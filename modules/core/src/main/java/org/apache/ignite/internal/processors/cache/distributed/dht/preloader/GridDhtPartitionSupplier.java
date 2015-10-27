@@ -217,12 +217,14 @@ class GridDhtPartitionSupplier {
         try {
             SupplyContext sctx = scMap.remove(scId);
 
+            // Context will be cleaned in case topology changed.
             if (sctx != null && (!d.topologyVersion().equals(sctx.topVer) || d.updateSequence() != sctx.updateSeq)) {
                 clearContext(sctx, log);
 
                 sctx = null;
             }
 
+            // Initial demand request should contain partitions list.
             if (sctx == null && d.partitions() == null)
                 return;
 
