@@ -78,14 +78,15 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
     /**
      * @param updateSeq Update sequence for this node.
      * @param cacheId Cache ID.
+     * @param addDepInfo Deployment info flag.
      */
-    GridDhtPartitionSupplyMessageV2(long updateSeq, int cacheId, AffinityTopologyVersion topVer) {
+    GridDhtPartitionSupplyMessageV2(long updateSeq, int cacheId, AffinityTopologyVersion topVer, boolean addDepInfo) {
         assert updateSeq > 0;
 
         this.cacheId = cacheId;
         this.updateSeq = updateSeq;
         this.topVer = topVer;
-    }
+        this.addDepInfo = addDepInfo;    }
 
     /**
      * Empty constructor required for {@link Externalizable}.
@@ -255,6 +256,11 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
             for (int i = 0; i < entries.size(); i++)
                 entries.get(i).unmarshal(cacheCtx, ldr);
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean addDeploymentInfo() {
+        return addDepInfo;
     }
 
     /**

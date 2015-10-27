@@ -208,7 +208,7 @@ class GridDhtPartitionSupplier {
                 ", from=" + id + ", idx=" + idx + "]");
 
         GridDhtPartitionSupplyMessageV2 s = new GridDhtPartitionSupplyMessageV2(
-            d.updateSequence(), cctx.cacheId(), d.topologyVersion());
+            d.updateSequence(), cctx.cacheId(), d.topologyVersion(), cctx.deploymentEnabled());
 
         ClusterNode node = cctx.discovery().node(id);
 
@@ -336,7 +336,7 @@ class GridDhtPartitionSupplier {
                                         return;
 
                                     s = new GridDhtPartitionSupplyMessageV2(d.updateSequence(),
-                                        cctx.cacheId(), d.topologyVersion());
+                                        cctx.cacheId(), d.topologyVersion(), cctx.deploymentEnabled());
                                 }
                             }
 
@@ -423,7 +423,7 @@ class GridDhtPartitionSupplier {
                                             return;
 
                                         s = new GridDhtPartitionSupplyMessageV2(d.updateSequence(),
-                                            cctx.cacheId(), d.topologyVersion());
+                                            cctx.cacheId(), d.topologyVersion(), cctx.deploymentEnabled());
                                     }
                                 }
 
@@ -545,7 +545,7 @@ class GridDhtPartitionSupplier {
                                         return;
 
                                     s = new GridDhtPartitionSupplyMessageV2(d.updateSequence(),
-                                        cctx.cacheId(), d.topologyVersion());
+                                        cctx.cacheId(), d.topologyVersion(), cctx.deploymentEnabled());
                                 }
                             }
 
@@ -737,7 +737,7 @@ class GridDhtPartitionSupplier {
     @Deprecated//Backward compatibility. To be removed in future.
     private void processOldDemandMessage(GridDhtPartitionDemandMessage d, UUID id) {
         GridDhtPartitionSupplyMessage s = new GridDhtPartitionSupplyMessage(d.workerId(),
-            d.updateSequence(), cctx.cacheId());
+            d.updateSequence(), cctx.cacheId(), cctx.deploymentEnabled());
 
         ClusterNode node = cctx.node(id);
 
@@ -798,7 +798,7 @@ class GridDhtPartitionSupplier {
                                 U.sleep(preloadThrottle);
 
                             s = new GridDhtPartitionSupplyMessage(d.workerId(), d.updateSequence(),
-                                cctx.cacheId());
+                                cctx.cacheId(), cctx.deploymentEnabled());
                         }
 
                         GridCacheEntryInfo info = e.info();
@@ -850,7 +850,7 @@ class GridDhtPartitionSupplier {
                                             U.sleep(preloadThrottle);
 
                                         s = new GridDhtPartitionSupplyMessage(d.workerId(),
-                                            d.updateSequence(), cctx.cacheId());
+                                            d.updateSequence(), cctx.cacheId(), cctx.deploymentEnabled());
                                     }
 
                                     GridCacheSwapEntry swapEntry = e.getValue();
@@ -934,7 +934,8 @@ class GridDhtPartitionSupplier {
 
                                 s = new GridDhtPartitionSupplyMessage(d.workerId(),
                                     d.updateSequence(),
-                                    cctx.cacheId());
+                                    cctx.cacheId(),
+                                    cctx.deploymentEnabled());
                             }
 
                             if (preloadPred == null || preloadPred.apply(info))
