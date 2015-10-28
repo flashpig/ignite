@@ -869,6 +869,9 @@ public class GridDhtPartitionDemander {
         private void cleanupRemoteContexts(UUID nodeId) {
             ClusterNode node = cctx.discovery().node(nodeId);
 
+            if (node == null)
+                return;
+
             //Check remote node rebalancing API version.
             if (node.version().compareTo(GridDhtPreloader.REBALANCING_VER_2_SINCE) >= 0) {
 
