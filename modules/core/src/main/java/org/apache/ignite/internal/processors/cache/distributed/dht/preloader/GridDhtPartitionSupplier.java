@@ -41,6 +41,7 @@ import org.apache.ignite.internal.util.typedef.CI2;
 import org.apache.ignite.internal.util.typedef.T3;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgnitePredicate;
+import org.apache.ignite.spi.IgniteSpiException;
 
 import static org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtPartitionState.OWNING;
 
@@ -583,6 +584,11 @@ class GridDhtPartitionSupplier {
         }
         catch (IgniteCheckedException e) {
             U.error(log, "Failed to send partition supply message to node: " + id, e);
+        }
+        catch (IgniteSpiException e) {
+            if (log.isDebugEnabled())
+                log.debug("Failed to send message to node (current node is stopping?) [node=" + node.id() +
+                    ", msg=" + e.getMessage() + ']');
         }
     }
 

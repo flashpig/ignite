@@ -67,6 +67,7 @@ import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgnitePredicate;
 import org.apache.ignite.lang.IgniteUuid;
+import org.apache.ignite.spi.IgniteSpiException;
 import org.jetbrains.annotations.Nullable;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -379,7 +380,7 @@ public class GridDhtPartitionDemander {
 
                         synchronized (fut) {
                             if (!fut.isDone())// Future can be already cancelled at this moment and all failovers happened.
-                            // New requests will not be covered by failovers.
+                                // New requests will not be covered by failovers.
                                 cctx.io().sendOrderedMessage(node,
                                     GridCachePartitionExchangeManager.rebalanceTopic(cnt), initD, cctx.ioPolicy(), initD.timeout());
                         }
@@ -590,6 +591,11 @@ public class GridDhtPartitionDemander {
         catch (IgniteCheckedException e) {
             if (log.isDebugEnabled())
                 log.debug("Node left during rebalancing [node=" + node.id() +
+                    ", msg=" + e.getMessage() + ']');
+        }
+        catch (IgniteSpiException e) {
+            if (log.isDebugEnabled())
+                log.debug("Failed to send message to node (current node is stopping?) [node=" + node.id() +
                     ", msg=" + e.getMessage() + ']');
         }
     }
