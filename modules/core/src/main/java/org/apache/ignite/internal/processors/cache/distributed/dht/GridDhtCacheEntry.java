@@ -164,6 +164,8 @@ public class GridDhtCacheEntry extends GridDistributedCacheEntry {
      * @param topVer Topology version.
      * @param threadId Owning thread ID.
      * @param ver Lock version.
+     * @param serOrder Version for serializable transactions ordering.
+     * @param serReadVer Optional read entry version for optimistic serializable transaction.
      * @param timeout Timeout to acquire lock.
      * @param reenter Reentry flag.
      * @param tx Tx flag.
@@ -178,10 +180,17 @@ public class GridDhtCacheEntry extends GridDistributedCacheEntry {
         AffinityTopologyVersion topVer,
         long threadId,
         GridCacheVersion ver,
+        @Nullable GridCacheVersion serOrder,
+        @Nullable GridCacheVersion serReadVer,
         long timeout,
         boolean reenter,
         boolean tx,
-        boolean implicitSingle) throws GridCacheEntryRemovedException, GridDistributedLockCancelledException {
+        boolean implicitSingle)
+        throws GridCacheEntryRemovedException, GridDistributedLockCancelledException
+    {
+        assert serReadVer == null || serOrder != null;
+        assert !reenter || serOrder == null;
+
         GridCacheMvccCandidate cand;
         GridCacheMvccCandidate prev;
         GridCacheMvccCandidate owner;
@@ -214,6 +223,7 @@ public class GridDhtCacheEntry extends GridDistributedCacheEntry {
                 threadId,
                 ver,
                 timeout,
+                serOrder,
                 reenter,
                 tx,
                 implicitSingle,
@@ -236,12 +246,12 @@ public class GridDhtCacheEntry extends GridDistributedCacheEntry {
 
             val = this.val;
 
-            if (mvcc != null && mvcc.isEmpty())
+            if (mvcc.isEmpty())
                 mvccExtras(null);
         }
 
         // Don't link reentries.
-        if (cand != null && !cand.reentry())
+        if (!cand.reentry())
             // Link with other candidates in the same thread.
             cctx.mvcc().addNext(cctx, cand);
 
@@ -251,7 +261,10 @@ public class GridDhtCacheEntry extends GridDistributedCacheEntry {
     }
 
     /** {@inheritDoc} */
-    @Override public boolean tmLock(IgniteInternalTx tx, long timeout)
+    @Override public boolean tmLock(IgniteInternalTx tx,
+        long timeout,
+        @Nullable GridCacheVersion serOrder,
+        GridCacheVersion serReadVer)
         throws GridCacheEntryRemovedException, GridDistributedLockCancelledException {
         if (tx.local()) {
             GridDhtTxLocalAdapter dhtTx = (GridDhtTxLocalAdapter)tx;
@@ -263,6 +276,8 @@ public class GridDhtCacheEntry extends GridDistributedCacheEntry {
                 tx.topologyVersion(),
                 tx.threadId(),
                 tx.xidVersion(),
+                serOrder,
+                serReadVer,
                 timeout,
                 /*reenter*/false,
                 /*tx*/true,
