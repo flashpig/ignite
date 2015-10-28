@@ -17,6 +17,11 @@
 
 package org.apache.ignite.internal.processors.cache.distributed.dht;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import javax.cache.CacheException;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteException;
@@ -45,12 +50,6 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.apache.ignite.transactions.Transaction;
 import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionRollbackException;
-
-import javax.cache.CacheException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 
 import static org.apache.ignite.transactions.TransactionConcurrency.OPTIMISTIC;
 import static org.apache.ignite.transactions.TransactionConcurrency.PESSIMISTIC;
@@ -96,6 +95,13 @@ public class GridCacheTxNodeFailureSelfTest extends GridCommonAbstractTest {
         ccfg.setBackups(1);
 
         return ccfg;
+    }
+
+    /**
+     *
+     */
+    @Override protected void afterTest() throws Exception {
+        stopAllGrids();
     }
 
     /**
@@ -198,83 +204,53 @@ public class GridCacheTxNodeFailureSelfTest extends GridCommonAbstractTest {
         for (int i = 0; i < gridCount(); i++)
             info("Grid " + i + ": " + ignite(i).cluster().localNode().id());
 
-        try {
-            final Ignite ignite = ignite(0);
+        final Ignite ignite = ignite(0);
 
-            final IgniteCache<Object, Object> cache = ignite.cache(null).withNoRetries();
+        final IgniteCache<Object, Object> cache = ignite.cache(null).withNoRetries();
 
-            final int key = generateKey(ignite, backup);
+        final int key = generateKey(ignite, backup);
 
-            IgniteEx backupNode = (IgniteEx)backupNode(key, null);
+        IgniteEx backupNode = (IgniteEx)backupNode(key, null);
 
-            assertNotNull(backupNode);
+        assertNotNull(backupNode);
 
-            final CountDownLatch commitLatch = new CountDownLatch(1);
+        final CountDownLatch commitLatch = new CountDownLatch(1);
 
-            if (!commit)
-                communication(1).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareRequest.class));
-            else {
-                if (!backup) {
-                    communication(2).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
-                    communication(3).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
-                }
-                else
-                    communication(0).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
+        if (!commit)
+            communication(1).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareRequest.class));
+        else {
+            if (!backup) {
+                communication(2).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
+                communication(3).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
             }
+            else
+                communication(0).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
+        }
 
-            IgniteInternalFuture<Object> fut = GridTestUtils.runAsync(new Callable<Object>() {
-                @Override public Object call() throws Exception {
-                    if (conc != null) {
-                        try (Transaction tx = ignite.transactions().txStart(conc, REPEATABLE_READ)) {
-                            cache.put(key, key);
+        IgniteInternalFuture<Object> fut = GridTestUtils.runAsync(new Callable<Object>() {
+            @Override public Object call() throws Exception {
+                if (conc != null) {
+                    try (Transaction tx = ignite.transactions().txStart(conc, REPEATABLE_READ)) {
+                        cache.put(key, key);
 
-                            Transaction asyncTx = (Transaction)tx.withAsync();
+                        Transaction asyncTx = (Transaction)tx.withAsync();
 
-                            asyncTx.commit();
-
-                            commitLatch.countDown();
-
-                            try {
-                                IgniteFuture<Object> fut = asyncTx.future();
-
-                                fut.get();
-
-                                if (!commit) {
-                                    error("Transaction has been committed");
-
-                                    fail("Transaction has been committed: " + tx);
-                                }
-                            }
-                            catch (TransactionRollbackException e) {
-                                if (commit) {
-                                    error(e.getMessage(), e);
-
-                                    fail("Failed to commit: " + e);
-                                }
-                                else
-                                    assertTrue(X.hasCause(e, TransactionRollbackException.class));
-                            }
-                        }
-                    }
-                    else {
-                        IgniteCache<Object, Object> cache0 = cache.withAsync();
-
-                        cache0.put(key, key);
-
-                        Thread.sleep(1000);
+                        asyncTx.commit();
 
                         commitLatch.countDown();
 
                         try {
-                            cache0.future().get();
+                            IgniteFuture<Object> fut = asyncTx.future();
+
+                            fut.get();
 
                             if (!commit) {
                                 error("Transaction has been committed");
 
-                                fail("Transaction has been committed.");
+                                fail("Transaction has been committed: " + tx);
                             }
                         }
-                        catch (CacheException e) {
+                        catch (TransactionRollbackException e) {
                             if (commit) {
                                 error(e.getMessage(), e);
 
@@ -284,28 +260,53 @@ public class GridCacheTxNodeFailureSelfTest extends GridCommonAbstractTest {
                                 assertTrue(X.hasCause(e, TransactionRollbackException.class));
                         }
                     }
-
-                    return null;
                 }
-            });
+                else {
+                    IgniteCache<Object, Object> cache0 = cache.withAsync();
 
-            commitLatch.await();
+                    cache0.put(key, key);
 
-            stopGrid(1);
+                    Thread.sleep(1000);
 
-            // Check that thread successfully finished.
-            fut.get();
+                    commitLatch.countDown();
 
-            // Check there are no hanging transactions.
-            assertEquals(0, ((IgniteEx)ignite(0)).context().cache().context().tm().idMapSize());
-            assertEquals(0, ((IgniteEx)ignite(2)).context().cache().context().tm().idMapSize());
-            assertEquals(0, ((IgniteEx)ignite(3)).context().cache().context().tm().idMapSize());
+                    try {
+                        cache0.future().get();
 
-            dataCheck((IgniteKernal)ignite(0), (IgniteKernal)backupNode, key, commit);
-        }
-        finally {
-            stopAllGrids();
-        }
+                        if (!commit) {
+                            error("Transaction has been committed");
+
+                            fail("Transaction has been committed.");
+                        }
+                    }
+                    catch (CacheException e) {
+                        if (commit) {
+                            error(e.getMessage(), e);
+
+                            fail("Failed to commit: " + e);
+                        }
+                        else
+                            assertTrue(X.hasCause(e, TransactionRollbackException.class));
+                    }
+                }
+
+                return null;
+            }
+        });
+
+        commitLatch.await();
+
+        stopGrid(1);
+
+        // Check that thread successfully finished.
+        fut.get();
+
+        // Check there are no hanging transactions.
+        assertEquals(0, ((IgniteEx)ignite(0)).context().cache().context().tm().idMapSize());
+        assertEquals(0, ((IgniteEx)ignite(2)).context().cache().context().tm().idMapSize());
+        assertEquals(0, ((IgniteEx)ignite(3)).context().cache().context().tm().idMapSize());
+
+        dataCheck((IgniteKernal)ignite(0), (IgniteKernal)backupNode, key, commit);
     }
 
     /**
