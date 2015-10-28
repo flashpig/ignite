@@ -316,7 +316,9 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
 
                 Map map = U.field(supplier, "scMap");
 
-                assert map.isEmpty();
+                synchronized (map) {
+                    assert map.isEmpty();
+                }
             }
         }
     }
@@ -356,8 +358,6 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
                     waitForRebalancing(2, 5, 0);
                     waitForRebalancing(3, 5, 0);
                     waitForRebalancing(4, 5, 0);
-
-                    checkSupplyContextMapIsEmpty();
 
                     //New cache should start rebalancing.
                     CacheConfiguration<Integer, Integer> cacheRCfg = new CacheConfiguration<>();
@@ -431,14 +431,14 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
 
         t4.start();
 
-        stopGrid(0);
+        stopGrid(1);
 
-        waitForRebalancing(1, 6);
+        waitForRebalancing(0, 6);
         waitForRebalancing(2, 6);
         waitForRebalancing(3, 6);
         waitForRebalancing(4, 6);
 
-        stopGrid(1);
+        stopGrid(0);
 
         waitForRebalancing(2, 7);
         waitForRebalancing(3, 7);

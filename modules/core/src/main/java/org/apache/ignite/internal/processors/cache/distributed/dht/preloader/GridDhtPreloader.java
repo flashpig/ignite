@@ -272,6 +272,11 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
     }
 
     /** {@inheritDoc} */
+    @Override public void onTopologyChanged(AffinityTopologyVersion topVer) {
+        supplier.onTopologyChanged(topVer);
+    }
+
+    /** {@inheritDoc} */
     @Override public GridDhtPreloaderAssignments assign(GridDhtPartitionsExchangeFuture exchFut) {
         // No assignments for disabled preloader.
         GridDhtPartitionTopology top = cctx.dht().topology();

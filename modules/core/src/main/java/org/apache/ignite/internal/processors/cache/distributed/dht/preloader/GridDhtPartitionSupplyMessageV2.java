@@ -81,8 +81,6 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
      * @param addDepInfo Deployment info flag.
      */
     GridDhtPartitionSupplyMessageV2(long updateSeq, int cacheId, AffinityTopologyVersion topVer, boolean addDepInfo) {
-        assert updateSeq > 0;
-
         this.cacheId = cacheId;
         this.updateSeq = updateSeq;
         this.topVer = topVer;

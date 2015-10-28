@@ -377,8 +377,12 @@ public class GridDhtPartitionDemander {
                         initD.updateSequence(fut.updateSeq);
                         initD.timeout(cctx.config().getRebalanceTimeout());
 
-                        cctx.io().sendOrderedMessage(node,
-                            GridCachePartitionExchangeManager.rebalanceTopic(cnt), initD, cctx.ioPolicy(), initD.timeout());
+                        synchronized (fut) {
+                            if (!fut.isDone())// Future can be already cancelled at this moment and all failovers happened.
+                            // New requests will not be covered by failovers.
+                                cctx.io().sendOrderedMessage(node,
+                                    GridCachePartitionExchangeManager.rebalanceTopic(cnt), initD, cctx.ioPolicy(), initD.timeout());
+                        }
 
                         if (log.isDebugEnabled())
                             log.debug("Requested rebalancing [from node=" + node.id() + ", listener index=" +
@@ -810,10 +814,14 @@ public class GridDhtPartitionDemander {
                 if (isDone())
                     return true;
 
-                remaining.clear();
-
                 U.log(log, "Cancelled rebalancing from all nodes [cache=" + cctx.name()
                     + ", topology=" + topologyVersion());
+
+                for (UUID nodeId : remaining.keySet()) {
+                    cleanupRemoteContexts(nodeId);
+                }
+
+                remaining.clear();
 
                 checkIsDone(true /* cancelled */);
             }
@@ -832,6 +840,8 @@ public class GridDhtPartitionDemander {
                 U.log(log, ("Cancelled rebalancing [cache=" + cctx.name() +
                     ", fromNode=" + nodeId + ", topology=" + topologyVersion() +
                     ", time=" + (U.currentTimeMillis() - remaining.get(nodeId).get1()) + " ms]"));
+
+                cleanupRemoteContexts(nodeId);
 
                 remaining.remove(nodeId);
 
@@ -853,6 +863,32 @@ public class GridDhtPartitionDemander {
                     missed.put(nodeId, new HashSet<Integer>());
 
                 missed.get(nodeId).add(p);
+            }
+        }
+
+        private void cleanupRemoteContexts(UUID nodeId) {
+            ClusterNode node = cctx.discovery().node(nodeId);
+
+            //Check remote node rebalancing API version.
+            if (node.version().compareTo(GridDhtPreloader.REBALANCING_VER_2_SINCE) >= 0) {
+
+                GridDhtPartitionDemandMessage d = new GridDhtPartitionDemandMessage(
+                    -1/* remove supply context signal */, this.topologyVersion(), cctx.cacheId());
+
+                d.timeout(cctx.config().getRebalanceTimeout());
+
+                try {
+                    for (int idx = 0; idx < cctx.gridConfig().getRebalanceThreadPoolSize(); idx++) {
+                        d.topic(GridCachePartitionExchangeManager.rebalanceTopic(idx));
+
+                        cctx.io().sendOrderedMessage(node, GridCachePartitionExchangeManager.rebalanceTopic(idx),
+                            d, cctx.ioPolicy(), cctx.config().getRebalanceTimeout());
+                    }
+                }
+                catch (IgniteCheckedException e) {
+                    if (log.isDebugEnabled())
+                        log.debug("Failed to send failover context cleanup request to node");
+                }
             }
         }
 

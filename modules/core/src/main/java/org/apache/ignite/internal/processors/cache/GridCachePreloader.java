@@ -171,4 +171,11 @@ public interface GridCachePreloader {
      * @param part Partition.
      */
     public void evictPartitionAsync(GridDhtLocalPartition part);
+
+    /**
+     * Handles new topology.
+     *
+     * @param topVer Topology version.
+     */
+    public void onTopologyChanged(AffinityTopologyVersion topVer);
 }
