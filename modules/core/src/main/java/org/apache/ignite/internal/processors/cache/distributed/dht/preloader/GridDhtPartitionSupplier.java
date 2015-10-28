@@ -659,6 +659,11 @@ class GridDhtPartitionSupplier {
                         loc,
                         updateSeq));
             }
+            else if (loc != null) {
+                assert loc.reservations() > 0;
+
+                loc.release();
+            }
         }
     }
 
