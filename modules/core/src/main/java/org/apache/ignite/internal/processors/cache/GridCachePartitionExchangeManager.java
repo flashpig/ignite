@@ -1297,6 +1297,7 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                         }
 
                         Callable<Boolean> marsR = null;
+                        LinkedList<Callable<Boolean>> orderedRs = new LinkedList<>();
 
                         //Ordered rebalance scheduling.
                         for (Integer order : orderMap.keySet()) {
@@ -1321,13 +1322,15 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                     if (cacheId == CU.cacheId(GridCacheUtils.MARSH_CACHE_NAME))
                                         marsR = r;
                                     else
-                                        rebalancingQueue.add(r);
+                                        orderedRs.add(r);
                                 }
                             }
                         }
 
                         if (asyncStartFut != null)
                             asyncStartFut.get(); // Wait for thread stop.
+
+                        rebalancingQueue.addAll(orderedRs);
 
                         if (marsR != null || !rebalancingQueue.isEmpty()) {
                             if (futQ.isEmpty()) {
