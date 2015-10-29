@@ -23,7 +23,7 @@ import org.apache.ignite.portable.PortableObject;
 /**
  * Implementation of portable field descriptor.
  */
-public class PortableFIeldDescriptorImpl implements PortableFieldDescriptor {
+public class PortableFIeldDescriptorImpl2 implements PortableFieldDescriptor {
     /** Well-known object schemas. */
     private final PortableSchemaRegistry schemas;
 
@@ -36,7 +36,7 @@ public class PortableFIeldDescriptorImpl implements PortableFieldDescriptor {
      * @param schemas Schemas.
      * @param fieldId Field ID.
      */
-    public PortableFIeldDescriptorImpl(PortableSchemaRegistry schemas, int fieldId) {
+    public PortableFIeldDescriptorImpl2(PortableSchemaRegistry schemas, int fieldId) {
         this.schemas = schemas;
         this.fieldId = fieldId;
     }
