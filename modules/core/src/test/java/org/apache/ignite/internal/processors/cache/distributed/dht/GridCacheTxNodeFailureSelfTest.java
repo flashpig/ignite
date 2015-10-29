@@ -98,13 +98,6 @@ public class GridCacheTxNodeFailureSelfTest extends GridCommonAbstractTest {
     }
 
     /**
-     *
-     */
-    @Override protected void afterTest() throws Exception {
-        stopAllGrids();
-    }
-
-    /**
      * @throws Exception If failed.
      */
     public void testPrimaryNodeFailureBackupCommitPessimistic() throws Exception {
@@ -198,59 +191,89 @@ public class GridCacheTxNodeFailureSelfTest extends GridCommonAbstractTest {
         boolean backup,
         final boolean commit
     ) throws Exception {
-        startGrids(gridCount());
-        awaitPartitionMapExchange();
+        try {
+            startGrids(gridCount());
+            awaitPartitionMapExchange();
 
-        for (int i = 0; i < gridCount(); i++)
-            info("Grid " + i + ": " + ignite(i).cluster().localNode().id());
+            for (int i = 0; i < gridCount(); i++)
+                info("Grid " + i + ": " + ignite(i).cluster().localNode().id());
 
-        final Ignite ignite = ignite(0);
+            final Ignite ignite = ignite(0);
 
-        final IgniteCache<Object, Object> cache = ignite.cache(null).withNoRetries();
+            final IgniteCache<Object, Object> cache = ignite.cache(null).withNoRetries();
 
-        final int key = generateKey(ignite, backup);
+            final int key = generateKey(ignite, backup);
 
-        IgniteEx backupNode = (IgniteEx)backupNode(key, null);
+            IgniteEx backupNode = (IgniteEx)backupNode(key, null);
 
-        assertNotNull(backupNode);
+            assertNotNull(backupNode);
 
-        final CountDownLatch commitLatch = new CountDownLatch(1);
+            final CountDownLatch commitLatch = new CountDownLatch(1);
 
-        if (!commit)
-            communication(1).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareRequest.class));
-        else {
-            if (!backup) {
-                communication(2).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
-                communication(3).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
+            if (!commit)
+                communication(1).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareRequest.class));
+            else {
+                if (!backup) {
+                    communication(2).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
+                    communication(3).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
+                }
+                else
+                    communication(0).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
             }
-            else
-                communication(0).bannedClasses(Collections.<Class>singletonList(GridDhtTxPrepareResponse.class));
-        }
 
-        IgniteInternalFuture<Object> fut = GridTestUtils.runAsync(new Callable<Object>() {
-            @Override public Object call() throws Exception {
-                if (conc != null) {
-                    try (Transaction tx = ignite.transactions().txStart(conc, REPEATABLE_READ)) {
-                        cache.put(key, key);
+            IgniteInternalFuture<Object> fut = GridTestUtils.runAsync(new Callable<Object>() {
+                @Override public Object call() throws Exception {
+                    if (conc != null) {
+                        try (Transaction tx = ignite.transactions().txStart(conc, REPEATABLE_READ)) {
+                            cache.put(key, key);
 
-                        Transaction asyncTx = (Transaction)tx.withAsync();
+                            Transaction asyncTx = (Transaction)tx.withAsync();
 
-                        asyncTx.commit();
+                            asyncTx.commit();
+
+                            commitLatch.countDown();
+
+                            try {
+                                IgniteFuture<Object> fut = asyncTx.future();
+
+                                fut.get();
+
+                                if (!commit) {
+                                    error("Transaction has been committed");
+
+                                    fail("Transaction has been committed: " + tx);
+                                }
+                            }
+                            catch (TransactionRollbackException e) {
+                                if (commit) {
+                                    error(e.getMessage(), e);
+
+                                    fail("Failed to commit: " + e);
+                                }
+                                else
+                                    assertTrue(X.hasCause(e, TransactionRollbackException.class));
+                            }
+                        }
+                    }
+                    else {
+                        IgniteCache<Object, Object> cache0 = cache.withAsync();
+
+                        cache0.put(key, key);
+
+                        Thread.sleep(1000);
 
                         commitLatch.countDown();
 
                         try {
-                            IgniteFuture<Object> fut = asyncTx.future();
-
-                            fut.get();
+                            cache0.future().get();
 
                             if (!commit) {
                                 error("Transaction has been committed");
 
-                                fail("Transaction has been committed: " + tx);
+                                fail("Transaction has been committed.");
                             }
                         }
-                        catch (TransactionRollbackException e) {
+                        catch (CacheException e) {
                             if (commit) {
                                 error(e.getMessage(), e);
 
@@ -260,53 +283,28 @@ public class GridCacheTxNodeFailureSelfTest extends GridCommonAbstractTest {
                                 assertTrue(X.hasCause(e, TransactionRollbackException.class));
                         }
                     }
+
+                    return null;
                 }
-                else {
-                    IgniteCache<Object, Object> cache0 = cache.withAsync();
+            });
 
-                    cache0.put(key, key);
+            commitLatch.await();
 
-                    Thread.sleep(1000);
+            stopGrid(1);
 
-                    commitLatch.countDown();
+            // Check that thread successfully finished.
+            fut.get();
 
-                    try {
-                        cache0.future().get();
+            // Check there are no hanging transactions.
+            assertEquals(0, ((IgniteEx)ignite(0)).context().cache().context().tm().idMapSize());
+            assertEquals(0, ((IgniteEx)ignite(2)).context().cache().context().tm().idMapSize());
+            assertEquals(0, ((IgniteEx)ignite(3)).context().cache().context().tm().idMapSize());
 
-                        if (!commit) {
-                            error("Transaction has been committed");
-
-                            fail("Transaction has been committed.");
-                        }
-                    }
-                    catch (CacheException e) {
-                        if (commit) {
-                            error(e.getMessage(), e);
-
-                            fail("Failed to commit: " + e);
-                        }
-                        else
-                            assertTrue(X.hasCause(e, TransactionRollbackException.class));
-                    }
-                }
-
-                return null;
-            }
-        });
-
-        commitLatch.await();
-
-        stopGrid(1);
-
-        // Check that thread successfully finished.
-        fut.get();
-
-        // Check there are no hanging transactions.
-        assertEquals(0, ((IgniteEx)ignite(0)).context().cache().context().tm().idMapSize());
-        assertEquals(0, ((IgniteEx)ignite(2)).context().cache().context().tm().idMapSize());
-        assertEquals(0, ((IgniteEx)ignite(3)).context().cache().context().tm().idMapSize());
-
-        dataCheck((IgniteKernal)ignite(0), (IgniteKernal)backupNode, key, commit);
+            dataCheck((IgniteKernal)ignite(0), (IgniteKernal)backupNode, key, commit);
+        }
+        finally {
+            stopAllGrids();
+        }
     }
 
     /**
