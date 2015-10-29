@@ -47,6 +47,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
@@ -160,7 +161,7 @@ public class PortableReaderExImpl implements PortableReader, PortableRawReaderEx
     private int schemaId;
 
     /** Object schema. */
-    private PortableObjectSchema schema;
+    private PortableSchema schema;
 
     /**
      * @param ctx Context.
@@ -300,6 +301,21 @@ public class PortableReaderExImpl implements PortableReader, PortableRawReaderEx
         parseHeaderIfNeeded();
 
         return hasField(fieldId) ? unmarshal() : null;
+    }
+
+    /**
+     * @param fieldOffset Field offset.
+     * @return Unmarshalled value.
+     * @throws PortableException In case of error.
+     */
+    @Nullable Object unmarshalFieldByOffset(int fieldOffset) throws PortableException {
+        parseHeaderIfNeeded();
+
+        int offset = in.readIntPositioned(footerStart + fieldOffset);
+
+        in.position(start + offset);
+
+        return unmarshal();
     }
 
     /**
@@ -2528,68 +2544,80 @@ public class PortableReaderExImpl implements PortableReader, PortableRawReaderEx
     }
 
     /**
+     * Create schema.
+     *
+     * @return Schema.
+     */
+    public PortableSchema createSchema() {
+        parseHeaderIfNeeded();
+
+        LinkedHashMap<Integer, Integer> fields = new LinkedHashMap<>();
+
+        int searchPos = footerStart;
+
+        while (searchPos < footerEnd) {
+            int fieldId = in.readIntPositioned(searchPos);
+
+            fields.put(fieldId, searchPos + 4 - footerStart);
+
+            searchPos += 8;
+        }
+
+        return new PortableSchema(fields);
+    }
+
+    /**
      * @param id Field ID.
      * @return Field offset.
      */
     private boolean hasField(int id) {
-        // TODO: Constant-time lookup.
-//        if (schema == null) {
-//            PortableObjectSchema schema0 = ctx.schema(typeId, schemaId);
-//
-//            if (schema0 == null) {
-//                Map<Integer, Integer> fields = new HashMap<>(256, 0.5f);
-//
-//                int searchPos = footerStart;
-//
-//                while (searchPos < footerEnd) {
-//                    int fieldId = in.readIntPositioned(searchPos);
-//
-//                    fields.put(fieldId, searchPos + 4 - footerStart);
-//
-//                    searchPos += 8;
-//                }
-//
-//                schema0 = new PortableObjectSchema(schemaId, fields);
-//
-//                ctx.addSchema(typeId, schemaId, schema0);
-//            }
-//
-//            schema = schema0;
-//        }
-//
-//        int fieldOffsetPos = schema.fieldOffsetPosition(id);
-//
-//        if (fieldOffsetPos != 0) {
-//            int fieldOffset = in.readIntPositioned(footerStart + fieldOffsetPos);
-//
-//            in.position(start + fieldOffset);
-//
-//            return true;
-//        }
-//        else
-//            return false;
+        if (schema == null) {
+            PortableSchemaRegistry schemaReg = ctx.schemaRegistry(typeId);
 
-        assert hdrLen != 0;
+            PortableSchema schema0 = schemaReg.schema(schemaId);
 
-        int searchHead = footerStart;
-        int searchTail = footerEnd;
+            if (schema0 == null) {
+                schema0 = createSchema();
 
-        while (true) {
-            if (searchHead >= searchTail)
-                return false;
-
-            int id0 = in.readIntPositioned(searchHead);
-
-            if (id0 == id) {
-                int offset = in.readIntPositioned(searchHead + 4);
-
-                in.position(start + offset);
-
-                return true;
+                schemaReg.addSchema(schemaId, schema0);
             }
 
-            searchHead += 8;
+            schema = schema0;
         }
+
+        int fieldOffsetPos = schema.offset(id);
+
+        if (fieldOffsetPos != 0) {
+            int fieldOffset = in.readIntPositioned(footerStart + fieldOffsetPos);
+
+            in.position(start + fieldOffset);
+
+            return true;
+        }
+        else
+            return false;
+
+//        assert hdrLen != 0;
+//
+//        int searchHead = footerStart;
+//        int searchTail = footerEnd;
+//
+//        while (true) {
+//            if (searchHead >= searchTail)
+//                return false;
+//
+//            int id0 = in.readIntPositioned(searchHead);
+//
+//            if (id0 == id) {
+//                int offset = in.readIntPositioned(searchHead + 4);
+//
+//                in.position(start + offset);
+//
+//                return true;
+//            }
+//
+//            searchHead += 8;
+//        }
     }
 
     /** {@inheritDoc} */

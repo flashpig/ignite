@@ -143,7 +143,7 @@ public interface PortableObject extends Serializable, Cloneable {
      * @return Field descriptor.
      * @throws PortableException If failed.
      */
-    public PortableObjectFieldDescriptor fieldDescriptor(String fieldName) throws PortableException;
+    public PortableFieldDescriptor fieldDescriptor(String fieldName) throws PortableException;
 
     /**
      * Gets fully deserialized instance of portable object.

@@ -20,7 +20,7 @@ package org.apache.ignite.portable;
 /**
  * Portable object field. Can be used to speed object field lookup.
  */
-public interface PortableObjectFieldDescriptor {
+public interface PortableFieldDescriptor {
     /**
      * Check whether field exists in the object.
      *

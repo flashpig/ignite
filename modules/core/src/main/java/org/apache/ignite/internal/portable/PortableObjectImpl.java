@@ -17,11 +17,6 @@
 
 package org.apache.ignite.internal.portable;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.nio.ByteBuffer;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.GridDirectTransient;
 import org.apache.ignite.internal.IgniteCodeGeneratingFail;
@@ -35,9 +30,16 @@ import org.apache.ignite.plugin.extensions.communication.Message;
 import org.apache.ignite.plugin.extensions.communication.MessageReader;
 import org.apache.ignite.plugin.extensions.communication.MessageWriter;
 import org.apache.ignite.portable.PortableException;
+import org.apache.ignite.portable.PortableFieldDescriptor;
 import org.apache.ignite.portable.PortableMetadata;
 import org.apache.ignite.portable.PortableObject;
 import org.jetbrains.annotations.Nullable;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.nio.ByteBuffer;
 
 /**
  * Portable object implementation.
@@ -248,6 +250,14 @@ public final class PortableObjectImpl extends PortableObjectEx implements Extern
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
+    @Nullable @Override protected <F> F fieldByOffset(int fieldOffset) {
+        PortableReaderExImpl reader = new PortableReaderExImpl(ctx, arr, start, null);
+
+        return (F)reader.unmarshalFieldByOffset(fieldOffset);
+    }
+
+    /** {@inheritDoc} */
+    @SuppressWarnings("unchecked")
     @Nullable @Override protected <F> F field(PortableReaderContext rCtx, String fieldName) {
         PortableReaderExImpl reader = new PortableReaderExImpl(ctx,
             new PortableHeapInputStream(arr),
@@ -295,6 +305,29 @@ public final class PortableObjectImpl extends PortableObjectEx implements Extern
     /** {@inheritDoc} */
     @Override public int hashCode() {
         return PRIM.readInt(arr, start + GridPortableMarshaller.HASH_CODE_POS);
+    }
+
+    /** {@inheritDoc} */
+    @Override protected int schemaId() {
+        return PRIM.readInt(arr, start + GridPortableMarshaller.SCHEMA_ID_POS);
+    }
+
+    /** {@inheritDoc} */
+    @Override protected PortableSchema createSchema() {
+        PortableReaderExImpl reader = new PortableReaderExImpl(ctx, arr, start, null);
+
+        return reader.createSchema();
+    }
+
+    /** {@inheritDoc} */
+    @Override public PortableFieldDescriptor fieldDescriptor(String fieldName) throws PortableException {
+        int typeId = typeId();
+
+        PortableSchemaRegistry schemaReg = ctx.schemaRegistry(typeId);
+
+        int fieldId = ctx.userTypeIdMapper(typeId).fieldId(typeId, fieldName);
+
+        return new PortableFIeldDescriptorImpl(schemaReg, fieldId);
     }
 
     /** {@inheritDoc} */
