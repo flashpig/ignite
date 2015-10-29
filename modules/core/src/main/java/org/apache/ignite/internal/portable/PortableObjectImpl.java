@@ -327,7 +327,7 @@ public final class PortableObjectImpl extends PortableObjectEx implements Extern
 
         int fieldId = ctx.userTypeIdMapper(typeId).fieldId(typeId, fieldName);
 
-        return new PortableFIeldDescriptorImpl2(schemaReg, fieldId);
+        return new PortableFieldDescriptorImpl(schemaReg, fieldId);
     }
 
     /** {@inheritDoc} */
