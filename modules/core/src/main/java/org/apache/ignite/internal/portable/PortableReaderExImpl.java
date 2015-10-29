@@ -2571,53 +2571,53 @@ public class PortableReaderExImpl implements PortableReader, PortableRawReaderEx
      * @return Field offset.
      */
     private boolean hasField(int id) {
-        if (schema == null) {
-            PortableSchemaRegistry schemaReg = ctx.schemaRegistry(typeId);
-
-            PortableSchema schema0 = schemaReg.schema(schemaId);
-
-            if (schema0 == null) {
-                schema0 = createSchema();
-
-                schemaReg.addSchema(schemaId, schema0);
-            }
-
-            schema = schema0;
-        }
-
-        int fieldOffsetPos = schema.offset(id);
-
-        if (fieldOffsetPos != 0) {
-            int fieldOffset = in.readIntPositioned(footerStart + fieldOffsetPos);
-
-            in.position(start + fieldOffset);
-
-            return true;
-        }
-        else
-            return false;
-
-//        assert hdrLen != 0;
+//        if (schema == null) {
+//            PortableSchemaRegistry schemaReg = ctx.schemaRegistry(typeId);
 //
-//        int searchHead = footerStart;
-//        int searchTail = footerEnd;
+//            PortableSchema schema0 = schemaReg.schema(schemaId);
 //
-//        while (true) {
-//            if (searchHead >= searchTail)
-//                return false;
+//            if (schema0 == null) {
+//                schema0 = createSchema();
 //
-//            int id0 = in.readIntPositioned(searchHead);
-//
-//            if (id0 == id) {
-//                int offset = in.readIntPositioned(searchHead + 4);
-//
-//                in.position(start + offset);
-//
-//                return true;
+//                schemaReg.addSchema(schemaId, schema0);
 //            }
 //
-//            searchHead += 8;
+//            schema = schema0;
 //        }
+//
+//        int fieldOffsetPos = schema.offset(id);
+//
+//        if (fieldOffsetPos != 0) {
+//            int fieldOffset = in.readIntPositioned(footerStart + fieldOffsetPos);
+//
+//            in.position(start + fieldOffset);
+//
+//            return true;
+//        }
+//        else
+//            return false;
+
+        assert hdrLen != 0;
+
+        int searchHead = footerStart;
+        int searchTail = footerEnd;
+
+        while (true) {
+            if (searchHead >= searchTail)
+                return false;
+
+            int id0 = in.readIntPositioned(searchHead);
+
+            if (id0 == id) {
+                int offset = in.readIntPositioned(searchHead + 4);
+
+                in.position(start + offset);
+
+                return true;
+            }
+
+            searchHead += 8;
+        }
     }
 
     /** {@inheritDoc} */

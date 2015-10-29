@@ -75,6 +75,8 @@ import org.apache.ignite.internal.util.worker.GridWorker;
 import org.apache.ignite.internal.util.worker.GridWorkerFuture;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteFuture;
+import org.apache.ignite.portable.PortableFieldDescriptor;
+import org.apache.ignite.portable.PortableObject;
 import org.apache.ignite.spi.indexing.IndexingQueryFilter;
 import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
@@ -1678,6 +1680,9 @@ public class GridQueryProcessor extends GridProcessorAdapter {
         /** */
         private volatile int isKeyProp;
 
+        /** Field descriptor. */
+        private volatile PortableFieldDescriptor fieldDesc;
+
         /**
          * Constructor.
          *
@@ -1726,7 +1731,18 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                 obj = isKeyProp0 == 1 ? key : val;
             }
 
-            return ctx.cacheObjects().field(obj, propName);
+            PortableFieldDescriptor fieldDesc0 = fieldDesc;
+
+            if (fieldDesc0 == null) {
+                fieldDesc0 = ((PortableObject)obj).fieldDescriptor(propName);
+
+                fieldDesc = fieldDesc0;
+            }
+
+            return fieldDesc.value((PortableObject)obj);
+
+            // TODO: Remove.
+            //return ctx.cacheObjects().field(obj, propName);
         }
 
         /** {@inheritDoc} */

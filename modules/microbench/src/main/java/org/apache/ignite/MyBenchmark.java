@@ -28,6 +28,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.marshaller.optimized.OptimizedMarshaller;
 import org.apache.ignite.marshaller.portable.PortableMarshaller;
 import org.apache.ignite.portable.PortableException;
+import org.apache.ignite.portable.PortableFieldDescriptor;
 import org.apache.ignite.portable.PortableMarshalAware;
 import org.apache.ignite.portable.PortableMetadata;
 import org.apache.ignite.portable.PortableObject;
@@ -76,6 +77,9 @@ public class MyBenchmark {
 
     private static PortableObject marshPortable;
 
+    private static PortableFieldDescriptor fieldCity;
+    private static PortableFieldDescriptor fieldStreet;
+
     @Setup
     public static void setup() throws Exception {
         PortableMetaDataHandler metaHnd = new PortableMetaDataHandler() {
@@ -97,6 +101,9 @@ public class MyBenchmark {
 
         marshPortable = new PortableObjectImpl(U.<GridPortableMarshaller>field(marsh, "impl").context(),
             marshAddrBytes, 0);
+
+        fieldCity = marshPortable.fieldDescriptor("city");
+        fieldStreet = marshPortable.fieldDescriptor("street");
     }
 
 //    @Benchmark
@@ -104,15 +111,21 @@ public class MyBenchmark {
 //        return marsh.marshal(new Address());
 //    }
 
-    @Benchmark
-    public Object testRead() throws Exception {
-        return marsh.unmarshal(marshAddrBytes, null);
-    }
-
 //    @Benchmark
-//    public Object testFieldRead() throws Exception {
-//        return marshPortable.field("street");
+//    public Object testRead() throws Exception {
+//        return marsh.unmarshal(marshAddrBytes, null);
 //    }
+
+    @Benchmark
+    public boolean testFieldRead() throws Exception {
+//        String city = marshPortable.field("city");
+//        String street = marshPortable.field("street");
+
+        String city = fieldCity.value(marshPortable);
+        String street = fieldStreet.value(marshPortable);
+
+        return city != null && street != null;
+    }
 
     private static final Address addr = new Address();
 
