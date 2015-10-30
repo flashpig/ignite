@@ -251,6 +251,11 @@ public final class PortableObjectImpl extends PortableObjectEx implements Extern
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Nullable @Override protected <F> F fieldByOffset(int fieldOffset) {
+//        int schemaOffset = PRIM.readInt(arr, start + GridPortableMarshaller.SCHEMA_OR_RAW_OFF_POS);
+//        int fieldPos = PRIM.readInt(arr, start + schemaOffset + fieldOffset);
+//
+//        return (F)(Object)PRIM.readInt(arr, start + fieldPos + 1);
+
         PortableReaderExImpl reader = new PortableReaderExImpl(ctx, arr, start, null);
 
         return (F)reader.unmarshalFieldByOffset(fieldOffset);

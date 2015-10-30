@@ -117,14 +117,10 @@ public class MyBenchmark {
 //    }
 
     @Benchmark
-    public boolean testFieldRead() throws Exception {
-//        String city = marshPortable.field("city");
-//        String street = marshPortable.field("street");
+    public Object testFieldRead() throws Exception {
+        //return marshPortable.field("city");
 
-        String city = fieldCity.value(marshPortable);
-        String street = fieldStreet.value(marshPortable);
-
-        return city != null && street != null;
+        return fieldCity.value(marshPortable);
     }
 
     private static final Address addr = new Address();

@@ -101,7 +101,7 @@ public class QueryBenchmark {
         discoSpi.setIpFinder(new TcpDiscoveryVmIpFinder(true));
         cfg.setDiscoverySpi(discoSpi);
 
-        cfg.setMarshaller(new PortableMarshaller());
+        //cfg.setMarshaller(new PortableMarshaller());
 
         CacheConfiguration cacheCfg = new CacheConfiguration();
 
@@ -143,15 +143,15 @@ public class QueryBenchmark {
     }
 
     public static void main(String[] args) throws Exception {
-        setup();
+//        setup();
+//
+//        while (true)
+//            cache.query(qry).getAll();
 
-        while (true)
-            cache.query(qry).getAll();
 
 
-
-//        Options opts = new OptionsBuilder().include(QueryBenchmark.class.getSimpleName()).build();
-//        new Runner(opts).run();
+        Options opts = new OptionsBuilder().include(QueryBenchmark.class.getSimpleName()).build();
+        new Runner(opts).run();
     }
 
     /**
