@@ -109,9 +109,6 @@ public class GridCacheAtomicInvalidPartitionHandlingSelfTest extends GridCommonA
 
         GridTestUtils.setMemoryMode(cfg, ccfg, memMode, 100, 1024);
 
-        //To be uncommented after https://issues.apache.org/jira/browse/IGNITE-1578 fix.
-        ((TcpCommunicationSpi)cfg.getCommunicationSpi()).setSharedMemoryPort(-1);
-
         return cfg;
     }
 
