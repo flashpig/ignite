@@ -917,7 +917,9 @@ public class GridDhtPartitionDemander {
                 Collection<Integer> parts = remaining.get(nodeId).get2();
 
                 if (parts != null) {
-                    parts.remove(p);
+                    boolean removed = parts.remove(p);
+
+                    assert removed;
 
                     if (parts.isEmpty()) {
                         U.log(log, "Completed " + ((remaining.size() == 1 ? "(final) " : "") +
