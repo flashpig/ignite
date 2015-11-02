@@ -21,11 +21,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.ignite.IgniteCheckedException;
@@ -117,10 +116,10 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
         new ConcurrentHashMap8<>();
 
     /** */
-    private final ConcurrentLinkedDeque8<GridDhtLocalPartition> partitionsToEvict = new ConcurrentLinkedDeque8<>();
+    private final ConcurrentLinkedDeque8<GridDhtLocalPartition> partsToEvict = new ConcurrentLinkedDeque8<>();
 
     /** */
-    private final AtomicReference<Integer> partitionsEvictionOwning = new AtomicReference<>(0);
+    private final AtomicInteger partsEvictOwning = new AtomicInteger();
 
     /** Discovery listener. */
     private final GridLocalEventListener discoLsnr = new GridLocalEventListener() {
@@ -771,34 +770,37 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
 
     /** {@inheritDoc} */
     @Override public void evictPartitionAsync(GridDhtLocalPartition part) {
-        partitionsToEvict.add(part);
+        partsToEvict.add(part);
 
-        if (partitionsEvictionOwning.get() == 0 && partitionsEvictionOwning.compareAndSet(0, 1)) {
+        if (partsEvictOwning.get() == 0 && partsEvictOwning.compareAndSet(0, 1)) {
             cctx.closures().callLocalSafe(new GPC<Boolean>() {
                 @Override public Boolean call() {
-                    boolean firstRun = true;
+                    boolean locked = true;
 
-                    while (true) {
-                        if (!firstRun && !partitionsToEvict.isEmptyx() &&
-                            !partitionsEvictionOwning.compareAndSet(0, 1))
+                    while (locked || !partsToEvict.isEmptyx()) {
+                        if (!locked && !partsEvictOwning.compareAndSet(0, 1))
                             return false;
 
-                        firstRun = false;
-
                         try {
-                            GridDhtLocalPartition part = partitionsToEvict.poll();
+                            GridDhtLocalPartition part = partsToEvict.poll();
 
-                            if (part == null)
-                                return false;
-
-                            part.tryEvict();
+                            if (part != null)
+                                part.tryEvict();
                         }
                         finally {
-                            boolean res = partitionsEvictionOwning.compareAndSet(1, 0);
+                            if (!partsToEvict.isEmptyx())
+                                locked = true;
+                            else {
+                                boolean res = partsEvictOwning.compareAndSet(1, 0);
 
-                            assert res;
+                                assert res;
+
+                                locked = false;
+                            }
                         }
                     }
+
+                    return true;
                 }
             }, /*system pool*/ true);
         }

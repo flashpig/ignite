@@ -145,6 +145,8 @@ public class GridDhtPartitionDemander {
      * Stop.
      */
     void stop() {
+        rebalanceFut.cancel();
+
         lastExchangeFut = null;
 
         lastTimeoutObj.set(null);
@@ -1005,7 +1007,7 @@ public class GridDhtPartitionDemander {
                 if (!cancelled && !cctx.preloader().syncFuture().isDone())
                     ((GridFutureAdapter)cctx.preloader().syncFuture()).onDone();
 
-                onDone(true);
+                onDone(!cancelled);
             }
         }
     }
