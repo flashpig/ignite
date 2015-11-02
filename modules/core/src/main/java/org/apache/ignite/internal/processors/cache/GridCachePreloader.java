@@ -146,7 +146,6 @@ public interface GridCachePreloader {
      */
     public void unwindUndeploys();
 
-
     /**
      * Handles Supply message.
      *

@@ -322,7 +322,6 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
         exchWorker.futQ.addFirst(fut);
 
         if (!cctx.kernalContext().clientNode()) {
-
             for (int cnt = 0; cnt < cctx.gridConfig().getRebalanceThreadPoolSize(); cnt++) {
                 final int idx = cnt;
 
@@ -409,8 +408,8 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
     }
 
     /**
-     * @param idx
-     * @return topic
+     * @param idx Index.
+     * @return Topic for index.
      */
     public static Object rebalanceTopic(int idx) {
         return TOPIC_CACHE.topic("Rebalance", idx);
@@ -440,10 +439,10 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
         for (AffinityReadyFuture f : readyFuts.values())
             f.onDone(stopErr);
 
-        if (!cctx.kernalContext().clientNode())
-            for (int cnt = 0; cnt < cctx.gridConfig().getRebalanceThreadPoolSize(); cnt++) {
+        if (!cctx.kernalContext().clientNode()) {
+            for (int cnt = 0; cnt < cctx.gridConfig().getRebalanceThreadPoolSize(); cnt++)
                 cctx.io().removeOrderedHandler(rebalanceTopic(cnt));
-            }
+        }
 
         U.cancel(exchWorker);
 
@@ -1338,7 +1337,7 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
 
                                 if (marsR != null)
                                     try {
-                                        marsR.call();//Marshaller cache rebalancing launches in sync way.
+                                        marsR.call(); //Marshaller cache rebalancing launches in sync way.
                                     }
                                     catch (Exception ex) {
                                         if (log.isDebugEnabled())

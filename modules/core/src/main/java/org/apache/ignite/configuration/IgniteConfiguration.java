@@ -149,8 +149,8 @@ public class IgniteConfiguration {
     /** Default keep alive time for public thread pool. */
     public static final long DFLT_PUBLIC_KEEP_ALIVE_TIME = 0;
 
-    /** Default limit of threads used at rebalance. */
-    public static final int DFLT_REBALANCE_THREAD_POOL_SIZE = 1;// Has minimal affect on the operation of the grid.
+    /** Default limit of threads used for rebalance. */
+    public static final int DFLT_REBALANCE_THREAD_POOL_SIZE = 1;
 
     /** Default max queue capacity of public thread pool. */
     public static final int DFLT_PUBLIC_THREADPOOL_QUEUE_CAP = Integer.MAX_VALUE;
@@ -1342,17 +1342,19 @@ public class IgniteConfiguration {
      * Minimum is 1.
      * @return count.
      */
-    public int getRebalanceThreadPoolSize(){
+    public int getRebalanceThreadPoolSize() {
         return Math.max(1, rebalanceThreadPoolSize);
     }
 
     /**
      * Sets Max count of threads can be used at rebalancing.
-     * Minimum is 1.
+     *
+     * Default is {@code 1} which has minimal impact on the operation of the grid.
+     *
      * @param size Size.
      * @return {@code this} for chaining.
      */
-    public IgniteConfiguration setRebalanceThreadPoolSize(int size){
+    public IgniteConfiguration setRebalanceThreadPoolSize(int size) {
         this.rebalanceThreadPoolSize = size;
 
         return this;

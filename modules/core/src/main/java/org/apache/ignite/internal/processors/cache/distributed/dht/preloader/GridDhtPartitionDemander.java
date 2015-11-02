@@ -138,6 +138,7 @@ public class GridDhtPartitionDemander {
      * Start.
      */
     void start() {
+        // No-op.
     }
 
     /**
@@ -224,9 +225,11 @@ public class GridDhtPartitionDemander {
      */
     private boolean waitForCacheRebalancing(String name, RebalanceFuture fut) throws IgniteCheckedException {
         if (log.isDebugEnabled())
-            log.debug("Waiting for " + name + " cache rebalancing [cacheName=" + cctx.name() + ']');
+            log.debug("Waiting for another cache to start rebalancing [cacheName=" + cctx.name() +
+                ", waitCache=" + name + ']');
 
-        RebalanceFuture wFut = (RebalanceFuture)cctx.kernalContext().cache().internalCache(name).preloader().rebalanceFuture();
+        RebalanceFuture wFut = (RebalanceFuture)cctx.kernalContext().cache().internalCache(name)
+            .preloader().rebalanceFuture();
 
         if (!topologyChanged(fut) && wFut.updateSeq == fut.updateSeq) {
             if (!wFut.get()) {
@@ -326,8 +329,10 @@ public class GridDhtPartitionDemander {
     /**
      * @param fut Future.
      */
-    private boolean requestPartitions(RebalanceFuture fut,
-        GridDhtPreloaderAssignments assigns) throws IgniteCheckedException {
+    private boolean requestPartitions(
+        RebalanceFuture fut,
+        GridDhtPreloaderAssignments assigns
+    ) throws IgniteCheckedException {
         for (Map.Entry<ClusterNode, GridDhtPartitionDemandMessage> e : assigns.entrySet()) {
             if (topologyChanged(fut))
                 return false;
@@ -414,7 +419,7 @@ public class GridDhtPartitionDemander {
      * @return String representation of partitions list.
      */
     private String partitionsList(Collection<Integer> c) {
-        LinkedList<Integer> s = new LinkedList<>(c);
+        List<Integer> s = new ArrayList<>(c);
 
         Collections.sort(s);
 
@@ -428,6 +433,7 @@ public class GridDhtPartitionDemander {
 
         while (sit.hasNext()) {
             int p = sit.next();
+
             if (start == -1) {
                 start = p;
                 prev = p;
@@ -465,7 +471,8 @@ public class GridDhtPartitionDemander {
     public void handleSupplyMessage(
         int idx,
         final UUID id,
-        final GridDhtPartitionSupplyMessageV2 supply) {
+        final GridDhtPartitionSupplyMessageV2 supply
+    ) {
         AffinityTopologyVersion topVer = supply.topologyVersion();
 
         final RebalanceFuture fut = rebalanceFut;
@@ -478,9 +485,8 @@ public class GridDhtPartitionDemander {
         if (!fut.isActual(supply.updateSequence())) // Current future have another update sequence.
             return; // Supple message based on another future.
 
-        if (topologyChanged(fut)) { // Topology already changed (for the future that supply message based on).
+        if (topologyChanged(fut)) // Topology already changed (for the future that supply message based on).
             return;
-        }
 
         if (log.isDebugEnabled())
             log.debug("Received supply message: " + supply);
@@ -525,6 +531,7 @@ public class GridDhtPartitionDemander {
 
                                     continue;
                                 }
+
                                 if (!preloadEntry(node, p, entry, topVer)) {
                                     if (log.isDebugEnabled())
                                         log.debug("Got entries for invalid partition during " +
@@ -568,9 +575,10 @@ public class GridDhtPartitionDemander {
             }
 
             // Only request partitions based on latest topology version.
-            for (Integer miss : supply.missed())
+            for (Integer miss : supply.missed()) {
                 if (cctx.affinity().localNode(miss, topVer))
                     fut.partitionMissed(id, miss);
+            }
 
             for (Integer miss : supply.missed())
                 fut.partitionDone(id, miss);

@@ -80,7 +80,9 @@ import static org.apache.ignite.internal.util.GridConcurrentFactory.newMap;
  * DHT cache preloader.
  */
 public class GridDhtPreloader extends GridCachePreloaderAdapter {
-    /** */
+    /**
+     *
+     */
     public static final IgniteProductVersion REBALANCING_VER_2_SINCE = IgniteProductVersion.fromString("1.5.0");
 
     /** Default preload resend timeout. */
@@ -115,7 +117,7 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
         new ConcurrentHashMap8<>();
 
     /** */
-    private final Queue<GridDhtLocalPartition> partitionsToEvict = new ConcurrentLinkedDeque8<>();
+    private final ConcurrentLinkedDeque8<GridDhtLocalPartition> partitionsToEvict = new ConcurrentLinkedDeque8<>();
 
     /** */
     private final AtomicReference<Integer> partitionsEvictionOwning = new AtomicReference<>(0);
@@ -771,13 +773,14 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
     @Override public void evictPartitionAsync(GridDhtLocalPartition part) {
         partitionsToEvict.add(part);
 
-        if (partitionsEvictionOwning.compareAndSet(0, 1)) {
+        if (partitionsEvictionOwning.get() == 0 && partitionsEvictionOwning.compareAndSet(0, 1)) {
             cctx.closures().callLocalSafe(new GPC<Boolean>() {
                 @Override public Boolean call() {
                     boolean firstRun = true;
 
                     while (true) {
-                        if (!firstRun && !partitionsEvictionOwning.compareAndSet(0, 1))
+                        if (!firstRun && !partitionsToEvict.isEmptyx() &&
+                            !partitionsEvictionOwning.compareAndSet(0, 1))
                             return false;
 
                         firstRun = false;
@@ -785,9 +788,8 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
                         try {
                             GridDhtLocalPartition part = partitionsToEvict.poll();
 
-                            if (part == null) {
+                            if (part == null)
                                 return false;
-                            }
 
                             part.tryEvict();
                         }

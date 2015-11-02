@@ -475,10 +475,10 @@ public class GridDhtLocalPartition implements Comparable<GridDhtLocalPartition>,
 
     /**
      * @param updateSeq Update sequence.
-     * @return Future for evict attempt.
      */
     void tryEvictAsync(boolean updateSeq) {
         if (map.isEmpty() && !GridQueryProcessor.isEnabled(cctx.config()) &&
+            state.getReference() == RENTING && state.getStamp() == 0 &&
             state.compareAndSet(RENTING, EVICTED, 0, 0)) {
             if (log.isDebugEnabled())
                 log.debug("Evicted partition: " + this);
@@ -496,9 +496,8 @@ public class GridDhtLocalPartition implements Comparable<GridDhtLocalPartition>,
 
             clearDeferredDeletes();
         }
-        else {
+        else
             cctx.preloader().evictPartitionAsync(this);
-        }
     }
 
     /**
@@ -514,7 +513,7 @@ public class GridDhtLocalPartition implements Comparable<GridDhtLocalPartition>,
     }
 
     /**
-     * @return {@code True} if entry has been transitioned to state EVICTED.
+     *
      */
     public void tryEvict() {
         if (state.getReference() != RENTING || state.getStamp() != 0 || groupReserved())

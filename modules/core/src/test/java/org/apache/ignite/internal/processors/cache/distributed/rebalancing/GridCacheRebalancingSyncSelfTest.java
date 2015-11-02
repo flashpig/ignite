@@ -232,6 +232,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
                 }
             }
         };
+
         Thread t2 = new Thread() {
             @Override public void run() {
                 while (!concurrentStartFinished) {
@@ -259,7 +260,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
 
         long spend = (System.currentTimeMillis() - start) / 1000;
 
-        log.info("Spend " + spend + " seconds to rebalance entries.");
+        info("Time to rebalance entries: " + spend);
     }
 
     /**
@@ -308,6 +309,9 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         }
     }
 
+    /**
+     *
+     */
     protected void checkSupplyContextMapIsEmpty() {
         for (Ignite g : G.allGrids()) {
             for (GridCacheAdapter c : ((IgniteEx)g).context().cache().internalCaches()) {
@@ -464,6 +468,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         log.info("Spend " + spend + " seconds to rebalance entries.");
     }
 
+    /** {@inheritDoc} */
     @Override protected void afterTest() throws Exception {
         super.afterTest();
 
