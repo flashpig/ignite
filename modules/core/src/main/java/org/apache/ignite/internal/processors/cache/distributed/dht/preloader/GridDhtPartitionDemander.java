@@ -872,6 +872,9 @@ public class GridDhtPartitionDemander {
             }
         }
 
+        /**
+         * @param nodeId Node id.
+         */
         private void cleanupRemoteContexts(UUID nodeId) {
             ClusterNode node = cctx.discovery().node(nodeId);
 
@@ -1307,6 +1310,9 @@ public class GridDhtPartitionDemander {
                             if (cctx.affinity().localNode(miss, topVer))
                                 fut.partitionMissed(node.id(), miss);
                         }
+
+                        for (Integer miss : s.supply().missed())
+                            fut.partitionDone(node.id(), miss);
 
                         if (fut.remaining.get(node.id()) == null)
                             break; // While.
