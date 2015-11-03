@@ -22,6 +22,13 @@ package org.apache.ignite.portable;
  */
 public interface PortableField {
     /**
+     * Get field's name.
+     *
+     * @return Name.
+     */
+    public String name();
+
+    /**
      * Check whether field exists in the object.
      *
      * @param obj Object.

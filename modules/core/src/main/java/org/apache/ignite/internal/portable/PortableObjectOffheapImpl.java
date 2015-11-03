@@ -33,6 +33,7 @@ import org.apache.ignite.internal.portable.streams.PortableOffheapInputStream;
 import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.CacheObjectContext;
 import org.apache.ignite.internal.util.GridUnsafe;
+import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.plugin.extensions.communication.MessageReader;
 import org.apache.ignite.plugin.extensions.communication.MessageWriter;
@@ -140,13 +141,15 @@ public class PortableObjectOffheapImpl extends PortableObjectEx implements Exter
 
     /** {@inheritDoc} */
     @Override public PortableField fieldDescriptor(String fieldName) throws PortableException {
+        A.notNull(fieldName, "fieldName");
+
         int typeId = typeId();
 
         PortableSchemaRegistry schemaReg = ctx.schemaRegistry(typeId);
 
         int fieldId = ctx.userTypeIdMapper(typeId).fieldId(typeId, fieldName);
 
-        return new PortableFieldImpl(schemaReg, fieldId);
+        return new PortableFieldImpl(schemaReg, fieldName, fieldId);
     }
 
     /** {@inheritDoc} */

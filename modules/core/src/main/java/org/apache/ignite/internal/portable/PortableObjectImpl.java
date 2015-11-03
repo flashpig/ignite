@@ -25,6 +25,7 @@ import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.CacheObjectContext;
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.portable.CacheObjectPortableProcessorImpl;
+import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.plugin.extensions.communication.Message;
 import org.apache.ignite.plugin.extensions.communication.MessageReader;
@@ -472,13 +473,15 @@ public final class PortableObjectImpl extends PortableObjectEx implements Extern
 
     /** {@inheritDoc} */
     @Override public PortableField fieldDescriptor(String fieldName) throws PortableException {
+        A.notNull(fieldName, "fieldName");
+
         int typeId = typeId();
 
         PortableSchemaRegistry schemaReg = ctx.schemaRegistry(typeId);
 
         int fieldId = ctx.userTypeIdMapper(typeId).fieldId(typeId, fieldName);
 
-        return new PortableFieldImpl(schemaReg, fieldId);
+        return new PortableFieldImpl(schemaReg, fieldName, fieldId);
     }
 
     /** {@inheritDoc} */
