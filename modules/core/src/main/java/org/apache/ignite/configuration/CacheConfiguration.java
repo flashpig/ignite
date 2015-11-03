@@ -402,12 +402,12 @@ public class CacheConfiguration<K, V> extends MutableConfiguration<K, V> {
         name = cc.getName();
         nearCfg = cc.getNearConfiguration();
         nodeFilter = cc.getNodeFilter();
-        rebalanceMode = cc.getRebalanceMode();
+        rebalanceBatchesPrefetchCount = cc.getRebalanceBatchesPrefetchCount();
         rebalanceBatchSize = cc.getRebalanceBatchSize();
         rebalanceDelay = cc.getRebalanceDelay();
+        rebalanceMode = cc.getRebalanceMode();
         rebalanceOrder = cc.getRebalanceOrder();
         rebalancePoolSize = cc.getRebalanceThreadPoolSize();
-        rebalanceBatchesPrefetchCount = cc.getRebalanceBatchesPrefetchCount();
         rebalanceTimeout = cc.getRebalanceTimeout();
         rebalanceThrottle = cc.getRebalanceThrottle();
         readFromBackup = cc.isReadFromBackup();
