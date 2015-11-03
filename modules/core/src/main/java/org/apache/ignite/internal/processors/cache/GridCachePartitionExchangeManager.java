@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -142,7 +141,7 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
     private GridFutureAdapter<?> reconnectExchangeFut;
 
     /** */
-    private final Queue<Callable<Boolean>> rebalancingQueue = new ConcurrentLinkedDeque8<>();
+    private final Queue<Callable<Boolean>> rebalanceQ = new ConcurrentLinkedDeque8<>();
 
     /**
      * Partition map futures.
@@ -1278,7 +1277,9 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                     }
 
                     if (assignsMap != null) {
-                        rebalancingQueue.clear();
+                        int size = assignsMap.size();
+
+                        rebalanceQ.clear();
 
                         NavigableMap<Integer, List<Integer>> orderMap = new TreeMap<>();
 
@@ -1290,20 +1291,20 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                             int order = cacheCtx.config().getRebalanceOrder();
 
                             if (orderMap.get(order) == null)
-                                orderMap.put(order, new LinkedList<Integer>());
+                                orderMap.put(order, new ArrayList<Integer>(size));
 
                             orderMap.get(order).add(cacheId);
                         }
 
-                        Callable<Boolean> marsR = null;
-                        LinkedList<Callable<Boolean>> orderedRs = new LinkedList<>();
+                        Callable<Boolean> marshR = null;
+                        List<Callable<Boolean>> orderedRs = new ArrayList<>(size);
 
                         //Ordered rebalance scheduling.
                         for (Integer order : orderMap.keySet()) {
                             for (Integer cacheId : orderMap.get(order)) {
                                 GridCacheContext<K, V> cacheCtx = cctx.cacheContext(cacheId);
 
-                                List<String> waitList = new LinkedList<>();
+                                List<String> waitList = new ArrayList<>(size - 1);
 
                                 for (List<Integer> cIds : orderMap.headMap(order).values()) {
                                     for (Integer cId : cIds) {
@@ -1319,7 +1320,7 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                         ", waitList=" + waitList.toString() + "]");
 
                                     if (cacheId == CU.cacheId(GridCacheUtils.MARSH_CACHE_NAME))
-                                        marsR = r;
+                                        marshR = r;
                                     else
                                         orderedRs.add(r);
                                 }
@@ -1329,15 +1330,15 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                         if (asyncStartFut != null)
                             asyncStartFut.get(); // Wait for thread stop.
 
-                        rebalancingQueue.addAll(orderedRs);
+                        rebalanceQ.addAll(orderedRs);
 
-                        if (marsR != null || !rebalancingQueue.isEmpty()) {
+                        if (marshR != null || !rebalanceQ.isEmpty()) {
                             if (futQ.isEmpty()) {
                                 U.log(log, "Starting caches rebalancing [top=" + exchFut.topologyVersion() + "]");
 
-                                if (marsR != null)
+                                if (marshR != null)
                                     try {
-                                        marsR.call(); //Marshaller cache rebalancing launches in sync way.
+                                        marshR.call(); //Marshaller cache rebalancing launches in sync way.
                                     }
                                     catch (Exception ex) {
                                         if (log.isDebugEnabled())
@@ -1354,7 +1355,7 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                     @Override public Boolean call() {
                                         try {
                                             while (true) {
-                                                Callable<Boolean> r = rebalancingQueue.poll();
+                                                Callable<Boolean> r = rebalanceQ.poll();
 
                                                 if (r == null)
                                                     return false;
