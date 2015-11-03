@@ -183,4 +183,9 @@ public interface GridCachePreloader {
      * @param topVer Topology version.
      */
     public void onTopologyChanged(AffinityTopologyVersion topVer);
+
+    /**
+     * Dumps debug information.
+     */
+    public void dumpDebugInfo();
 }

@@ -752,6 +752,11 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
         }
     }
 
+    /** {@inheritDoc} */
+    @Override public void dumpDebugInfo() {
+        supplier.dumpDebugInfo();
+    }
+
     /**
      * Adds future to future map.
      *

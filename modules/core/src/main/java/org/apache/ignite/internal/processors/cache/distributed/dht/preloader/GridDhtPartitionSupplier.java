@@ -1015,4 +1015,20 @@ class GridDhtPartitionSupplier {
             return false;
         }
     }
+
+    /**
+     * Dumps debug information.
+     */
+    public void dumpDebugInfo() {
+        synchronized (scMap) {
+            if (!scMap.isEmpty()) {
+                U.warn(log, "Rebalancing supplier reserved following partitions:");
+
+                for (SupplyContext sc : scMap.values()) {
+                    if (sc.loc != null)
+                        U.warn(log, ">>> " + sc.loc);
+                }
+            }
+        }
+    }
 }
