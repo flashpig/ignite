@@ -28,7 +28,7 @@ import org.apache.ignite.internal.portable.GridPortableMarshallerSelfTest;
 import org.apache.ignite.internal.portable.GridPortableMetaDataDisabledSelfTest;
 import org.apache.ignite.internal.portable.GridPortableMetaDataSelfTest;
 import org.apache.ignite.internal.portable.GridPortableWildcardsSelfTest;
-import org.apache.ignite.internal.portable.PortableFIeldsHeapSelfTest;
+import org.apache.ignite.internal.portable.PortableFIeldsHeapSelfTest2;
 import org.apache.ignite.internal.portable.PortableFieldsOffheapSelfTest;
 import org.apache.ignite.internal.processors.cache.portable.GridCacheClientNodePortableMetadataMultinodeTest;
 import org.apache.ignite.internal.processors.cache.portable.GridCacheClientNodePortableMetadataTest;
@@ -62,7 +62,7 @@ public class IgnitePortableObjectsTestSuite extends TestSuite {
         suite.addTestSuite(GridPortableMarshallerCtxDisabledSelfTest.class);
         suite.addTestSuite(GridPortableBuilderSelfTest.class);
         suite.addTestSuite(GridPortableBuilderStringAsCharsSelfTest.class);
-        suite.addTestSuite(PortableFIeldsHeapSelfTest.class);
+        suite.addTestSuite(PortableFIeldsHeapSelfTest2.class);
         suite.addTestSuite(PortableFieldsOffheapSelfTest.class);
         suite.addTestSuite(GridPortableMetaDataSelfTest.class);
         suite.addTestSuite(GridPortableMetaDataDisabledSelfTest.class);
