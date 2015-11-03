@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.processors.cache.distributed.rebalancing;
 
 import java.util.Map;
+import java.util.Random;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.cache.CacheMode;
@@ -222,12 +223,16 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
 
         Thread t1 = new Thread() {
             @Override public void run() {
+                Random rdm = new Random();
+
                 while (!concurrentStartFinished) {
-                    for (int i = 0; i < 0 + TEST_SIZE; i++) {
+                    for (int i = 0; i < TEST_SIZE; i++) {
                         if (i % (TEST_SIZE / 10) == 0)
                             log.info("Prepared " + i * 100 / (TEST_SIZE) + "% entries (" + TEST_SIZE + ").");
 
-                        ignite.cache(CACHE_NAME_DHT_PARTITIONED).put(i, i + CACHE_NAME_DHT_PARTITIONED.hashCode() + 0);
+                        int ii = rdm.nextInt(TEST_SIZE);
+
+                        ignite.cache(CACHE_NAME_DHT_PARTITIONED).put(ii, ii + CACHE_NAME_DHT_PARTITIONED.hashCode());
                     }
                 }
             }
@@ -250,8 +255,14 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         t2.start();
 
         startGrid(2);
+        startGrid(3);
 
-        waitForRebalancing(2, 3);
+        stopGrid(2);
+
+        startGrid(4);
+
+        waitForRebalancing(3, 6);
+        waitForRebalancing(4, 6);
 
         concurrentStartFinished = true;
 
