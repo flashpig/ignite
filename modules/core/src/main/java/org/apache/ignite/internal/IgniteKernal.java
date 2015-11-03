@@ -2144,6 +2144,17 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
         if (cfg.getSystemThreadPoolSize() <= cfg.getRebalanceThreadPoolSize())
             throw new IgniteCheckedException("Rebalance thread pool size exceed or equals System thread pool size. " +
                 "Change IgniteConfiguration.rebalanceThreadPoolSize property before next start.");
+
+        if (cfg.getRebalanceThreadPoolSize() < 1)
+            throw new IgniteCheckedException("Rebalance thread pool size minimal allowed value is 1. " +
+                "Change IgniteConfiguration.rebalanceThreadPoolSize property before next start.");
+
+        for (CacheConfiguration ccfg : cfg.getCacheConfiguration()){
+            if (ccfg.getRebalanceBatchesPrefetchCount() < 1)
+                throw new IgniteCheckedException("Rebalance batches prefetch count minimal allowed value is 1. " +
+                    "Change CacheConfiguration.rebalanceBatchesPrefetchCount property before next start. " +
+                    "[cache="+ccfg.getName()+"]");
+        }
     }
 
     /**

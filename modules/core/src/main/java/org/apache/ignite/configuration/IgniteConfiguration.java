@@ -1343,7 +1343,7 @@ public class IgniteConfiguration {
      * @return count.
      */
     public int getRebalanceThreadPoolSize() {
-        return Math.max(1, rebalanceThreadPoolSize);
+        return rebalanceThreadPoolSize;
     }
 
     /**

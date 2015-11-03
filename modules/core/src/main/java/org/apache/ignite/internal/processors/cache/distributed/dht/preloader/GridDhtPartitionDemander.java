@@ -110,6 +110,10 @@ public class GridDhtPartitionDemander {
     @Deprecated//Backward compatibility. To be removed in future.
     private final ReadWriteLock demandLock;
 
+    /** DemandWorker index. */
+    @Deprecated//Backward compatibility. To be removed in future.
+    private final AtomicInteger dmIdx = new AtomicInteger();
+
     /**
      * @param cctx Cctx.
      * @param demandLock Demand lock.
@@ -1062,10 +1066,6 @@ public class GridDhtPartitionDemander {
             return S.toString(SupplyMessage.class, this);
         }
     }
-
-    /** DemandWorker index. */
-    @Deprecated//Backward compatibility. To be removed in future.
-    private final AtomicInteger dmIdx = new AtomicInteger();
 
     /**
      *

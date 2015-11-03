@@ -212,6 +212,9 @@ class GridDhtPartitionSupplier {
 
         ClusterNode node = cctx.discovery().node(id);
 
+        if (node == null)
+            return; //Context will be cleaned at topology change.
+
         try {
             SupplyContext sctx;
 
@@ -233,7 +236,7 @@ class GridDhtPartitionSupplier {
 
             boolean newReq = true;
 
-            long maxBatchesCnt = cctx.config().getRebalanceBatchesCount();
+            long maxBatchesCnt = cctx.config().getRebalanceBatchesPrefetchCount();
 
             if (sctx != null) {
                 phase = sctx.phase;

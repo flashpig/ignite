@@ -84,7 +84,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         cachePCfg.setRebalanceMode(CacheRebalanceMode.SYNC);
         cachePCfg.setBackups(1);
         cachePCfg.setRebalanceBatchSize(1);
-        cachePCfg.setRebalanceBatchesCount(1);
+        cachePCfg.setRebalanceBatchesPrefetchCount(1);
         cachePCfg.setRebalanceOrder(2);
 
         CacheConfiguration<Integer, Integer> cachePCfg2 = new CacheConfiguration<>();
@@ -102,7 +102,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         cacheRCfg.setCacheMode(CacheMode.REPLICATED);
         cacheRCfg.setRebalanceMode(CacheRebalanceMode.SYNC);
         cacheRCfg.setRebalanceBatchSize(1);
-        cacheRCfg.setRebalanceBatchesCount(Integer.MAX_VALUE);
+        cacheRCfg.setRebalanceBatchesPrefetchCount(Integer.MAX_VALUE);
         ((TcpCommunicationSpi)iCfg.getCommunicationSpi()).setSharedMemoryPort(-1);//Shmem fail fix for Integer.MAX_VALUE.
 
         CacheConfiguration<Integer, Integer> cacheRCfg2 = new CacheConfiguration<>();
