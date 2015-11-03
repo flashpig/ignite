@@ -23,10 +23,15 @@ import org.apache.ignite.marshaller.MarshallerContextTestImpl;
 import org.apache.ignite.marshaller.portable.PortableMarshaller;
 import org.apache.ignite.portable.PortableField;
 import org.apache.ignite.portable.PortableMetadata;
+import org.apache.ignite.portable.PortableObject;
 import org.apache.ignite.portable.PortableTypeConfiguration;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.UUID;
 
 /**
  * Contains tests for portable object fields.
@@ -59,7 +64,8 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
 
         marsh.setTypeConfigurations(Arrays.asList(
             new PortableTypeConfiguration(TestObject.class.getName()),
-            new PortableTypeConfiguration(TestOuterObject.class.getName())
+            new PortableTypeConfiguration(TestOuterObject.class.getName()),
+            new PortableTypeConfiguration(TestInnerObject.class.getName())
         ));
 
         marsh.setContext(new MarshallerContextTestImpl(null));
@@ -121,20 +127,96 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     }
 
     /**
-     * Test int field.
+     * Test float field.
      *
      * @throws Exception If failed.
      */
     public void testFloat() throws Exception {
         check("fFloat");
     }
+
     /**
-     * Test int field.
+     * Test double field.
      *
      * @throws Exception If failed.
      */
     public void testDouble() throws Exception {
         check("fDouble");
+    }
+
+    /**
+     * Test string field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testString() throws Exception {
+        check("fString");
+    }
+
+    /**
+     * Test date field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testDate() throws Exception {
+        check("fDate");
+    }
+
+    /**
+     * Test timestamp field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testTimestamp() throws Exception {
+        check("fTimestamp");
+    }
+
+    /**
+     * Test UUID field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testUuid() throws Exception {
+        check("fUuid");
+    }
+
+    /**
+     * Test decimal field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testDecimal() throws Exception {
+        check("fDecimal");
+    }
+
+    /**
+     * Test object field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testObject() throws Exception {
+        check("fObj");
+    }
+
+    /**
+     * Test null field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testNull() throws Exception {
+        check("fNull");
+    }
+
+    /**
+     * Test missing field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testMissing() throws Exception {
+        String fieldName = "fMissing";
+
+        checkNormal(fieldName, false);
+        checkNested(fieldName, false);
     }
 
     /**
@@ -144,32 +226,34 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
      * @throws Exception If failed.
      */
     public void check(String fieldName) throws Exception {
-        checkNormal(fieldName);
-        checkNested(fieldName);
+        checkNormal(fieldName, true);
+        checkNested(fieldName, true);
     }
 
     /**
      * Check field.
      *
      * @param fieldName Field name.
+     * @param exists Whether field should exist.
      * @throws Exception If failed.
      */
-    private void checkNormal(String fieldName) throws Exception {
+    private void checkNormal(String fieldName, boolean exists) throws Exception {
         TestContext ctx = context(fieldName);
 
-        check0(fieldName, ctx);
+        check0(fieldName, ctx, exists);
     }
 
     /**
      * Check nested field.
      *
      * @param fieldName Field name.
+     * @param exists Whether field should exist.
      * @throws Exception If failed.
      */
-    private void checkNested(String fieldName) throws Exception {
+    private void checkNested(String fieldName, boolean exists) throws Exception {
         TestContext ctx = nestedContext(fieldName);
 
-        check0(fieldName, ctx);
+        check0(fieldName, ctx, exists);
     }
 
     /**
@@ -177,14 +261,27 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
      *
      * @param fieldName Field name.
      * @param ctx Context.
+     * @param exists Whether field should exist.
      * @throws Exception If failed.
      */
-    private void check0(String fieldName, TestContext ctx) throws Exception {
-        Object expVal = U.field(ctx.obj, fieldName);
+    private void check0(String fieldName, TestContext ctx, boolean exists) throws Exception {
+        Object val = ctx.field.value(ctx.portObj);
 
-        assertTrue(ctx.field.exists(ctx.portObj));
+        if (exists) {
+            assertTrue(ctx.field.exists(ctx.portObj));
 
-        assertEquals(expVal, ctx.field.value(ctx.portObj));
+            Object expVal = U.field(ctx.obj, fieldName);
+
+            if (val instanceof PortableObject)
+                val = ((PortableObject) val).deserialize();
+
+            assertEquals(expVal, val);
+        }
+        else {
+            assertFalse(ctx.field.exists(ctx.portObj));
+
+            assert val == null;
+        }
     }
 
     /**
@@ -284,6 +381,19 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
         public float fFloat;
         public double fDouble;
 
+        /** Special fields. */
+        public String fString;
+        public Date fDate;
+        public Timestamp fTimestamp;
+        public UUID fUuid;
+        public BigDecimal fDecimal;
+
+        /** Nested object. */
+        public TestInnerObject fObj;
+
+        /** Field which is always set to null. */
+        public Object fNull;
+
         /**
          * Default constructor.
          */
@@ -305,6 +415,49 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
             fLong = 5;
             fFloat = 6.6f;
             fDouble = 7.7;
+
+            fString = "8";
+            fDate = new Date();
+            fTimestamp = new Timestamp(new Date().getTime());
+            fUuid = UUID.randomUUID();
+            fDecimal = new BigDecimal(9);
+
+            fObj = new TestInnerObject(10);
+        }
+    }
+
+    /**
+     * Inner test object.
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public static class TestInnerObject {
+        /** Value. */
+        private int val;
+
+        /**
+         * Default constructor.
+         */
+        public TestInnerObject() {
+            // No-op.
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param val Value.
+         */
+        public TestInnerObject(int val) {
+            this.val = val;
+        }
+
+        /** {@inheritDoc} */
+        @Override public int hashCode() {
+            return val;
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean equals(Object other) {
+            return other != null && other instanceof TestInnerObject && val == ((TestInnerObject)(other)).val;
         }
     }
 
