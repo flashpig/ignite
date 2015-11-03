@@ -22,7 +22,7 @@ import org.apache.ignite.marshaller.portable.PortableMarshaller;
 /**
  * Field tests for heap-based portables.
  */
-public class PortableFIeldsHeapSelfTest2 extends PortableFieldsAbstractSelfTest {
+public class PortableFieldsHeapSelfTest extends PortableFieldsAbstractSelfTest {
     /** {@inheritDoc} */
     @Override protected PortableObjectEx toPortable(PortableMarshaller marsh, Object obj) throws Exception {
         byte[] bytes = marsh.marshal(obj);
