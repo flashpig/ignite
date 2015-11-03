@@ -33,6 +33,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Contains tests for portable object fields.
  */
@@ -83,12 +86,30 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     }
 
     /**
+     * Test byte array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testByteArray() throws Exception {
+        check("fByteArr");
+    }
+
+    /**
      * Test boolean field.
      *
      * @throws Exception If failed.
      */
     public void testBoolean() throws Exception {
         check("fBool");
+    }
+
+    /**
+     * Test boolean array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testBooleanArray() throws Exception {
+        check("fBoolArr");
     }
 
     /**
@@ -101,6 +122,15 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     }
 
     /**
+     * Test short array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testShortArray() throws Exception {
+        check("fShortArr");
+    }
+
+    /**
      * Test char field.
      *
      * @throws Exception If failed.
@@ -108,6 +138,16 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     public void testChar() throws Exception {
         check("fChar");
     }
+
+    /**
+     * Test char array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testCharArray() throws Exception {
+        check("fCharArr");
+    }
+
     /**
      * Test int field.
      *
@@ -115,6 +155,15 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
      */
     public void testInt() throws Exception {
         check("fInt");
+    }
+
+    /**
+     * Test int array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testIntArray() throws Exception {
+        check("fIntArr");
     }
 
     /**
@@ -127,6 +176,15 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     }
 
     /**
+     * Test long array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testLongArray() throws Exception {
+        check("fLongArr");
+    }
+
+    /**
      * Test float field.
      *
      * @throws Exception If failed.
@@ -136,12 +194,30 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     }
 
     /**
+     * Test float array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testFloatArray() throws Exception {
+        check("fFloatArr");
+    }
+
+    /**
      * Test double field.
      *
      * @throws Exception If failed.
      */
     public void testDouble() throws Exception {
         check("fDouble");
+    }
+
+    /**
+     * Test double array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testDoubleArray() throws Exception {
+        check("fDoubleArr");
     }
 
     /**
@@ -275,7 +351,28 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
             if (val instanceof PortableObject)
                 val = ((PortableObject) val).deserialize();
 
-            assertEquals(expVal, val);
+            if (val != null && val.getClass().isArray()) {
+                if (val instanceof byte[])
+                    assertTrue(Arrays.equals((byte[]) expVal, (byte[]) val));
+                else if (val instanceof boolean[])
+                    assertTrue(Arrays.equals((boolean[]) expVal, (boolean[]) val));
+                else if (val instanceof short[])
+                    assertTrue(Arrays.equals((short[]) expVal, (short[]) val));
+                else if (val instanceof char[])
+                    assertTrue(Arrays.equals((char[]) expVal, (char[]) val));
+                else if (val instanceof int[])
+                    assertTrue(Arrays.equals((int[]) expVal, (int[]) val));
+                else if (val instanceof long[])
+                    assertTrue(Arrays.equals((long[]) expVal, (long[]) val));
+                else if (val instanceof float[])
+                    assertTrue(Arrays.equals((float[]) expVal, (float[]) val));
+                else if (val instanceof double[])
+                    assertTrue(Arrays.equals((double[]) expVal, (double[]) val));
+                else
+                    assertTrue(Arrays.equals((Object[]) expVal, (Object[]) val));
+            }
+            else
+                assertEquals(expVal, val);
         }
         else {
             assertFalse(ctx.field.exists(ctx.portObj));
@@ -381,6 +478,15 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
         public float fFloat;
         public double fDouble;
 
+//        public byte[] fByteArr;
+//        public boolean[] fBoolArr;
+//        public short[] fShortArr;
+//        public char[] fCharArr;
+//        public int[] fIntArr;
+//        public long[] fLongArr;
+//        public float[] fFloatArr;
+//        public double[] fDoubleArr;
+
         /** Special fields. */
         public String fString;
         public Date fDate;
@@ -416,9 +522,18 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
             fFloat = 6.6f;
             fDouble = 7.7;
 
+//            fByteArr = new byte[] { 1, 2 };
+//            fBoolArr = new boolean[] { true, false };
+//            fShortArr = new short[] { 2, 3 };
+//            fCharArr = new char[] { 3, 4 };
+//            fIntArr = new int[] { 4, 5 };
+//            fLongArr = new long[] { 5, 6 };
+//            fFloatArr = new float[] { 6.6f, 7.7f };
+//            fDoubleArr = new double[] { 7.7, 8.8 };
+
             fString = "8";
             fDate = new Date();
-            fTimestamp = new Timestamp(new Date().getTime());
+            fTimestamp = new Timestamp(new Date().getTime() + 100);
             fUuid = UUID.randomUUID();
             fDecimal = new BigDecimal(9);
 
