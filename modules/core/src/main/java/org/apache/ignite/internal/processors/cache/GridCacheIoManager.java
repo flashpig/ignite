@@ -270,7 +270,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
             unmarshall(nodeId, cacheMsg);
 
             if (cacheMsg.classError() != null)
-                processFailedMessage(nodeId, cacheMsg);
+                processFailedMessage(nodeId, cacheMsg, c);
             else
                 processMessage(nodeId, cacheMsg, c);
         }
@@ -314,7 +314,8 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
      * @param msg Message.
      * @throws IgniteCheckedException If failed.
      */
-    private void processFailedMessage(UUID nodeId, GridCacheMessage msg) throws IgniteCheckedException {
+    private void processFailedMessage(UUID nodeId, GridCacheMessage msg, IgniteBiInClosure<UUID, GridCacheMessage> c)
+        throws IgniteCheckedException {
         GridCacheContext ctx = cctx.cacheContext(msg.cacheId());
 
         switch (msg.directType()) {
@@ -413,9 +414,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
             break;
 
             case 45: {
-                GridDhtPartitionSupplyMessage req = (GridDhtPartitionSupplyMessage)msg;
-
-                U.error(log, "Supply message cannot be unmarshalled.", req.classError());
+                processMessage(nodeId,msg,c);// Will be handled by Rebalance Demander.
             }
 
             break;
@@ -519,9 +518,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
             break;
 
             case 114: {
-                GridDhtPartitionSupplyMessageV2 req = (GridDhtPartitionSupplyMessageV2)msg;
-
-                U.error(log, "Supply message v2 cannot be unmarshalled.", req.classError());
+                processMessage(nodeId,msg,c);// Will be handled by Rebalance Demander.
             }
 
             break;
@@ -537,8 +534,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
      * @param msg Message.
      * @param c Closure.
      */
-    private void processMessage(UUID nodeId, GridCacheMessage msg,
-        IgniteBiInClosure<UUID, GridCacheMessage> c) {
+    private void processMessage(UUID nodeId, GridCacheMessage msg, IgniteBiInClosure<UUID, GridCacheMessage> c) {
         try {
             // We will not end up with storing a bunch of new UUIDs
             // in each cache entry, since node ID is stored in NIO session

@@ -514,7 +514,8 @@ public class GridDhtPartitionDemander {
 
         // Check whether there were class loading errors on unmarshal
         if (supply.classError() != null) {
-            U.warn(log, "Class got undeployed during preloading: " + supply.classError());
+            U.warn(log, "Rebalancing from node cancelled [node=" + id +
+                "]. Class got undeployed during preloading: " + supply.classError());
 
             fut.cancel(id);
 
@@ -613,7 +614,7 @@ public class GridDhtPartitionDemander {
 
             if (!topologyChanged(fut) && !fut.isDone()) {
                 // Send demand message.
-                cctx.io().sendOrderedMessage(node,rebalanceTopics.get(idx),
+                cctx.io().sendOrderedMessage(node, rebalanceTopics.get(idx),
                     d, cctx.ioPolicy(), cctx.config().getRebalanceTimeout());
             }
         }
