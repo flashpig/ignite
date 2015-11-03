@@ -102,10 +102,7 @@ public class GridCacheRebalancingUnmarshallingFailedSelfTest extends GridCommonA
         cfg.setName(CACHE);
         cfg.setCacheMode(CacheMode.PARTITIONED);
         cfg.setRebalanceMode(CacheRebalanceMode.SYNC);
-        cfg.setBackups(1);
-        cfg.setRebalanceBatchSize(1);
-        cfg.setRebalanceBatchesPrefetchCount(1);
-        cfg.setRebalanceOrder(2);
+        cfg.setBackups(0);
 
         iCfg.setCacheConfiguration(cfg);
 
