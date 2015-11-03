@@ -114,6 +114,9 @@ public class GridDhtPartitionDemander {
     @Deprecated//Backward compatibility. To be removed in future.
     private final AtomicInteger dmIdx = new AtomicInteger();
 
+    /** Cached rebalance topics. */
+    private final Map<Integer, Object> rebalanceTopics;
+
     /**
      * @param cctx Cctx.
      * @param demandLock Demand lock.
@@ -135,6 +138,14 @@ public class GridDhtPartitionDemander {
             rebalanceFut.onDone(true);
             syncFut.onDone();
         }
+
+        Map<Integer, Object> tops = new HashMap<>();
+
+        for (int idx = 0; idx < cctx.gridConfig().getRebalanceThreadPoolSize(); idx++) {
+            tops.put(idx, GridCachePartitionExchangeManager.rebalanceTopic(idx));
+        }
+
+        rebalanceTopics = tops;
     }
 
     /**
@@ -389,7 +400,7 @@ public class GridDhtPartitionDemander {
                         // Create copy.
                         GridDhtPartitionDemandMessage initD = new GridDhtPartitionDemandMessage(d, sParts.get(cnt));
 
-                        initD.topic(GridCachePartitionExchangeManager.rebalanceTopic(cnt));
+                        initD.topic(rebalanceTopics.get(cnt));
                         initD.updateSequence(fut.updateSeq);
                         initD.timeout(cctx.config().getRebalanceTimeout());
 
@@ -397,7 +408,7 @@ public class GridDhtPartitionDemander {
                             if (!fut.isDone())// Future can be already cancelled at this moment and all failovers happened.
                                 // New requests will not be covered by failovers.
                                 cctx.io().sendOrderedMessage(node,
-                                    GridCachePartitionExchangeManager.rebalanceTopic(cnt), initD, cctx.ioPolicy(), initD.timeout());
+                                    rebalanceTopics.get(cnt), initD, cctx.ioPolicy(), initD.timeout());
                         }
 
                         if (log.isDebugEnabled())
@@ -598,11 +609,11 @@ public class GridDhtPartitionDemander {
 
             d.timeout(cctx.config().getRebalanceTimeout());
 
-            d.topic(GridCachePartitionExchangeManager.rebalanceTopic(idx));
+            d.topic(rebalanceTopics.get(idx));
 
             if (!topologyChanged(fut) && !fut.isDone()) {
                 // Send demand message.
-                cctx.io().sendOrderedMessage(node, GridCachePartitionExchangeManager.rebalanceTopic(idx),
+                cctx.io().sendOrderedMessage(node,rebalanceTopics.get(idx),
                     d, cctx.ioPolicy(), cctx.config().getRebalanceTimeout());
             }
         }
