@@ -80,7 +80,9 @@ import static org.apache.ignite.internal.util.GridConcurrentFactory.newMap;
  */
 public class GridDhtPreloader extends GridCachePreloaderAdapter {
     /**
-     *
+     * Rebalancing was refactored at version 1.5.0, but backward compatibility to previous implementation was saved.
+     * Node automatically chose communication protocol depends on remote node's version.
+     * Backward compatibility may be removed at Ignite 2.x.
      */
     public static final IgniteProductVersion REBALANCING_VER_2_SINCE = IgniteProductVersion.fromString("1.5.0");
 

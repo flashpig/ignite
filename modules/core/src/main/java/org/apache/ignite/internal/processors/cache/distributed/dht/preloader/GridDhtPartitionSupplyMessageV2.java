@@ -52,9 +52,6 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
     /** Update sequence. */
     private long updateSeq;
 
-    /** Acknowledgement flag. */
-    private boolean ack;
-
     /** Topology version. */
     private AffinityTopologyVersion topVer;
 
@@ -69,7 +66,7 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
     /** Entries. */
     @GridDirectMap(keyType = int.class, valueType = CacheEntryInfoCollection.class)
-    private Map<Integer, CacheEntryInfoCollection> infos = new HashMap<>();
+    private Map<Integer, CacheEntryInfoCollection> infos;
 
     /** Message size. */
     @GridDirectTransient
@@ -106,20 +103,6 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
     }
 
     /**
-     * Marks this message for acknowledgment.
-     */
-    void markAck() {
-        ack = true;
-    }
-
-    /**
-     * @return Acknowledgement flag.
-     */
-    boolean ack() {
-        return ack;
-    }
-
-    /**
      * @return Topology version for which demand message is sent.
      */
     @Override public AffinityTopologyVersion topologyVersion() {
@@ -144,12 +127,12 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
             msgSize += 4;
 
             // If partition is empty, we need to add it.
-            if (!infos.containsKey(p)) {
+            if (!infos().containsKey(p)) {
                 CacheEntryInfoCollection infoCol = new CacheEntryInfoCollection();
 
                 infoCol.init();
 
-                infos.put(p, infoCol);
+                infos().put(p, infoCol);
             }
         }
     }
@@ -176,6 +159,9 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
      * @return Entries.
      */
     Map<Integer, CacheEntryInfoCollection> infos() {
+        if (infos == null)
+            infos = new HashMap<>();
+
         return infos;
     }
 
@@ -199,12 +185,12 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
         msgSize += info.marshalledSize(ctx);
 
-        CacheEntryInfoCollection infoCol = infos.get(p);
+        CacheEntryInfoCollection infoCol = infos().get(p);
 
         if (infoCol == null) {
             msgSize += 4;
 
-            infos.put(p, infoCol = new CacheEntryInfoCollection());
+            infos().put(p, infoCol = new CacheEntryInfoCollection());
 
             infoCol.init();
         }
@@ -228,12 +214,12 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
         msgSize += info.marshalledSize(ctx);
 
-        CacheEntryInfoCollection infoCol = infos.get(p);
+        CacheEntryInfoCollection infoCol = infos().get(p);
 
         if (infoCol == null) {
             msgSize += 4;
 
-            infos.put(p, infoCol = new CacheEntryInfoCollection());
+            infos().put(p, infoCol = new CacheEntryInfoCollection());
 
             infoCol.init();
         }
@@ -265,7 +251,7 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
      * @return Number of entries in message.
      */
     public int size() {
-        return infos.size();
+        return infos().size();
     }
 
     /** {@inheritDoc} */
@@ -284,36 +270,30 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
         switch (writer.state()) {
             case 3:
-                if (!writer.writeBoolean("ack", ack))
-                    return false;
-
-                writer.incrementState();
-
-            case 4:
                 if (!writer.writeMap("infos", infos, MessageCollectionItemType.INT, MessageCollectionItemType.MSG))
                     return false;
 
                 writer.incrementState();
 
-            case 5:
+            case 4:
                 if (!writer.writeCollection("last", last, MessageCollectionItemType.INT))
                     return false;
 
                 writer.incrementState();
 
-            case 6:
+            case 5:
                 if (!writer.writeCollection("missed", missed, MessageCollectionItemType.INT))
                     return false;
 
                 writer.incrementState();
 
-            case 7:
+            case 6:
                 if (!writer.writeMessage("topVer", topVer))
                     return false;
 
                 writer.incrementState();
 
-            case 8:
+            case 7:
                 if (!writer.writeLong("updateSeq", updateSeq))
                     return false;
 
@@ -336,14 +316,6 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
         switch (reader.state()) {
             case 3:
-                ack = reader.readBoolean("ack");
-
-                if (!reader.isLastRead())
-                    return false;
-
-                reader.incrementState();
-
-            case 4:
                 infos = reader.readMap("infos", MessageCollectionItemType.INT, MessageCollectionItemType.MSG, false);
 
                 if (!reader.isLastRead())
@@ -351,7 +323,7 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
                 reader.incrementState();
 
-            case 5:
+            case 4:
                 last = reader.readCollection("last", MessageCollectionItemType.INT);
 
                 if (!reader.isLastRead())
@@ -359,7 +331,7 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
                 reader.incrementState();
 
-            case 6:
+            case 5:
                 missed = reader.readCollection("missed", MessageCollectionItemType.INT);
 
                 if (!reader.isLastRead())
@@ -367,7 +339,7 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
                 reader.incrementState();
 
-            case 7:
+            case 6:
                 topVer = reader.readMessage("topVer");
 
                 if (!reader.isLastRead())
@@ -375,7 +347,7 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
                 reader.incrementState();
 
-            case 8:
+            case 7:
                 updateSeq = reader.readLong("updateSeq");
 
                 if (!reader.isLastRead())
@@ -395,14 +367,14 @@ public class GridDhtPartitionSupplyMessageV2 extends GridCacheMessage implements
 
     /** {@inheritDoc} */
     @Override public byte fieldsCount() {
-        return 9;
+        return 8;
     }
 
     /** {@inheritDoc} */
     @Override public String toString() {
         return S.toString(GridDhtPartitionSupplyMessageV2.class, this,
             "size", size(),
-            "parts", infos.keySet(),
+            "parts", infos().keySet(),
             "super", super.toString());
     }
 }
