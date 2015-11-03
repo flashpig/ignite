@@ -232,7 +232,7 @@ class GridDhtPartitionSupplier {
 
             long bCnt = 0;
 
-            int phase = 0;
+            SupplyContextPhase phase = SupplyContextPhase.NEW;
 
             boolean newReq = true;
 
@@ -284,7 +284,7 @@ class GridDhtPartitionSupplier {
                 GridCacheEntryInfoCollectSwapListener swapLsnr = null;
 
                 try {
-                    if (phase == 0 && cctx.isSwapOrOffheapEnabled()) {
+                    if (phase == SupplyContextPhase.NEW && cctx.isSwapOrOffheapEnabled()) {
                         swapLsnr = new GridCacheEntryInfoCollectSwapListener(log);
 
                         cctx.swap().addOffHeapListener(part, swapLsnr);
@@ -293,10 +293,10 @@ class GridDhtPartitionSupplier {
 
                     boolean partMissing = false;
 
-                    if (phase == 0)
-                        phase = 1;
+                    if (phase == SupplyContextPhase.NEW)
+                        phase = SupplyContextPhase.ONHEAP;
 
-                    if (phase == 1) {
+                    if (phase == SupplyContextPhase.ONHEAP) {
                         Iterator<GridDhtCacheEntry> entIt = sctx != null ?
                             (Iterator<GridDhtCacheEntry>)sctx.entryIt : loc.entries().iterator();
 
@@ -360,8 +360,8 @@ class GridDhtPartitionSupplier {
 
                     }
 
-                    if (phase == 1) {
-                        phase = 2;
+                    if (phase == SupplyContextPhase.ONHEAP) {
+                        phase = SupplyContextPhase.SWAP;
 
                         if (sctx != null) {
                             sctx = new SupplyContext(
@@ -375,7 +375,7 @@ class GridDhtPartitionSupplier {
                         }
                     }
 
-                    if (phase == 2 && cctx.isSwapOrOffheapEnabled()) {
+                    if (phase == SupplyContextPhase.SWAP && cctx.isSwapOrOffheapEnabled()) {
                         GridCloseableIterator<Map.Entry<byte[], GridCacheSwapEntry>> iter =
                             sctx != null && sctx.entryIt != null ?
                                 (GridCloseableIterator<Map.Entry<byte[], GridCacheSwapEntry>>)sctx.entryIt :
@@ -485,8 +485,8 @@ class GridDhtPartitionSupplier {
                         cctx.swap().removeSwapListener(part, swapLsnr);
                     }
 
-                    if (phase == 2) {
-                        phase = 3;
+                    if (phase == SupplyContextPhase.SWAP) {
+                        phase = SupplyContextPhase.EVICTED;
 
                         if (sctx != null) {
                             sctx = new SupplyContext(
@@ -500,7 +500,7 @@ class GridDhtPartitionSupplier {
                         }
                     }
 
-                    if (phase == 3 && swapLsnr != null) {
+                    if (phase == SupplyContextPhase.EVICTED && swapLsnr != null) {
                         Collection<GridCacheEntryInfo> entries = swapLsnr.entries();
 
                         swapLsnr = null;
@@ -562,7 +562,7 @@ class GridDhtPartitionSupplier {
                     // Mark as last supply message.
                     s.last(part);
 
-                    phase = 0;
+                    phase = SupplyContextPhase.NEW;
 
                     sctx = null;
                 }
@@ -642,7 +642,7 @@ class GridDhtPartitionSupplier {
      */
     private void saveSupplyContext(
         T3<UUID, Integer, AffinityTopologyVersion> t,
-        int phase,
+        SupplyContextPhase phase,
         Iterator<Integer> partIt,
         int part,
         Iterator<?> entryIt, GridCacheEntryInfoCollectSwapListener swapLsnr,
@@ -671,11 +671,21 @@ class GridDhtPartitionSupplier {
     }
 
     /**
+     * Supply context phase.
+     */
+    private enum SupplyContextPhase {
+        NEW,
+        ONHEAP,
+        SWAP,
+        EVICTED
+    }
+
+    /**
      * Supply context.
      */
     private static class SupplyContext {
         /** Phase. */
-        private final int phase;
+        private final SupplyContextPhase phase;
 
         /** Partition iterator. */
         private final Iterator<Integer> partIt;
@@ -702,7 +712,7 @@ class GridDhtPartitionSupplier {
          * @param swapLsnr Swap listener.
          * @param part Partition.
          */
-        public SupplyContext(int phase,
+        public SupplyContext(SupplyContextPhase phase,
             Iterator<Integer> partIt,
             Iterator<?> entryIt,
             GridCacheEntryInfoCollectSwapListener swapLsnr,
