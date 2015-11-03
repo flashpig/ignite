@@ -276,9 +276,9 @@ public final class PortableObjectImpl extends PortableObjectEx implements Extern
         int fieldPos;
 
         if (fieldOffsetSize == PortableUtils.OFFSET_1)
-            fieldPos = start + (int)PortablePrimitives.readByte(arr, fieldOffsetPos) & 0xFF;
+            fieldPos = start + ((int)PortablePrimitives.readByte(arr, fieldOffsetPos) & 0xFF);
         else if (fieldOffsetSize == PortableUtils.OFFSET_2)
-            fieldPos = start + (int)PortablePrimitives.readShort(arr, fieldOffsetPos) & 0xFFFF;
+            fieldPos = start + ((int)PortablePrimitives.readShort(arr, fieldOffsetPos) & 0xFFFF);
         else
             fieldPos = start + PortablePrimitives.readInt(arr, fieldOffsetPos);
 

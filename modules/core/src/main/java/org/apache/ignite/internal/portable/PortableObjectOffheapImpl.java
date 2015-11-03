@@ -218,9 +218,9 @@ public class PortableObjectOffheapImpl extends PortableObjectEx implements Exter
         int fieldPos;
 
         if (fieldOffsetSize == PortableUtils.OFFSET_1)
-            fieldPos = start + (int)PortablePrimitives.readByte(ptr, fieldOffsetPos) & 0xFF;
+            fieldPos = start + ((int)PortablePrimitives.readByte(ptr, fieldOffsetPos) & 0xFF);
         else if (fieldOffsetSize == PortableUtils.OFFSET_2)
-            fieldPos = start + (int)PortablePrimitives.readShort(ptr, fieldOffsetPos) & 0xFFFF;
+            fieldPos = start + ((int)PortablePrimitives.readShort(ptr, fieldOffsetPos) & 0xFFFF);
         else
             fieldPos = start + PortablePrimitives.readInt(ptr, fieldOffsetPos);
 

@@ -33,9 +33,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
-
 /**
  * Contains tests for portable object fields.
  */
@@ -230,12 +227,30 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     }
 
     /**
+     * Test string array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testStringArray() throws Exception {
+        check("fStringArr");
+    }
+
+    /**
      * Test date field.
      *
      * @throws Exception If failed.
      */
     public void testDate() throws Exception {
         check("fDate");
+    }
+
+    /**
+     * Test date array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testDateArray() throws Exception {
+        check("fDateArr");
     }
 
     /**
@@ -248,12 +263,30 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     }
 
     /**
+     * Test timestamp array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testTimestampArray() throws Exception {
+        check("fTimestampArr");
+    }
+
+    /**
      * Test UUID field.
      *
      * @throws Exception If failed.
      */
     public void testUuid() throws Exception {
         check("fUuid");
+    }
+
+    /**
+     * Test UUID array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testUuidArray() throws Exception {
+        check("fUuidArr");
     }
 
     /**
@@ -266,12 +299,30 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
     }
 
     /**
+     * Test decimal array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testDecimalArray() throws Exception {
+        check("fDecimalArr");
+    }
+
+    /**
      * Test object field.
      *
      * @throws Exception If failed.
      */
     public void testObject() throws Exception {
         check("fObj");
+    }
+
+    /**
+     * Test object array field.
+     *
+     * @throws Exception If failed.
+     */
+    public void testObjectArray() throws Exception {
+        check("fObjArr");
     }
 
     /**
@@ -352,6 +403,8 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
                 val = ((PortableObject) val).deserialize();
 
             if (val != null && val.getClass().isArray()) {
+                assertNotNull(expVal);
+
                 if (val instanceof byte[])
                     assertTrue(Arrays.equals((byte[]) expVal, (byte[]) val));
                 else if (val instanceof boolean[])
@@ -368,8 +421,22 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
                     assertTrue(Arrays.equals((float[]) expVal, (float[]) val));
                 else if (val instanceof double[])
                     assertTrue(Arrays.equals((double[]) expVal, (double[]) val));
-                else
-                    assertTrue(Arrays.equals((Object[]) expVal, (Object[]) val));
+                else {
+                    Object[] expVal0 = (Object[])expVal;
+                    Object[] val0 = (Object[])val;
+
+                    assertEquals(expVal0.length, val0.length);
+
+                    for (int i = 0; i < expVal0.length; i++) {
+                        Object expItem = expVal0[i];
+                        Object item = val0[i];
+
+                        if (item instanceof PortableObject)
+                            item = ((PortableObject)item).deserialize();
+
+                        assertEquals(expItem, item);
+                    }
+                }
             }
             else
                 assertEquals(expVal, val);
@@ -478,14 +545,14 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
         public float fFloat;
         public double fDouble;
 
-//        public byte[] fByteArr;
-//        public boolean[] fBoolArr;
-//        public short[] fShortArr;
-//        public char[] fCharArr;
-//        public int[] fIntArr;
-//        public long[] fLongArr;
-//        public float[] fFloatArr;
-//        public double[] fDoubleArr;
+        public byte[] fByteArr;
+        public boolean[] fBoolArr;
+        public short[] fShortArr;
+        public char[] fCharArr;
+        public int[] fIntArr;
+        public long[] fLongArr;
+        public float[] fFloatArr;
+        public double[] fDoubleArr;
 
         /** Special fields. */
         public String fString;
@@ -494,8 +561,16 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
         public UUID fUuid;
         public BigDecimal fDecimal;
 
+        public String[] fStringArr;
+        public Date[] fDateArr;
+        public Timestamp[] fTimestampArr;
+        public UUID[] fUuidArr;
+        public BigDecimal[] fDecimalArr;
+
         /** Nested object. */
         public TestInnerObject fObj;
+
+        public TestInnerObject[] fObjArr;
 
         /** Field which is always set to null. */
         public Object fNull;
@@ -522,22 +597,30 @@ public abstract class PortableFieldsAbstractSelfTest extends GridCommonAbstractT
             fFloat = 6.6f;
             fDouble = 7.7;
 
-//            fByteArr = new byte[] { 1, 2 };
-//            fBoolArr = new boolean[] { true, false };
-//            fShortArr = new short[] { 2, 3 };
-//            fCharArr = new char[] { 3, 4 };
-//            fIntArr = new int[] { 4, 5 };
-//            fLongArr = new long[] { 5, 6 };
-//            fFloatArr = new float[] { 6.6f, 7.7f };
-//            fDoubleArr = new double[] { 7.7, 8.8 };
+            fByteArr = new byte[] { 1, 2 };
+            fBoolArr = new boolean[] { true, false };
+            fShortArr = new short[] { 2, 3 };
+            fCharArr = new char[] { 3, 4 };
+            fIntArr = new int[] { 4, 5 };
+            fLongArr = new long[] { 5, 6 };
+            fFloatArr = new float[] { 6.6f, 7.7f };
+            fDoubleArr = new double[] { 7.7, 8.8 };
 
             fString = "8";
             fDate = new Date();
-            fTimestamp = new Timestamp(new Date().getTime() + 100);
+            fTimestamp = new Timestamp(new Date().getTime() + 1);
             fUuid = UUID.randomUUID();
             fDecimal = new BigDecimal(9);
 
+            fStringArr = new String[] { "8", "9" };
+            fDateArr = new Date[] { new Date(), new Date(new Date().getTime() + 1) };
+            fTimestampArr =
+                new Timestamp[] { new Timestamp(new Date().getTime() + 1), new Timestamp(new Date().getTime() + 2) };
+            fUuidArr = new UUID[] { UUID.randomUUID(), UUID.randomUUID() };
+            fDecimalArr = new BigDecimal[] { new BigDecimal(9), new BigDecimal(10) };
+
             fObj = new TestInnerObject(10);
+            fObjArr = new TestInnerObject[] { new TestInnerObject(10), new TestInnerObject(11) };
         }
     }
 
