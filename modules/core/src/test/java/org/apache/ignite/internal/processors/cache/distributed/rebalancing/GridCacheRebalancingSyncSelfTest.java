@@ -266,9 +266,9 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
 
         concurrentStartFinished = true;
 
-        awaitPartitionMapExchange();
+        awaitPartitionMapExchange(true);
 
-        awaitPartitionEviction();
+        checkSupplyContextMapIsEmpty();
 
         t1.join();
         t2.join();
@@ -435,9 +435,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         waitForRebalancing(3, 5, 1);
         waitForRebalancing(4, 5, 1);
 
-        awaitPartitionMapExchange();
-
-        awaitPartitionEviction();
+        awaitPartitionMapExchange(true);
 
         checkSupplyContextMapIsEmpty();
 
@@ -461,9 +459,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         waitForRebalancing(3, 6);
         waitForRebalancing(4, 6);
 
-        awaitPartitionMapExchange();
-
-        awaitPartitionEviction();
+        awaitPartitionMapExchange(true);
 
         checkSupplyContextMapIsEmpty();
 
@@ -473,9 +469,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         waitForRebalancing(3, 7);
         waitForRebalancing(4, 7);
 
-        awaitPartitionMapExchange();
-
-        awaitPartitionEviction();
+        awaitPartitionMapExchange(true);
 
         checkSupplyContextMapIsEmpty();
 
@@ -484,9 +478,7 @@ public class GridCacheRebalancingSyncSelfTest extends GridCommonAbstractTest {
         waitForRebalancing(3, 8);
         waitForRebalancing(4, 8);
 
-        awaitPartitionMapExchange();
-
-        awaitPartitionEviction();
+        awaitPartitionMapExchange(true);
 
         checkSupplyContextMapIsEmpty();
 

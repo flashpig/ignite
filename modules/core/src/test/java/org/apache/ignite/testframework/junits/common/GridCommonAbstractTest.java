@@ -413,10 +413,18 @@ public abstract class GridCommonAbstractTest extends GridAbstractTest {
 
     /**
      * @throws InterruptedException If interrupted.
-     * Should be run after awaitPartitionMapExchange.
      */
     @SuppressWarnings("BusyWait")
-    protected void awaitPartitionEviction() throws InterruptedException {
+    protected void awaitPartitionMapExchange() throws InterruptedException {
+        awaitPartitionMapExchange(false);
+    }
+
+    /**
+     * @param waitEvicts If {@code true} will wait for evictions finished.
+     * @throws InterruptedException If interrupted.
+     */
+    @SuppressWarnings("BusyWait")
+    protected void awaitPartitionMapExchange(boolean waitEvicts) throws InterruptedException {
         for (Ignite g : G.allGrids()) {
             IgniteKernal g0 = (IgniteKernal)g;
 
@@ -456,112 +464,8 @@ public abstract class GridCommonAbstractTest extends GridAbstractTest {
 
                                 GridDhtLocalPartition loc = top.localPartition(p, readyVer, false);
 
-                                if (loc != null && loc.state() == GridDhtPartitionState.RENTING) {
-                                    LT.warn(log(), null, "Waiting for evictions [" +
-                                        "grid=" + g.name() +
-                                        ", cache=" + cfg.getName() +
-                                        ", cacheId=" + dht.context().cacheId() +
-                                        ", topVer=" + top.topologyVersion() +
-                                        ", topFut=" + topFut +
-                                        ", p=" + p +
-                                        ", affNodesCnt=" + exp +
-                                        ", ownersCnt=" + actual +
-                                        ", affNodes=" + affNodes +
-                                        ", owners=" + owners +
-                                        ", locNode=" + g.cluster().localNode() + ']');
-                                }
-                                else
-                                    match = true;
-                            }
-                            else {
-                                LT.warn(log(), null, "Waiting for evictions [" +
-                                    "grid=" + g.name() +
-                                    ", cache=" + cfg.getName() +
-                                    ", cacheId=" + dht.context().cacheId() +
-                                    ", topVer=" + top.topologyVersion() +
-                                    ", started=" + dht.context().started() +
-                                    ", p=" + p +
-                                    ", readVer=" + readyVer +
-                                    ", locNode=" + g.cluster().localNode() + ']');
-                            }
-
-                            if (!match) {
-                                if (i == 0)
-                                    start = System.currentTimeMillis();
-
-                                if (System.currentTimeMillis() - start > 30_000) {
-                                    U.dumpThreads(log);
-
-                                    throw new IgniteException("Timeout of waiting for evictions [" +
-                                        "grid=" + g.name() +
-                                        ", cache=" + cfg.getName() +
-                                        ", cacheId=" + dht.context().cacheId() +
-                                        ", topVer=" + top.topologyVersion() +
-                                        ", p=" + p +
-                                        ", readVer=" + readyVer +
-                                        ", locNode=" + g.cluster().localNode() + ']');
-                                }
-
-                                Thread.sleep(200); // Busy wait.
-
-                                continue;
-                            }
-
-                            if (i > 0)
-                                log().warning("Finished waiting for topology map update [grid=" + g.name() +
-                                    ", p=" + p + ", duration=" + (System.currentTimeMillis() - start) + "ms]");
-
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * @throws InterruptedException If interrupted.
-     */
-    @SuppressWarnings("BusyWait")
-    protected void awaitPartitionMapExchange() throws InterruptedException {
-        for (Ignite g : G.allGrids()) {
-            IgniteKernal g0 = (IgniteKernal)g;
-
-            for (IgniteCacheProxy<?, ?> c : g0.context().cache().jcaches()) {
-                CacheConfiguration cfg = c.context().config();
-
-                if (cfg.getCacheMode() == PARTITIONED &&
-                    cfg.getRebalanceMode() != NONE &&
-                    g.cluster().nodes().size() > 1) {
-                    AffinityFunction aff = cfg.getAffinity();
-
-                    GridDhtCacheAdapter<?, ?> dht = dht(c);
-
-                    GridDhtPartitionTopology top = dht.topology();
-
-                    for (int p = 0; p < aff.partitions(); p++) {
-                        long start = 0;
-
-                        for (int i = 0; ; i++) {
-                            boolean match = false;
-
-                            AffinityTopologyVersion readyVer = dht.context().shared().exchange().readyAffinityVersion();
-
-                            if (readyVer.topologyVersion() > 0 && c.context().started()) {
-                                // Must map on updated version of topology.
-                                Collection<ClusterNode> affNodes =
-                                    g0.affinity(cfg.getName()).mapPartitionToPrimaryAndBackups(p);
-
-                                int exp = affNodes.size();
-
-                                GridDhtTopologyFuture topFut = top.topologyVersionFuture();
-
-                                Collection<ClusterNode> owners = (topFut != null && topFut.isDone()) ?
-                                    top.nodes(p, AffinityTopologyVersion.NONE) : Collections.<ClusterNode>emptyList();
-
-                                int actual = owners.size();
-
-                                if (affNodes.size() != owners.size() || !affNodes.containsAll(owners)) {
+                                if (affNodes.size() != owners.size() || !affNodes.containsAll(owners) ||
+                                    (waitEvicts && loc != null && loc.state() == GridDhtPartitionState.RENTING)) {
                                     LT.warn(log(), null, "Waiting for topology map update [" +
                                         "grid=" + g.name() +
                                         ", cache=" + cfg.getName() +
