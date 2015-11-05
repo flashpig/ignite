@@ -336,7 +336,7 @@ public class PortableContext implements Externalizable {
 
         for (TypeDescriptor desc : descs.descriptors()) {
             registerUserType(desc.clsName, desc.idMapper, desc.serializer, desc.affKeyFieldName,
-                true, desc.keepDeserialized); // TODO: Remove.
+                desc.keepDeserialized);
         }
     }
 
@@ -713,7 +713,6 @@ public class PortableContext implements Externalizable {
      * @param idMapper ID mapper.
      * @param serializer Serializer.
      * @param affKeyFieldName Affinity key field name.
-     * @param metaDataEnabled Metadata enabled flag.
      * @param keepDeserialized Keep deserialized flag.
      * @throws PortableException In case of error.
      */
@@ -722,7 +721,6 @@ public class PortableContext implements Externalizable {
         PortableIdMapper idMapper,
         @Nullable PortableSerializer serializer,
         @Nullable String affKeyFieldName,
-        boolean metaDataEnabled,
         boolean keepDeserialized)
         throws PortableException {
         assert idMapper != null;
@@ -749,7 +747,7 @@ public class PortableContext implements Externalizable {
 
         typeMappers.put(typeName, idMapper);
 
-        metaEnabled.put(id, metaDataEnabled);
+        metaEnabled.put(id, true); // TODO: Refactor.
 
         Map<String, String> fieldsMeta = null;
 
@@ -762,7 +760,7 @@ public class PortableContext implements Externalizable {
                 typeName,
                 idMapper,
                 serializer,
-                metaDataEnabled,
+                true,
                 keepDeserialized,
                 true, /* registered */
                 false /* predefined */
