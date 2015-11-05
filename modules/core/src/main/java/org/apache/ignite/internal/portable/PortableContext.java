@@ -417,7 +417,7 @@ public class PortableContext implements Externalizable {
         PortableClassDescriptor desc = descByCls.get(cls);
 
         if (desc == null || !desc.registered())
-            desc = registerClassDescriptor(cls, true);
+            desc = registerClassDescriptor(cls);
 
         return desc;
     }
@@ -472,7 +472,7 @@ public class PortableContext implements Externalizable {
         }
 
         if (desc == null) {
-            desc = registerClassDescriptor(cls, false);
+            desc = registerClassDescriptor(cls);
 
             assert desc.typeId() == typeId;
         }
@@ -486,7 +486,7 @@ public class PortableContext implements Externalizable {
      * @param cls Class.
      * @return Class descriptor.
      */
-    private PortableClassDescriptor registerClassDescriptor(Class<?> cls, boolean registerMetadata) {
+    private PortableClassDescriptor registerClassDescriptor(Class<?> cls) {
         PortableClassDescriptor desc;
 
         String clsName = cls.getName();
@@ -499,7 +499,7 @@ public class PortableContext implements Externalizable {
                 clsName,
                 BASIC_CLS_ID_MAPPER,
                 null,
-                true,
+                false,
                 keepDeserialized,
                 true, /* registered */
                 false /* predefined */
@@ -511,7 +511,7 @@ public class PortableContext implements Externalizable {
                 desc = old;
         }
         else
-            desc = registerUserClassDescriptor(cls, registerMetadata);
+            desc = registerUserClassDescriptor(cls);
 
         return desc;
     }
@@ -522,7 +522,7 @@ public class PortableContext implements Externalizable {
      * @param cls Class.
      * @return Class descriptor.
      */
-    private PortableClassDescriptor registerUserClassDescriptor(Class<?> cls, boolean registerMetadata) {
+    private PortableClassDescriptor registerUserClassDescriptor(Class<?> cls) {
         boolean registered;
 
         String typeName = typeName(cls.getName());
