@@ -1449,6 +1449,12 @@ public class GridDhtPartitionsExchangeFuture extends GridFutureAdapter<AffinityT
                                             ", old=" + oldest.id() + ", new=" + newOldest.id() + ']');
                                 }
                             }
+                            else {
+                                ClusterTopologyCheckedException err = new ClusterTopologyCheckedException("Failed to " +
+                                    "wait for exchange future, all server nodes left.");
+
+                                onDone(err);
+                            }
 
                             if (set) {
                                 // If received any messages, process them.
