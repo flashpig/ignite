@@ -292,12 +292,10 @@ public class PortableContext implements Externalizable {
                     String pkgName = clsName.substring(0, clsName.length() - 2);
 
                     for (String clsName0 : classesInPackage(pkgName))
-                        descs.add(clsName0, idMapper, null, null, true,
-                            globalKeepDeserialized, true);
+                        descs.add(clsName0, idMapper, null, null, globalKeepDeserialized, true);
                 }
                 else // Regular single class
-                    descs.add(clsName, idMapper, null, null, true,
-                        globalKeepDeserialized, true);
+                    descs.add(clsName, idMapper, null, null, globalKeepDeserialized, true);
             }
         }
 
@@ -320,7 +318,6 @@ public class PortableContext implements Externalizable {
                 if (typeCfg.getSerializer() != null)
                     serializer = typeCfg.getSerializer();
 
-                boolean metaDataEnabled = true;
                 boolean keepDeserialized = typeCfg.isKeepDeserialized() != null ? typeCfg.isKeepDeserialized() :
                     globalKeepDeserialized;
 
@@ -329,17 +326,17 @@ public class PortableContext implements Externalizable {
 
                     for (String clsName0 : classesInPackage(pkgName))
                         descs.add(clsName0, idMapper, serializer, typeCfg.getAffinityKeyFieldName(),
-                            metaDataEnabled, keepDeserialized, true);
+                            keepDeserialized, true);
                 }
                 else
                     descs.add(clsName, idMapper, serializer, typeCfg.getAffinityKeyFieldName(),
-                        metaDataEnabled, keepDeserialized, false);
+                        keepDeserialized, false);
             }
         }
 
         for (TypeDescriptor desc : descs.descriptors()) {
             registerUserType(desc.clsName, desc.idMapper, desc.serializer, desc.affKeyFieldName,
-                desc.metadataEnabled, desc.keepDeserialized);
+                true, desc.keepDeserialized); // TODO: Remove.
         }
     }
 
@@ -1036,7 +1033,6 @@ public class PortableContext implements Externalizable {
          * @param idMapper ID mapper.
          * @param serializer Serializer.
          * @param affKeyFieldName Affinity key field name.
-         * @param metadataEnabled Metadata enabled flag.
          * @param keepDeserialized Keep deserialized flag.
          * @param canOverride Whether this descriptor can be override.
          * @throws PortableException If failed.
@@ -1045,7 +1041,6 @@ public class PortableContext implements Externalizable {
             PortableIdMapper idMapper,
             PortableSerializer serializer,
             String affKeyFieldName,
-            boolean metadataEnabled,
             boolean keepDeserialized,
             boolean canOverride)
             throws PortableException {
@@ -1053,7 +1048,6 @@ public class PortableContext implements Externalizable {
                 idMapper,
                 serializer,
                 affKeyFieldName,
-                metadataEnabled,
                 keepDeserialized,
                 canOverride);
 
@@ -1091,9 +1085,6 @@ public class PortableContext implements Externalizable {
         /** Affinity key field name. */
         private String affKeyFieldName;
 
-        /** Metadata enabled flag. */
-        private boolean metadataEnabled;
-
         /** Keep deserialized flag. */
         private boolean keepDeserialized;
 
@@ -1107,18 +1098,15 @@ public class PortableContext implements Externalizable {
          * @param idMapper ID mapper.
          * @param serializer Serializer.
          * @param affKeyFieldName Affinity key field name.
-         * @param metadataEnabled Metadata enabled flag.
          * @param keepDeserialized Keep deserialized flag.
          * @param canOverride Whether this descriptor can be override.
          */
         private TypeDescriptor(String clsName, PortableIdMapper idMapper, PortableSerializer serializer,
-            String affKeyFieldName, boolean metadataEnabled, boolean keepDeserialized,
-            boolean canOverride) {
+            String affKeyFieldName, boolean keepDeserialized, boolean canOverride) {
             this.clsName = clsName;
             this.idMapper = idMapper;
             this.serializer = serializer;
             this.affKeyFieldName = affKeyFieldName;
-            this.metadataEnabled = metadataEnabled;
             this.keepDeserialized = keepDeserialized;
             this.canOverride = canOverride;
         }
@@ -1136,7 +1124,6 @@ public class PortableContext implements Externalizable {
                 idMapper = other.idMapper;
                 serializer = other.serializer;
                 affKeyFieldName = other.affKeyFieldName;
-                metadataEnabled = other.metadataEnabled;
                 keepDeserialized = other.keepDeserialized;
                 canOverride = other.canOverride;
             }
