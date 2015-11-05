@@ -284,7 +284,7 @@ public class GridDhtLocalPartition implements Comparable<GridDhtLocalPartition>,
         }
 
         // Attempt to evict.
-        cctx.preloader().evictPartitionAsync(this);
+        tryEvict();
     }
 
     /**
@@ -409,7 +409,7 @@ public class GridDhtLocalPartition implements Comparable<GridDhtLocalPartition>,
 
             // Decrement reservations.
             if (state.compareAndSet(s, s, reservations, --reservations)) {
-                cctx.preloader().evictPartitionAsync(this);
+                tryEvict();
 
                 break;
             }
@@ -579,7 +579,7 @@ public class GridDhtLocalPartition implements Comparable<GridDhtLocalPartition>,
      *
      */
     void onUnlock() {
-        cctx.preloader().evictPartitionAsync(this);
+        tryEvict();
     }
 
     /**
