@@ -783,14 +783,6 @@ public class PortableContext implements Externalizable {
 
     /**
      * @param typeId Type ID.
-     * @return Whether meta data is enabled.
-     */
-    public boolean isMetaDataEnabled(int typeId) {
-        return true;
-    }
-
-    /**
-     * @param typeId Type ID.
      * @param metaHashSum Meta data hash sum.
      * @return Whether meta is changed.
      */
