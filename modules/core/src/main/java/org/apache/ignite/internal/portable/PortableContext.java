@@ -150,9 +150,6 @@ public class PortableContext implements Externalizable {
     private boolean convertStrings;
 
     /** */
-    private boolean metaDataEnabled;
-
-    /** */
     private boolean keepDeserialized;
 
     /** Object schemas. */
@@ -253,7 +250,6 @@ public class PortableContext implements Externalizable {
             return;
 
         convertStrings = marsh.isConvertStringToBytes();
-        metaDataEnabled = marsh.isMetaDataEnabled();
         keepDeserialized = marsh.isKeepDeserialized();
 
         marshCtx = marsh.getContext();
@@ -265,7 +261,6 @@ public class PortableContext implements Externalizable {
         configure(
             marsh.getIdMapper(),
             marsh.getSerializer(),
-            marsh.isMetaDataEnabled(),
             marsh.isKeepDeserialized(),
             marsh.getClassNames(),
             marsh.getTypeConfigurations()
@@ -275,7 +270,6 @@ public class PortableContext implements Externalizable {
     /**
      * @param globalIdMapper ID mapper.
      * @param globalSerializer Serializer.
-     * @param globalMetaDataEnabled Metadata enabled flag.
      * @param globalKeepDeserialized Keep deserialized flag.
      * @param clsNames Class names.
      * @param typeCfgs Type configurations.
@@ -284,7 +278,6 @@ public class PortableContext implements Externalizable {
     private void configure(
         PortableIdMapper globalIdMapper,
         PortableSerializer globalSerializer,
-        boolean globalMetaDataEnabled,
         boolean globalKeepDeserialized,
         Collection<String> clsNames,
         Collection<PortableTypeConfiguration> typeCfgs
@@ -299,11 +292,11 @@ public class PortableContext implements Externalizable {
                     String pkgName = clsName.substring(0, clsName.length() - 2);
 
                     for (String clsName0 : classesInPackage(pkgName))
-                        descs.add(clsName0, idMapper, null, null, globalMetaDataEnabled,
+                        descs.add(clsName0, idMapper, null, null, true,
                             globalKeepDeserialized, true);
                 }
                 else // Regular single class
-                    descs.add(clsName, idMapper, null, null, globalMetaDataEnabled,
+                    descs.add(clsName, idMapper, null, null, true,
                         globalKeepDeserialized, true);
             }
         }
@@ -327,8 +320,7 @@ public class PortableContext implements Externalizable {
                 if (typeCfg.getSerializer() != null)
                     serializer = typeCfg.getSerializer();
 
-                boolean metaDataEnabled = typeCfg.isMetaDataEnabled() != null ? typeCfg.isMetaDataEnabled() :
-                    globalMetaDataEnabled;
+                boolean metaDataEnabled = true;
                 boolean keepDeserialized = typeCfg.isKeepDeserialized() != null ? typeCfg.isKeepDeserialized() :
                     globalKeepDeserialized;
 
@@ -513,7 +505,7 @@ public class PortableContext implements Externalizable {
                 clsName,
                 BASIC_CLS_ID_MAPPER,
                 null,
-                metaDataEnabled,
+                true,
                 keepDeserialized,
                 true, /* registered */
                 false /* predefined */
@@ -559,7 +551,7 @@ public class PortableContext implements Externalizable {
             typeName,
             idMapper,
             null,
-            metaDataEnabled,
+            true,
             keepDeserialized,
             registered,
             false /* predefined */
@@ -806,7 +798,7 @@ public class PortableContext implements Externalizable {
     public boolean isMetaDataEnabled(int typeId) {
         Boolean enabled = metaEnabled.get(typeId);
 
-        return enabled != null ? enabled : metaDataEnabled;
+        return enabled != null ? enabled : true;
     }
 
     /**

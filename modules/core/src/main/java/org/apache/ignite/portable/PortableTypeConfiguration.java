@@ -17,10 +17,10 @@
 
 package org.apache.ignite.portable;
 
-import java.sql.Timestamp;
-import java.util.Collection;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.marshaller.portable.PortableMarshaller;
+
+import java.util.Collection;
 
 /**
  * Defines configuration properties for a specific portable type. Providing per-type
@@ -40,9 +40,6 @@ public class PortableTypeConfiguration {
 
     /** Serializer. */
     private PortableSerializer serializer;
-
-    /** Meta data enabled flag. */
-    private Boolean metaDataEnabled;
 
     /** Keep deserialized flag. */
     private Boolean keepDeserialized;
@@ -115,23 +112,6 @@ public class PortableTypeConfiguration {
      */
     public void setSerializer(PortableSerializer serializer) {
         this.serializer = serializer;
-    }
-
-    /**
-     * Defines whether meta data is collected for this type. If provided, this value will override
-     * {@link PortableMarshaller#isMetaDataEnabled()} property.
-     *
-     * @return Whether meta data is collected.
-     */
-    public Boolean isMetaDataEnabled() {
-        return metaDataEnabled;
-    }
-
-    /**
-     * @param metaDataEnabled Whether meta data is collected.
-     */
-    public void setMetaDataEnabled(Boolean metaDataEnabled) {
-        this.metaDataEnabled = metaDataEnabled;
     }
 
     /**
