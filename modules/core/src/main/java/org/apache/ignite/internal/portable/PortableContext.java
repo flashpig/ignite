@@ -132,9 +132,6 @@ public class PortableContext implements Externalizable {
     private final Map<String, PortableIdMapper> typeMappers = new ConcurrentHashMap8<>(0);
 
     /** */
-    private Map<Integer, Boolean> metaEnabled = new HashMap<>(0);
-
-    /** */
     private PortableMetaDataHandler metaHnd;
 
     /** */
@@ -747,8 +744,6 @@ public class PortableContext implements Externalizable {
 
         typeMappers.put(typeName, idMapper);
 
-        metaEnabled.put(id, true); // TODO: Refactor.
-
         Map<String, String> fieldsMeta = null;
 
         if (cls != null) {
@@ -791,9 +786,7 @@ public class PortableContext implements Externalizable {
      * @return Whether meta data is enabled.
      */
     public boolean isMetaDataEnabled(int typeId) {
-        Boolean enabled = metaEnabled.get(typeId);
-
-        return enabled != null ? enabled : true;
+        return true;
     }
 
     /**
