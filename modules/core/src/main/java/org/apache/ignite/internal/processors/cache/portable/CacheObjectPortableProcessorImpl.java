@@ -39,9 +39,13 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.MutableEntry;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
+import org.apache.ignite.IgnitePortables;
 import org.apache.ignite.cluster.ClusterTopologyException;
 import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
+import org.apache.ignite.internal.portable.api.IgnitePortables;
+=======
 import org.apache.ignite.IgnitePortables;
+>>>>>>> Temporary merge branch 2
 import org.apache.ignite.cache.CacheEntryEventSerializableFilter;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
