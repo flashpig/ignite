@@ -173,4 +173,14 @@ public class GridCachePreloaderAdapter implements GridCachePreloader {
     @Override public void evictPartitionAsync(GridDhtLocalPartition part) {
         // No-op.
     }
+
+    /** {@inheritDoc} */
+    @Override public void onTopologyChanged(AffinityTopologyVersion topVer) {
+        // No-op.
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dumpDebugInfo() {
+        // No-op.
+    }
 }
