@@ -83,8 +83,6 @@ public class GridBinaryObjectBuilderSelfTest extends GridCommonAbstractTest {
 
         marsh.setTypeConfigurations(Collections.singleton(customIdMapper));
 
-        marsh.setConvertStringToBytes(useUtf8());
-
         cfg.setMarshaller(marsh);
 
         return cfg;
@@ -98,13 +96,6 @@ public class GridBinaryObjectBuilderSelfTest extends GridCommonAbstractTest {
     /** {@inheritDoc} */
     @Override protected void afterTestsStopped() throws Exception {
         stopAllGrids();
-    }
-
-    /**
-     * @return Whether to use UTF8 strings.
-     */
-    protected boolean useUtf8() {
-        return true;
     }
 
     /**
@@ -975,13 +966,6 @@ public class GridBinaryObjectBuilderSelfTest extends GridCommonAbstractTest {
      */
     private BinaryObject toPortable(Object obj) {
         return portables().toBinary(obj);
-    }
-
-    /**
-     * @return Builder.
-     */
-    private <T> BinaryObjectBuilder builder(int typeId) {
-        return portables().builder(typeId);
     }
 
     /**
