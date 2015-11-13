@@ -713,12 +713,35 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
      * @return {@code True} if message was sent, {@code false} if node left grid.
      */
     private boolean sendAllPartitions(Collection<? extends ClusterNode> nodes) {
-        GridDhtPartitionsFullMessage m = new GridDhtPartitionsFullMessage(null, null, AffinityTopologyVersion.NONE);
+        boolean retry = false;
 
-        for (GridCacheContext cacheCtx : cctx.cacheContexts()) {
-            if (!cacheCtx.isLocal() && cacheCtx.started())
-                m.addFullPartitionsMap(cacheCtx.cacheId(), cacheCtx.topology().partitionMap(true));
+        GridDhtPartitionsFullMessage m;
+
+        do {
+            AffinityTopologyVersion topVer = cctx.exchange().topologyVersion();
+
+            m = new GridDhtPartitionsFullMessage(null, null, topVer);
+
+            for (GridCacheContext cacheCtx : cctx.cacheContexts()) {
+                cacheCtx.topology().readLock();
+
+                try {
+                    if (!cacheCtx.topology().topologyVersion().equals(topVer)) {
+                        retry = true;
+
+                        break;
+                    }
+
+                    if (!cacheCtx.isLocal() && cacheCtx.started())
+                        m.addFullPartitionsMap(cacheCtx.cacheId(), cacheCtx.topology().partitionMap(true));
+
+                }
+                finally {
+                    cacheCtx.topology().readUnlock();
+                }
+            }
         }
+        while (retry);
 
         // It is important that client topologies be added after contexts.
         for (GridClientPartitionTopology top : cctx.exchange().clientTopologies())
@@ -749,17 +772,38 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
      * @param id ID.
      */
     private void sendLocalPartitions(ClusterNode node, @Nullable GridDhtPartitionExchangeId id) {
-        GridDhtPartitionsSingleMessage m = new GridDhtPartitionsSingleMessage(id,
-            cctx.kernalContext().clientNode(),
-            cctx.versions().last());
+        boolean retry = false;
 
-        for (GridCacheContext cacheCtx : cctx.cacheContexts()) {
-            if (!cacheCtx.isLocal()) {
-                GridDhtPartitionMap locMap = cacheCtx.topology().localPartitionMap();
+        GridDhtPartitionsSingleMessage m;
 
-                m.addLocalPartitionMap(cacheCtx.cacheId(), locMap);
+        do {
+            AffinityTopologyVersion topVer = cctx.exchange().topologyVersion();
+
+            m = new GridDhtPartitionsSingleMessage(id,
+                cctx.kernalContext().clientNode(),
+                cctx.versions().last(),
+                topVer);
+
+            for (GridCacheContext cacheCtx : cctx.cacheContexts()) {
+                if (!cacheCtx.isLocal()) {
+                    cacheCtx.topology().readLock();
+
+                    try {
+                        if (!cacheCtx.topology().topologyVersion().equals(topVer)) {
+                            retry = true;
+
+                            break;
+                        }
+
+                        m.addLocalPartitionMap(cacheCtx.cacheId(), cacheCtx.topology().localPartitionMap());
+                    }
+                    finally {
+                        cacheCtx.topology().readUnlock();
+                    }
+                }
             }
         }
+        while (retry);
 
         for (GridClientPartitionTopology top : clientTops.values()) {
             GridDhtPartitionMap locMap = top.localPartitionMap();
@@ -925,6 +969,11 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
 
                     GridCacheContext<K, V> cacheCtx = cctx.cacheContext(cacheId);
 
+                    if (cacheCtx != null && cacheCtx.startTopologyVersion() != null &&
+                        msg.topologyVersion() != AffinityTopologyVersion.NONE && // Backward compatibility.
+                        cacheCtx.startTopologyVersion().compareTo(msg.topologyVersion()) > 0)
+                        continue;
+
                     if (cacheCtx != null && !cacheCtx.started())
                         continue; // Can safely ignore background exchange.
 
@@ -970,6 +1019,11 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                     Integer cacheId = entry.getKey();
 
                     GridCacheContext<K, V> cacheCtx = cctx.cacheContext(cacheId);
+
+                    if (cacheCtx != null && cacheCtx.startTopologyVersion() != null &&
+                        msg.topologyVersion() != AffinityTopologyVersion.NONE && // Backward compatibility.
+                        cacheCtx.startTopologyVersion().compareTo(msg.topologyVersion()) > 0)
+                        continue;
 
                     GridDhtPartitionTopology top = null;
 
