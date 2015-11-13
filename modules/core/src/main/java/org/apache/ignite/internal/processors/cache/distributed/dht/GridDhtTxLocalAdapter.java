@@ -705,7 +705,6 @@ public abstract class GridDhtTxLocalAdapter extends IgniteTxLocalAdapter {
                 passedKeys,
                 read,
                 needRetVal,
-                skipped,
                 accessTtl,
                 null,
                 skipStore);
@@ -723,7 +722,6 @@ public abstract class GridDhtTxLocalAdapter extends IgniteTxLocalAdapter {
      * @param passedKeys Passed keys.
      * @param read {@code True} if read.
      * @param needRetVal Return value flag.
-     * @param skipped Skipped keys.
      * @param accessTtl TTL for read operation.
      * @param filter Entry write filter.
      * @param skipStore Skip store flag.
@@ -735,13 +733,11 @@ public abstract class GridDhtTxLocalAdapter extends IgniteTxLocalAdapter {
         final Collection<KeyCacheObject> passedKeys,
         final boolean read,
         final boolean needRetVal,
-        final Set<KeyCacheObject> skipped,
         final long accessTtl,
         @Nullable final CacheEntryPredicate[] filter,
         boolean skipStore) {
         if (log.isDebugEnabled())
-            log.debug("Before acquiring transaction lock on keys [passedKeys=" + passedKeys + ", skipped=" +
-                skipped + ']');
+            log.debug("Before acquiring transaction lock on keys [keys=" + passedKeys + ']');
 
         if (passedKeys.isEmpty())
             return new GridFinishedFuture<>(ret);
@@ -768,7 +764,6 @@ public abstract class GridDhtTxLocalAdapter extends IgniteTxLocalAdapter {
 
                     postLockWrite(cacheCtx,
                         passedKeys,
-                        skipped,
                         ret,
                         /*remove*/false,
                         /*retval*/false,

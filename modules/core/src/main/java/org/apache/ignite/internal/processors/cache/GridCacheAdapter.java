@@ -1948,7 +1948,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
 
         Boolean stored = syncOp(new SyncOp<Boolean>(true) {
             @Override public Boolean op(IgniteTxLocalAdapter tx) throws IgniteCheckedException {
-                return tx.putAllAsync(ctx, F.t(key, val), false, filter).get().success();
+                return tx.putAsync(ctx, key, val, false, filter).get().success();
             }
 
             @Override public String toString() {
