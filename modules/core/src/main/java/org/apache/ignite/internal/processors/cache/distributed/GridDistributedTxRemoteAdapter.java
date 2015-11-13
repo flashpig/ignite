@@ -188,11 +188,6 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     }
 
     /** {@inheritDoc} */
-    @Override public Collection<Integer> activeCacheIds() {
-        return Collections.emptyList();
-    }
-
-    /** {@inheritDoc} */
     @Override public boolean activeCachesDeploymentEnabled() {
         return false;
     }

@@ -156,9 +156,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     /** Commit error. */
     protected AtomicReference<Throwable> commitErr = new AtomicReference<>();
 
-    /** Active cache IDs. */
-    protected Set<Integer> activeCacheIds = new HashSet<>();
-
     /** Need return value. */
     protected boolean needRetVal;
 
@@ -268,15 +265,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     @Override public boolean onOwnerChanged(GridCacheEntryEx entry, GridCacheMvccCandidate owner) {
         assert false;
         return false;
-    }
-
-    /**
-     * Gets collection of active cache IDs for this transaction.
-     *
-     * @return Collection of active cache IDs.
-     */
-    @Override public Collection<Integer> activeCacheIds() {
-        return activeCacheIds;
     }
 
     /** {@inheritDoc} */
