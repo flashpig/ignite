@@ -106,7 +106,11 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     private static final int MAX_OFFSET_2 = 1 << 16;
 
     /** Thread-local schema. */
-    private static final ThreadLocal<SchemaHolder> SCHEMA = new ThreadLocal<>();
+    private static final ThreadLocal<SchemaHolder> SCHEMA = new ThreadLocal<SchemaHolder>() {
+        @Override protected SchemaHolder initialValue() {
+            return new SchemaHolder();
+        }
+    };
 
     /** */
     private final PortableContext ctx;
@@ -284,14 +288,16 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     int handle(Object obj) {
         assert obj != null;
 
-        Integer h = handles.get(obj);
+        int pos = out.position();
 
-        if (h != null)
-            return out.position() - h;
-        else {
-            handles.put(obj, out.position());
+        Integer old = handles.put(obj, pos);
 
+        if (old == null)
             return -1;
+        else {
+            handles.put(obj, old);
+
+            return pos - old;
         }
     }
 
