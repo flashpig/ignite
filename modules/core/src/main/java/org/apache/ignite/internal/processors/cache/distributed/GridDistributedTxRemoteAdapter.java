@@ -45,6 +45,9 @@ import org.apache.ignite.internal.processors.cache.transactions.IgniteTxAdapter;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxKey;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteEx;
+import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteStateImpl;
+import org.apache.ignite.internal.processors.cache.transactions.IgniteTxState;
+import org.apache.ignite.internal.processors.cache.transactions.IgniteTxStateImpl;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersionConflictContext;
 import org.apache.ignite.internal.transactions.IgniteTxHeuristicCheckedException;
@@ -109,6 +112,10 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     @GridToStringInclude
     private AtomicBoolean commitAllowed = new AtomicBoolean(false);
 
+    /** */
+    @GridToStringInclude
+    protected IgniteTxState txState;
+
     /**
      * Empty constructor required for {@link Externalizable}.
      */
@@ -166,10 +173,17 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
         this.rmtThreadId = rmtThreadId;
         this.invalidate = invalidate;
 
+        txState = new IgniteTxRemoteStateImpl();
+
         commitVersion(commitVer);
 
         // Must set started flag after concurrency and isolation.
         started = true;
+    }
+
+    /** {@inheritDoc} */
+    @Override public IgniteTxState txState() {
+        return txState;
     }
 
     /** {@inheritDoc} */

@@ -53,4 +53,6 @@ public interface IgniteTxState {
     public Collection<CacheStoreManager> stores(GridCacheSharedContext cctx);
 
     public void onTxEnd(GridCacheSharedContext cctx, IgniteInternalTx tx, boolean commit);
+
+    // public IgniteTxEntry entry(IgniteTxKey key);
 }

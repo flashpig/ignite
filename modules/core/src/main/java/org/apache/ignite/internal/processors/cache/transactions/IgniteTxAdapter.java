@@ -247,9 +247,6 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
     @GridToStringExclude
     private TransactionProxyImpl proxy;
 
-    /** */
-    protected IgniteTxState txState;
-
     /**
      * Empty constructor required for {@link Externalizable}.
      */
@@ -313,8 +310,6 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
 
         threadId = Thread.currentThread().getId();
 
-        txState = implicitSingle ? new IgniteTxImplicitStateImpl() : new IgniteTxStateImpl();
-
         if (log == null)
             log = U.logger(cctx.kernalContext(), logRef, this);
     }
@@ -364,15 +359,8 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
         implicit = false;
         loc = false;
 
-        txState = new IgniteTxStateImpl();
-
         if (log == null)
             log = U.logger(cctx.kernalContext(), logRef, this);
-    }
-
-    /** {@inheritDoc} */
-    @Override public IgniteTxState txState() {
-        return txState;
     }
 
     /** {@inheritDoc} */
@@ -427,7 +415,7 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
 
     /** {@inheritDoc} */
     @Override public boolean storeUsed() {
-        return storeEnabled() && txState.storeUsed(cctx);
+        return storeEnabled() && txState().storeUsed(cctx);
 
     }
 
@@ -614,7 +602,7 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
 
     /** {@inheritDoc} */
     @Override public boolean implicitSingle() {
-        return txState.implicitSingle();
+        return txState().implicitSingle();
     }
 
     /** {@inheritDoc} */

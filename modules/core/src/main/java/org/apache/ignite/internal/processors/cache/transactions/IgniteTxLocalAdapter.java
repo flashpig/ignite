@@ -66,9 +66,7 @@ import org.apache.ignite.internal.processors.dr.GridDrType;
 import org.apache.ignite.internal.transactions.IgniteTxHeuristicCheckedException;
 import org.apache.ignite.internal.transactions.IgniteTxRollbackCheckedException;
 import org.apache.ignite.internal.transactions.IgniteTxTimeoutCheckedException;
-import org.apache.ignite.internal.util.F0;
 import org.apache.ignite.internal.util.GridLeanMap;
-import org.apache.ignite.internal.util.GridLeanSet;
 import org.apache.ignite.internal.util.future.GridEmbeddedFuture;
 import org.apache.ignite.internal.util.future.GridFinishedFuture;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
@@ -165,6 +163,10 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     /** Flag indicating whether deployment is enabled for caches from this transaction or not. */
     private boolean depEnabled;
 
+    /** */
+    @GridToStringInclude
+    protected IgniteTxState txState;
+
     /**
      * Empty constructor required for {@link Externalizable}.
      */
@@ -222,6 +224,13 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         );
 
         minVer = xidVer;
+
+        txState = implicitSingle ? new IgniteTxImplicitSingleStateImpl() : new IgniteTxStateImpl();
+    }
+
+    /** {@inheritDoc} */
+    @Override public IgniteTxState txState() {
+        return txState;
     }
 
     /**
@@ -3434,7 +3443,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
      */
     public boolean init() {
         if (txMap == null) {
-            txMap = new LinkedHashMap<>(txSize > 0 ? txSize : 16, 1.0f);
+            txMap = U.newLinkedHashMap(txSize > 0 ? txSize : 16);
 
             readView = new IgniteTxMap(txMap, CU.reads());
             writeView = new IgniteTxMap(txMap, CU.writes());
