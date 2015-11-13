@@ -682,13 +682,24 @@ public class PortableClassDescriptor {
         if (writer.tryWriteAsHandle(obj))
             return false;
 
-        PortableUtils.writeHeader(
-            writer,
-            userType,
-            registered ? typeId : GridPortableMarshaller.UNREGISTERED_TYPE_ID,
-            obj instanceof CacheObjectImpl ? 0 : obj.hashCode(),
-            registered ? null : cls.getName()
-        );
+        if (registered) {
+            PortableUtils.writeHeader(
+                writer,
+                userType,
+                typeId,
+                obj instanceof CacheObjectImpl ? 0 : obj.hashCode(),
+                null
+            );
+        }
+        else {
+            PortableUtils.writeHeader(
+                writer,
+                userType,
+                GridPortableMarshaller.UNREGISTERED_TYPE_ID,
+                obj instanceof CacheObjectImpl ? 0 : obj.hashCode(),
+                cls.getName()
+            );
+        }
 
         return true;
     }
