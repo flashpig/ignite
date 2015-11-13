@@ -83,7 +83,7 @@ public class PortableClassDescriptor {
     private final Constructor<?> ctor;
 
     /** */
-    private final Collection<FieldInfo> fields;
+    private final FieldInfo[] fields;
 
     /** */
     private final Method writeReplaceMtd;
@@ -209,7 +209,7 @@ public class PortableClassDescriptor {
                 assert idMapper != null;
 
                 ctor = constructor(cls);
-                fields = new ArrayList<>();
+                ArrayList<FieldInfo> fields0 = new ArrayList<>();
                 fieldsMeta = metaDataEnabled ? new HashMap<String, String>() : null;
 
                 Collection<String> names = new HashSet<>();
@@ -234,13 +234,15 @@ public class PortableClassDescriptor {
 
                             FieldInfo fieldInfo = new FieldInfo(f, fieldId);
 
-                            fields.add(fieldInfo);
+                            fields0.add(fieldInfo);
 
                             if (metaDataEnabled)
                                 fieldsMeta.put(name, fieldInfo.fieldMode().typeName());
                         }
                     }
                 }
+
+                fields = fields0.toArray(new FieldInfo[fields0.size()]);
 
                 break;
 
