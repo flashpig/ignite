@@ -796,8 +796,6 @@ public class PortableUtils {
             return PortableClassDescriptor.Mode.COL;
         else if (Map.class.isAssignableFrom(cls))
             return PortableClassDescriptor.Mode.MAP;
-        else if (cls == BinaryObjectImpl.class)
-            return PortableClassDescriptor.Mode.PORTABLE_OBJ;
         else if (cls.isEnum())
             return PortableClassDescriptor.Mode.ENUM;
         else if (cls == Class.class)
