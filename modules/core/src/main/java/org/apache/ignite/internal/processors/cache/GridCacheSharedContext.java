@@ -582,12 +582,7 @@ public class GridCacheSharedContext<K, V> {
      * @throws IgniteCheckedException If failed.
      */
     public void endTx(IgniteInternalTx tx) throws IgniteCheckedException {
-        Collection<Integer> cacheIds = tx.activeCacheIds();
-
-        if (!cacheIds.isEmpty()) {
-            for (Integer cacheId : cacheIds)
-                cacheContext(cacheId).cache().awaitLastFut();
-        }
+        tx.txState().awaitLastFut(this);
 
         tx.close();
     }
@@ -597,21 +592,9 @@ public class GridCacheSharedContext<K, V> {
      * @return Commit future.
      */
     public IgniteInternalFuture<IgniteInternalTx> commitTxAsync(IgniteInternalTx tx) {
-        Collection<Integer> cacheIds = tx.activeCacheIds();
+        tx.txState().awaitLastFut(this);
 
-        if (cacheIds.isEmpty())
-            return tx.commitAsync();
-        else if (cacheIds.size() == 1) {
-            int cacheId = F.first(cacheIds);
-
-            return cacheContext(cacheId).cache().commitTxAsync(tx);
-        }
-        else {
-            for (Integer cacheId : cacheIds)
-                cacheContext(cacheId).cache().awaitLastFut();
-
-            return tx.commitAsync();
-        }
+        return tx.commitAsync();
     }
 
     /**
@@ -620,12 +603,7 @@ public class GridCacheSharedContext<K, V> {
      * @return Rollback future.
      */
     public IgniteInternalFuture rollbackTxAsync(IgniteInternalTx tx) throws IgniteCheckedException {
-        Collection<Integer> cacheIds = tx.activeCacheIds();
-
-        if (!cacheIds.isEmpty()) {
-            for (Integer cacheId : cacheIds)
-                cacheContext(cacheId).cache().awaitLastFut();
-        }
+        tx.txState().awaitLastFut(this);
 
         return tx.rollbackAsync();
     }

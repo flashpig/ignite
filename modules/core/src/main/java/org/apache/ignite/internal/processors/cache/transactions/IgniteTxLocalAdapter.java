@@ -284,6 +284,13 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         return depEnabled;
     }
 
+    /**
+     * @param depEnabled Flag indicating whether deployment is enabled for caches from this transaction or not.
+     */
+    public void activeCachesDeploymentEnabled(boolean depEnabled) {
+        this.depEnabled = depEnabled;
+    }
+
     /** {@inheritDoc} */
     @Override public boolean isStarted() {
         return txMap != null;
@@ -652,7 +659,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         if (!storeEnabled() || internal())
             return;
 
-        Collection<CacheStoreManager> stores = stores();
+        Collection<CacheStoreManager> stores = txState.stores(cctx);
 
         if (stores == null || stores.isEmpty())
             return;
@@ -1282,7 +1289,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 cctx.tm().rollbackTx(this);
 
                 if (!internal()) {
-                    Collection<CacheStoreManager> stores = stores();
+                    Collection<CacheStoreManager> stores = txState.stores(cctx);
 
                     if (stores != null && !stores.isEmpty()) {
                         assert isWriteToStoreFromDhtValid(stores) :
@@ -3457,38 +3464,8 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
      * @throws IgniteCheckedException If caches already enlisted in this transaction are not compatible with given
      *      cache (e.g. they have different stores).
      */
-    protected void addActiveCache(GridCacheContext cacheCtx) throws IgniteCheckedException {
-        int cacheId = cacheCtx.cacheId();
-
-        // Check if we can enlist new cache to transaction.
-        if (!activeCacheIds.contains(cacheId)) {
-            String err = cctx.verifyTxCompatibility(this, activeCacheIds, cacheCtx);
-
-            if (err != null) {
-                StringBuilder cacheNames = new StringBuilder();
-
-                int idx = 0;
-
-                for (Integer activeCacheId : activeCacheIds) {
-                    cacheNames.append(cctx.cacheContext(activeCacheId).name());
-
-                    if (idx++ < activeCacheIds.size() - 1)
-                        cacheNames.append(", ");
-                }
-
-                throw new IgniteCheckedException("Failed to enlist new cache to existing transaction (" +
-                    err +
-                    ") [activeCaches=[" + cacheNames + "]" +
-                    ", cacheName=" + cacheCtx.name() +
-                    ", cacheSystem=" + cacheCtx.systemTx() +
-                    ", txSystem=" + system() + ']');
-            }
-            else
-                activeCacheIds.add(cacheId);
-
-            if (activeCacheIds.size() == 1)
-                depEnabled = cacheCtx.deploymentEnabled();
-        }
+    protected final void addActiveCache(GridCacheContext cacheCtx) throws IgniteCheckedException {
+        txState().addActiveCache(cacheCtx, this);
     }
 
     /**

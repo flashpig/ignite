@@ -280,6 +280,11 @@ public interface IgniteInternalTx extends AutoCloseable, GridTimeoutObject {
     public Collection<Integer> activeCacheIds();
 
     /**
+     * @return Transaction state.
+     */
+    public IgniteTxState txState();
+
+    /**
      * @return {@code true} or {@code false} if the deployment is enabled or disabled for all active caches involved
      * in this transaction.
      */
