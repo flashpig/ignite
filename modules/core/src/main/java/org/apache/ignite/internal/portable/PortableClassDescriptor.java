@@ -83,7 +83,7 @@ public class PortableClassDescriptor {
     private final Constructor<?> ctor;
 
     /** */
-    private final FieldInfo[] fields;
+    private final BinaryFieldAccessor[] fields;
 
     /** */
     private final Method writeReplaceMtd;
@@ -153,7 +153,7 @@ public class PortableClassDescriptor {
         if (excluded)
             mode = Mode.EXCLUSION;
         else
-            mode = serializer != null ? Mode.PORTABLE : mode(cls);
+            mode = serializer != null ? Mode.PORTABLE : PortableUtils.mode(cls);
 
         switch (mode) {
             case BYTE:
@@ -209,7 +209,7 @@ public class PortableClassDescriptor {
                 assert idMapper != null;
 
                 ctor = constructor(cls);
-                ArrayList<FieldInfo> fields0 = new ArrayList<>();
+                ArrayList<BinaryFieldAccessor> fields0 = new ArrayList<>();
                 fieldsMeta = metaDataEnabled ? new HashMap<String, String>() : null;
 
                 Collection<String> names = new HashSet<>();
@@ -232,17 +232,17 @@ public class PortableClassDescriptor {
                             if (!ids.add(fieldId))
                                 throw new BinaryObjectException("Duplicate field ID: " + name);
 
-                            FieldInfo fieldInfo = new FieldInfo(f, fieldId);
+                            BinaryFieldAccessor fieldInfo = BinaryFieldAccessor.create(f, fieldId);
 
                             fields0.add(fieldInfo);
 
                             if (metaDataEnabled)
-                                fieldsMeta.put(name, fieldInfo.fieldMode().typeName());
+                                fieldsMeta.put(name, fieldInfo.mode().typeName());
                         }
                     }
                 }
 
-                fields = fields0.toArray(new FieldInfo[fields0.size()]);
+                fields = fields0.toArray(new BinaryFieldAccessor[fields0.size()]);
 
                 break;
 
@@ -582,7 +582,7 @@ public class PortableClassDescriptor {
             case OBJECT:
                 if (writeHeader(obj, writer)) {
                     try {
-                        for (FieldInfo info : fields)
+                        for (BinaryFieldAccessor info : fields)
                             info.write(obj, writer);
 
                         writer.postWrite(userType);
@@ -642,7 +642,7 @@ public class PortableClassDescriptor {
 
                 reader.setHandler(res);
 
-                for (FieldInfo info : fields)
+                for (BinaryFieldAccessor info : fields)
                     info.read(res, reader);
 
                 break;
@@ -754,528 +754,32 @@ public class PortableClassDescriptor {
         return use;
     }
 
-    /**
-     * @param cls Class.
-     * @return Mode.
-     */
-    @SuppressWarnings("IfMayBeConditional")
-    private static Mode mode(Class<?> cls) {
-        assert cls != null;
-
-        if (cls == byte.class || cls == Byte.class)
-            return Mode.BYTE;
-        else if (cls == short.class || cls == Short.class)
-            return Mode.SHORT;
-        else if (cls == int.class || cls == Integer.class)
-            return Mode.INT;
-        else if (cls == long.class || cls == Long.class)
-            return Mode.LONG;
-        else if (cls == float.class || cls == Float.class)
-            return Mode.FLOAT;
-        else if (cls == double.class || cls == Double.class)
-            return Mode.DOUBLE;
-        else if (cls == char.class || cls == Character.class)
-            return Mode.CHAR;
-        else if (cls == boolean.class || cls == Boolean.class)
-            return Mode.BOOLEAN;
-        else if (cls == BigDecimal.class)
-            return Mode.DECIMAL;
-        else if (cls == String.class)
-            return Mode.STRING;
-        else if (cls == UUID.class)
-            return Mode.UUID;
-        else if (cls == Date.class)
-            return Mode.DATE;
-        else if (cls == Timestamp.class)
-            return Mode.TIMESTAMP;
-        else if (cls == byte[].class)
-            return Mode.BYTE_ARR;
-        else if (cls == short[].class)
-            return Mode.SHORT_ARR;
-        else if (cls == int[].class)
-            return Mode.INT_ARR;
-        else if (cls == long[].class)
-            return Mode.LONG_ARR;
-        else if (cls == float[].class)
-            return Mode.FLOAT_ARR;
-        else if (cls == double[].class)
-            return Mode.DOUBLE_ARR;
-        else if (cls == char[].class)
-            return Mode.CHAR_ARR;
-        else if (cls == boolean[].class)
-            return Mode.BOOLEAN_ARR;
-        else if (cls == BigDecimal[].class)
-            return Mode.DECIMAL_ARR;
-        else if (cls == String[].class)
-            return Mode.STRING_ARR;
-        else if (cls == UUID[].class)
-            return Mode.UUID_ARR;
-        else if (cls == Date[].class)
-            return Mode.DATE_ARR;
-        else if (cls == Timestamp[].class)
-            return Mode.TIMESTAMP_ARR;
-        else if (cls.isArray())
-            return cls.getComponentType().isEnum() ? Mode.ENUM_ARR : Mode.OBJ_ARR;
-        else if (cls == BinaryObjectImpl.class)
-            return Mode.PORTABLE_OBJ;
-        else if (Binarylizable.class.isAssignableFrom(cls))
-            return Mode.PORTABLE;
-        else if (Externalizable.class.isAssignableFrom(cls))
-            return Mode.EXTERNALIZABLE;
-        else if (Map.Entry.class.isAssignableFrom(cls))
-            return Mode.MAP_ENTRY;
-        else if (Collection.class.isAssignableFrom(cls))
-            return Mode.COL;
-        else if (Map.class.isAssignableFrom(cls))
-            return Mode.MAP;
-        else if (cls == BinaryObjectImpl.class)
-            return Mode.PORTABLE_OBJ;
-        else if (cls.isEnum())
-            return Mode.ENUM;
-        else if (cls == Class.class)
-            return Mode.CLASS;
-        else
-            return Mode.OBJECT;
-    }
-
-    /** */
-    private static class FieldInfo {
-        /** */
-        private final Field field;
-
-        /** */
-        private final int id;
-
-        /** */
-        private final Mode mode;
-
-        /**
-         * @param field Field.
-         * @param id Field ID.
-         */
-        private FieldInfo(Field field, int id) {
-            assert field != null;
-
-            this.field = field;
-            this.id = id;
-
-            Class<?> type = field.getType();
-
-            mode = mode(type);
-        }
-
-        /**
-         * @return Field mode.
-         */
-        public Mode fieldMode() {
-            return mode;
-        }
-
-        /**
-         * @param obj Object.
-         * @param writer Writer.
-         * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
-         */
-        public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            assert obj != null;
-            assert writer != null;
-
-            writer.writeFieldId(id);
-
-            Object val;
-
-            try {
-                val = field.get(obj);
-            }
-            catch (IllegalAccessException e) {
-                throw new BinaryObjectException("Failed to get value for field: " + field, e);
-            }
-
-            switch (mode) {
-                case BYTE:
-                    writer.writeByteField((Byte)val);
-
-                    break;
-
-                case SHORT:
-                    writer.writeShortField((Short)val);
-
-                    break;
-
-                case INT:
-                    writer.writeIntField((Integer)val);
-
-                    break;
-
-                case LONG:
-                    writer.writeLongField((Long)val);
-
-                    break;
-
-                case FLOAT:
-                    writer.writeFloatField((Float)val);
-
-                    break;
-
-                case DOUBLE:
-                    writer.writeDoubleField((Double)val);
-
-                    break;
-
-                case CHAR:
-                    writer.writeCharField((Character)val);
-
-                    break;
-
-                case BOOLEAN:
-                    writer.writeBooleanField((Boolean)val);
-
-                    break;
-
-                case DECIMAL:
-                    writer.writeDecimalField((BigDecimal)val);
-
-                    break;
-
-                case STRING:
-                    writer.writeStringField((String)val);
-
-                    break;
-
-                case UUID:
-                    writer.writeUuidField((UUID)val);
-
-                    break;
-
-                case DATE:
-                    writer.writeDateField((Date)val);
-
-                    break;
-
-                case TIMESTAMP:
-                    writer.writeTimestampField((Timestamp)val);
-
-                    break;
-
-                case BYTE_ARR:
-                    writer.writeByteArrayField((byte[])val);
-
-                    break;
-
-                case SHORT_ARR:
-                    writer.writeShortArrayField((short[])val);
-
-                    break;
-
-                case INT_ARR:
-                    writer.writeIntArrayField((int[])val);
-
-                    break;
-
-                case LONG_ARR:
-                    writer.writeLongArrayField((long[])val);
-
-                    break;
-
-                case FLOAT_ARR:
-                    writer.writeFloatArrayField((float[])val);
-
-                    break;
-
-                case DOUBLE_ARR:
-                    writer.writeDoubleArrayField((double[])val);
-
-                    break;
-
-                case CHAR_ARR:
-                    writer.writeCharArrayField((char[])val);
-
-                    break;
-
-                case BOOLEAN_ARR:
-                    writer.writeBooleanArrayField((boolean[])val);
-
-                    break;
-
-                case DECIMAL_ARR:
-                    writer.writeDecimalArrayField((BigDecimal[])val);
-
-                    break;
-
-                case STRING_ARR:
-                    writer.writeStringArrayField((String[])val);
-
-                    break;
-
-                case UUID_ARR:
-                    writer.writeUuidArrayField((UUID[])val);
-
-                    break;
-
-                case DATE_ARR:
-                    writer.writeDateArrayField((Date[])val);
-
-                    break;
-
-                case TIMESTAMP_ARR:
-                    writer.writeTimestampArrayField((Timestamp[])val);
-
-                    break;
-
-                case OBJ_ARR:
-                    writer.writeObjectArrayField((Object[])val);
-
-                    break;
-
-                case COL:
-                    writer.writeCollectionField((Collection<?>)val);
-
-                    break;
-
-                case MAP:
-                    writer.writeMapField((Map<?, ?>)val);
-
-                    break;
-
-                case MAP_ENTRY:
-                    writer.writeMapEntryField((Map.Entry<?, ?>)val);
-
-                    break;
-
-                case PORTABLE_OBJ:
-                    writer.writePortableObjectField((BinaryObjectImpl)val);
-
-                    break;
-
-                case ENUM:
-                    writer.writeEnumField((Enum<?>)val);
-
-                    break;
-
-                case ENUM_ARR:
-                    writer.writeEnumArrayField((Object[])val);
-
-                    break;
-
-                case PORTABLE:
-                case EXTERNALIZABLE:
-                case OBJECT:
-                    writer.writeObjectField(val);
-
-                    break;
-
-                case CLASS:
-                    writer.writeClassField((Class)val);
-
-                    break;
-
-                default:
-                    assert false : "Invalid mode: " + mode;
-            }
-        }
-
-        /**
-         * @param obj Object.
-         * @param reader Reader.
-         * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
-         */
-        public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            Object val = null;
-
-            switch (mode) {
-                case BYTE:
-                    val = reader.readByte(id);
-
-                    break;
-
-                case SHORT:
-                    val = reader.readShort(id);
-
-                    break;
-
-                case INT:
-                    val = reader.readInt(id);
-
-                    break;
-
-                case LONG:
-                    val = reader.readLong(id);
-
-                    break;
-
-                case FLOAT:
-                    val = reader.readFloat(id);
-
-                    break;
-
-                case DOUBLE:
-                    val = reader.readDouble(id);
-
-                    break;
-
-                case CHAR:
-                    val = reader.readChar(id);
-
-                    break;
-
-                case BOOLEAN:
-                    val = reader.readBoolean(id);
-
-                    break;
-
-                case DECIMAL:
-                    val = reader.readDecimal(id);
-
-                    break;
-
-                case STRING:
-                    val = reader.readString(id);
-
-                    break;
-
-                case UUID:
-                    val = reader.readUuid(id);
-
-                    break;
-
-                case DATE:
-                    val = reader.readDate(id);
-
-                    break;
-
-                case TIMESTAMP:
-                    val = reader.readTimestamp(id);
-
-                    break;
-
-                case BYTE_ARR:
-                    val = reader.readByteArray(id);
-
-                    break;
-
-                case SHORT_ARR:
-                    val = reader.readShortArray(id);
-
-                    break;
-
-                case INT_ARR:
-                    val = reader.readIntArray(id);
-
-                    break;
-
-                case LONG_ARR:
-                    val = reader.readLongArray(id);
-
-                    break;
-
-                case FLOAT_ARR:
-                    val = reader.readFloatArray(id);
-
-                    break;
-
-                case DOUBLE_ARR:
-                    val = reader.readDoubleArray(id);
-
-                    break;
-
-                case CHAR_ARR:
-                    val = reader.readCharArray(id);
-
-                    break;
-
-                case BOOLEAN_ARR:
-                    val = reader.readBooleanArray(id);
-
-                    break;
-
-                case DECIMAL_ARR:
-                    val = reader.readDecimalArray(id);
-
-                    break;
-
-                case STRING_ARR:
-                    val = reader.readStringArray(id);
-
-                    break;
-
-                case UUID_ARR:
-                    val = reader.readUuidArray(id);
-
-                    break;
-
-                case DATE_ARR:
-                    val = reader.readDateArray(id);
-
-                    break;
-
-                case TIMESTAMP_ARR:
-                    val = reader.readTimestampArray(id);
-
-                    break;
-
-                case OBJ_ARR:
-                    val = reader.readObjectArray(id);
-
-                    break;
-
-                case COL:
-                    val = reader.readCollection(id, null);
-
-                    break;
-
-                case MAP:
-                    val = reader.readMap(id, null);
-
-                    break;
-
-                case MAP_ENTRY:
-                    val = reader.readMapEntry(id);
-
-                    break;
-
-                case PORTABLE_OBJ:
-                    val = reader.readPortableObject(id);
-
-                    break;
-
-                case ENUM:
-                    val = reader.readEnum(id, field.getType());
-
-                    break;
-
-                case ENUM_ARR:
-                    val = reader.readEnumArray(id, field.getType().getComponentType());
-
-                    break;
-
-                case PORTABLE:
-                case EXTERNALIZABLE:
-                case OBJECT:
-                    val = reader.readObject(id);
-
-                    break;
-
-                case CLASS:
-                    val = reader.readClass(id);
-
-                    break;
-
-                default:
-                    assert false : "Invalid mode: " + mode;
-            }
-
-            try {
-                if (val != null || !field.getType().isPrimitive())
-                    field.set(obj, val);
-            }
-            catch (IllegalAccessException e) {
-                throw new BinaryObjectException("Failed to set value for field: " + field, e);
-            }
-        }
-    }
-
     /** */
     enum Mode {
+        /** Primitive byte. */
+        P_BYTE("byte"),
+
+        /** Primitive boolean. */
+        P_BOOLEAN("boolean"),
+
+        /** Primitive short. */
+        P_SHORT("short"),
+
+        /** Primitive char. */
+        P_CHAR("char"),
+
+        /** Primitive int. */
+        P_INT("int"),
+
+        /** Primitive long. */
+        P_LONG("long"),
+
+        /** Primitive float. */
+        P_FLOAT("float"),
+
+        /** Primitive int. */
+        P_DOUBLE("double"),
+
         /** */
         BYTE("byte"),
 
