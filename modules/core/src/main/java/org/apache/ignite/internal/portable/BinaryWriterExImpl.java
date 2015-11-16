@@ -23,8 +23,6 @@ import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.binary.BinaryRawWriter;
 import org.apache.ignite.binary.BinaryWriter;
 import org.apache.ignite.internal.portable.streams.PortableHeapOutputStream;
-import org.apache.ignite.internal.portable.streams.PortableMemoryAllocator;
-import org.apache.ignite.internal.portable.streams.PortableMemoryAllocatorChunk;
 import org.apache.ignite.internal.portable.streams.PortableOutputStream;
 import org.apache.ignite.internal.util.typedef.internal.A;
 import org.jetbrains.annotations.Nullable;
@@ -123,29 +121,17 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** ID mapper. */
     private BinaryIdMapper idMapper;
 
-    private static final ThreadLocal<TLSContext> TLS_CTX = new ThreadLocal<TLSContext>() {
-        @Override protected TLSContext initialValue() {
-            return new TLSContext();
-        }
-    };
-
-    private static class TLSContext {
-
-        public PortableMemoryAllocatorChunk chunk = PortableMemoryAllocator.INSTANCE.chunk();
-        public BinaryWriterSchemaHolder schema = new BinaryWriterSchemaHolder();
-    }
-    
     /**
      * @param ctx Context.
      */
     BinaryWriterExImpl(PortableContext ctx) {
-        TLSContext tlsCtx = TLS_CTX.get();
+        BinaryThreadLocalContext tlsCtx = BinaryThreadLocalContext.get();
 
         this.ctx = ctx;
-        this.out = new PortableHeapOutputStream(INIT_CAP, tlsCtx.chunk);
+        this.out = new PortableHeapOutputStream(INIT_CAP, tlsCtx.chunk());
 
         start = out.position();
-        schema = tlsCtx.schema;
+        schema = tlsCtx.schemaHolder();
     }
 
     /**
@@ -168,7 +154,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
         start = out.position();
 
-        schema = TLS_CTX.get().schema;
+        schema = BinaryThreadLocalContext.get().schemaHolder();
     }
 
      /**
