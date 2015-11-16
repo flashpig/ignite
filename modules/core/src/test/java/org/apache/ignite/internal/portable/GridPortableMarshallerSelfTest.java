@@ -68,7 +68,7 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.jsr166.ConcurrentHashMap8;
 import sun.misc.Unsafe;
 
-import static org.apache.ignite.internal.portable.PortableThreadLocalMemoryAllocator.THREAD_LOCAL_ALLOC;
+import static org.apache.ignite.internal.portable.streams.PortableMemoryAllocator.INSTANCE;
 import static org.junit.Assert.assertArrayEquals;
 
 /**
@@ -2075,20 +2075,20 @@ public class GridPortableMarshallerSelfTest extends GridCommonAbstractTest {
      */
     public void testThreadLocalArrayReleased() throws IgniteCheckedException {
         // Checking the writer directly.
-        assertEquals(false, THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+        assertEquals(false, INSTANCE.isAcquired());
 
         try (BinaryWriterExImpl writer = new BinaryWriterExImpl(initPortableContext(new PortableMarshaller()))) {
-            assertEquals(true, THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+            assertEquals(true, INSTANCE.isAcquired());
 
             writer.writeString("Thread local test");
 
             writer.array();
 
-            assertEquals(true, THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+            assertEquals(true, INSTANCE.isAcquired());
         }
 
         // Checking the portable marshaller.
-        assertEquals(false, THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+        assertEquals(false, INSTANCE.isAcquired());
 
         PortableMarshaller marsh = new PortableMarshaller();
 
@@ -2096,7 +2096,7 @@ public class GridPortableMarshallerSelfTest extends GridCommonAbstractTest {
 
         marsh.marshal(new SimpleObject());
 
-        assertEquals(false, THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+        assertEquals(false, INSTANCE.isAcquired());
 
         // Checking the builder.
         BinaryObjectBuilder builder = new BinaryObjectBuilderImpl(initPortableContext(new PortableMarshaller()),
@@ -2106,7 +2106,7 @@ public class GridPortableMarshallerSelfTest extends GridCommonAbstractTest {
 
         BinaryObject portableObj = builder.build();
 
-        assertEquals(false, THREAD_LOCAL_ALLOC.isThreadLocalArrayAcquired());
+        assertEquals(false, INSTANCE.isAcquired());
     }
 
     /**

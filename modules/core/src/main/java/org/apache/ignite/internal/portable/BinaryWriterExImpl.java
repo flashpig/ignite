@@ -19,12 +19,13 @@ package org.apache.ignite.internal.portable;
 
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.binary.BinaryIdMapper;
-import org.apache.ignite.internal.portable.streams.PortableHeapOutputStream;
-import org.apache.ignite.internal.portable.streams.PortableOutputStream;
-import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.binary.BinaryRawWriter;
 import org.apache.ignite.binary.BinaryWriter;
+import org.apache.ignite.internal.portable.streams.PortableHeapOutputStream;
+import org.apache.ignite.internal.portable.streams.PortableMemoryAllocator;
+import org.apache.ignite.internal.portable.streams.PortableOutputStream;
+import org.apache.ignite.internal.util.typedef.internal.A;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -105,13 +106,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** Maximum offset which fits in 2 bytes. */
     private static final int MAX_OFFSET_2 = 1 << 16;
 
-    /** Thread-local schema. */
-    private static final ThreadLocal<SchemaHolder> SCHEMA = new ThreadLocal<SchemaHolder>() {
-        @Override protected SchemaHolder initialValue() {
-            return new SchemaHolder();
-        }
-    };
-
     /** */
     private final PortableContext ctx;
 
@@ -143,7 +137,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     private SchemaHolder schema;
 
     /** Schema ID. */
-    private int schemaId;
+    private int schemaId = FNV1_OFFSET_BASIS;
 
     /** Amount of written fields. */
     private int fieldCnt;
@@ -151,33 +145,30 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** ID mapper. */
     private BinaryIdMapper idMapper;
 
+    private static final ThreadLocal<TLSContext> TLS_CTX = new ThreadLocal<TLSContext>() {
+        @Override protected TLSContext initialValue() {
+            return new TLSContext();
+        }
+    };
+
+    private static class TLSContext {
+        public PortableMemoryAllocator.Chunk chunk = PortableMemoryAllocator.INSTANCE.chunk();
+        public SchemaHolder schema = new SchemaHolder();
+    }
+
     /**
      * @param ctx Context.
      */
     BinaryWriterExImpl(PortableContext ctx) {
-        this(ctx, new PortableHeapOutputStream(INIT_CAP));
+        TLSContext tlsCtx = TLS_CTX.get();
+
+        this.ctx = ctx;
+        this.out = new PortableHeapOutputStream(INIT_CAP, tlsCtx.chunk);
+        this.handles = new IdentityHashMap<>();
+
+        start = out.position();
+        schema = tlsCtx.schema;
     }
-
-    /**
-     * @param ctx Context.
-     * @param out Output stream.
-     */
-    BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out) {
-        this(ctx, out, new IdentityHashMap<Object, Integer>());
-    }
-
-     /**
-      * @param ctx Context.
-      * @param out Output stream.
-      * @param handles Handles.
-      */
-     private BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, Map<Object, Integer> handles) {
-         this.ctx = ctx;
-         this.out = out;
-         this.handles = handles;
-
-         start = out.position();
-     }
 
     /**
      * @param ctx Context.
@@ -189,6 +180,35 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         this.typeId = typeId;
         this.metaEnabled = metaEnabled;
     }
+
+    /**
+     * @param ctx Context.
+     * @param out Output stream.
+     */
+    BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out) {
+        this.ctx = ctx;
+        this.out = out;
+        this.handles = new IdentityHashMap<>();
+
+        start = out.position();
+
+        schema = TLS_CTX.get().schema;
+    }
+
+     /**
+      * @param ctx Context.
+      * @param out Output stream.
+      * @param handles Handles.
+      */
+     private BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, SchemaHolder schema,
+         Map<Object, Integer> handles) {
+         this.ctx = ctx;
+         this.out = out;
+         this.schema = schema;
+         this.handles = handles;
+
+         start = out.position();
+     }
 
     /**
      * Close the writer releasing resources if necessary.
@@ -345,7 +365,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param userType User type flag.
      */
     public void postWrite(boolean userType) {
-        if (schema != null) {
+        if (fieldCnt != 0) {
             // Write schema ID.
             out.writeInt(start + SCHEMA_ID_POS, schemaId);
 
@@ -562,7 +582,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (obj == null)
             doWriteByte(NULL);
         else {
-            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, handles);
+            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, schema, handles);
 
             writer.marshal(obj);
         }
@@ -1468,7 +1488,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (obj == null)
             doWriteByte(NULL);
         else {
-            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, new IdentityHashMap<Object, Integer>());
+            BinaryWriterExImpl writer =
+                new BinaryWriterExImpl(ctx, out, schema, new IdentityHashMap<Object, Integer>());
 
             writer.marshal(obj);
         }
@@ -1783,19 +1804,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     public void writeFieldId(int fieldId) {
         int fieldOff = out.position() - start;
 
-        if (schema == null) {
-            schema = SCHEMA.get();
-
-            if (schema == null) {
-                schema = new SchemaHolder();
-
-                SCHEMA.set(schema);
-            }
-
-            // Initialize offset when the first field is written.
-            schemaId = FNV1_OFFSET_BASIS;
-        }
-
         // Advance schema hash.
         int schemaId0 = schemaId ^ (fieldId & 0xFF);
         schemaId0 = schemaId0 * FNV1_PRIME;
@@ -1839,7 +1847,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @return New writer.
      */
     public BinaryWriterExImpl newWriter(int typeId) {
-        BinaryWriterExImpl res = new BinaryWriterExImpl(ctx, out, handles);
+        BinaryWriterExImpl res = new BinaryWriterExImpl(ctx, out, schema, handles);
 
         res.typeId = typeId;
 
