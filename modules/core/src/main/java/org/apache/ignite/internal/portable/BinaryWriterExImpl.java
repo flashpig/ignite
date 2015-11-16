@@ -37,7 +37,6 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Date;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -116,7 +115,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     private int rawOffPos;
 
     /** Handles. */
-    private Map<Object, Integer> handles;
+    private BinaryWriterHandles handles;
 
     /** Output stream. */
     private PortableOutputStream out;
@@ -153,7 +152,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
         this.ctx = ctx;
         this.out = new PortableHeapOutputStream(INIT_CAP, tlsCtx.chunk);
-        this.handles = new IdentityHashMap<>();
 
         start = out.position();
         schema = tlsCtx.schema;
@@ -176,7 +174,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out) {
         this.ctx = ctx;
         this.out = out;
-        this.handles = new IdentityHashMap<>();
 
         start = out.position();
 
@@ -189,7 +186,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
       * @param handles Handles.
       */
      private BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, SchemaHolder schema,
-         Map<Object, Integer> handles) {
+         BinaryWriterHandles handles) {
          this.ctx = ctx;
          this.out = out;
          this.schema = schema;
@@ -550,7 +547,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (obj == null)
             doWriteByte(NULL);
         else {
-            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, schema, handles);
+            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, schema, handles());
 
             writer.marshal(obj);
         }
@@ -1456,8 +1453,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (obj == null)
             doWriteByte(NULL);
         else {
-            BinaryWriterExImpl writer =
-                new BinaryWriterExImpl(ctx, out, schema, new IdentityHashMap<Object, Integer>());
+            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, schema, null);
 
             writer.marshal(obj);
         }
@@ -1797,6 +1793,19 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     }
 
     /**
+     * Get current handles. If they are {@code null}, then we should create them. Otherwise we will not see updates
+     * performed by child writers.
+     *
+     * @return Handles.
+     */
+    private BinaryWriterHandles handles() {
+        if (handles == null)
+            handles = new BinaryWriterHandles();
+
+        return handles;
+    }
+
+    /**
      * Attempts to write the object as a handle.
      *
      * @param obj Object to write.
@@ -1807,13 +1816,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
         int pos = out.position();
 
-        Integer old = handles.put(obj, pos);
+        BinaryWriterHandles handles0 = handles();
 
-        if (old == null)
+        int old = handles0.put(obj, pos);
+
+        if (old == BinaryWriterHandles.POS_NULL)
             return false;
         else {
-            handles.put(obj, old);
-
             doWriteByte(GridPortableMarshaller.HANDLE);
             doWriteInt(pos - old);
 
@@ -1828,7 +1837,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @return New writer.
      */
     public BinaryWriterExImpl newWriter(int typeId) {
-        BinaryWriterExImpl res = new BinaryWriterExImpl(ctx, out, schema, handles);
+        BinaryWriterExImpl res = new BinaryWriterExImpl(ctx, out, schema, handles());
 
         res.typeId = typeId;
 

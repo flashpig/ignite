@@ -99,7 +99,7 @@ public class PortableClassDescriptor {
     private final Map<String, Integer> stableFieldsMeta;
 
     /** Object schemas. Initialized only for serializable classes and contains only 1 entry. */
-    private final Collection<PortableSchema> stableSchemas;
+    private final PortableSchema stableSchema;
 
     /** Schema registry. */
     private final PortableSchemaRegistry schemaReg;
@@ -210,7 +210,7 @@ public class PortableClassDescriptor {
                 ctor = null;
                 fields = null;
                 stableFieldsMeta = null;
-                stableSchemas = null;
+                stableSchema = null;
 
                 break;
 
@@ -219,7 +219,7 @@ public class PortableClassDescriptor {
                 ctor = constructor(cls);
                 fields = null;
                 stableFieldsMeta = null;
-                stableSchemas = null;
+                stableSchema = null;
 
                 break;
 
@@ -264,7 +264,7 @@ public class PortableClassDescriptor {
                 
                 fields = fields0.toArray(new BinaryFieldAccessor[fields0.size()]);
                 
-                stableSchemas = Collections.singleton(schemaBuilder.build());
+                stableSchema = schemaBuilder.build();
                 
                 break;
 
@@ -312,10 +312,10 @@ public class PortableClassDescriptor {
     }
 
     /**
-     * @return Schemas.
+     * @return Schema.
      */
-    Collection<PortableSchema> schemas() {
-        return stableSchemas;
+    PortableSchema schema() {
+        return stableSchema;
     }
 
     /**
