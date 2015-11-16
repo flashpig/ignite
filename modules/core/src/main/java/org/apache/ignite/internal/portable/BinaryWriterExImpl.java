@@ -24,6 +24,7 @@ import org.apache.ignite.binary.BinaryRawWriter;
 import org.apache.ignite.binary.BinaryWriter;
 import org.apache.ignite.internal.portable.streams.PortableHeapOutputStream;
 import org.apache.ignite.internal.portable.streams.PortableMemoryAllocator;
+import org.apache.ignite.internal.portable.streams.PortableMemoryAllocatorChunk;
 import org.apache.ignite.internal.portable.streams.PortableOutputStream;
 import org.apache.ignite.internal.util.typedef.internal.A;
 import org.jetbrains.annotations.Nullable;
@@ -152,7 +153,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     };
 
     private static class TLSContext {
-        public PortableMemoryAllocator.Chunk chunk = PortableMemoryAllocator.INSTANCE.chunk();
+
+        public PortableMemoryAllocatorChunk chunk = PortableMemoryAllocator.INSTANCE.chunk();
         public SchemaHolder schema = new SchemaHolder();
     }
 
@@ -408,11 +410,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * Pop schema.
      */
     public void popSchema() {
-        if (schema != null) {
-            assert fieldCnt > 0;
-
+        if (fieldCnt > 0)
             schema.pop(fieldCnt);
-        }
     }
 
     /**

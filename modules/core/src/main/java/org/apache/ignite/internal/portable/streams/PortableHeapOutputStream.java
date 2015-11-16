@@ -22,7 +22,7 @@ package org.apache.ignite.internal.portable.streams;
  */
 public final class PortableHeapOutputStream extends PortableAbstractOutputStream {
     /** Allocator. */
-    private final PortableMemoryAllocator.Chunk chunk;
+    private final PortableMemoryAllocatorChunk chunk;
 
     /** Data. */
     private byte[] data;
@@ -42,7 +42,7 @@ public final class PortableHeapOutputStream extends PortableAbstractOutputStream
      * @param cap Capacity.
      * @param chunk Chunk.
      */
-    public PortableHeapOutputStream(int cap, PortableMemoryAllocator.Chunk chunk) {
+    public PortableHeapOutputStream(int cap, PortableMemoryAllocatorChunk chunk) {
         this.chunk = chunk;
 
         data = chunk.allocate(cap);

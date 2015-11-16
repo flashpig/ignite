@@ -17,12 +17,6 @@
 
 package org.apache.ignite.internal.portable.streams;
 
-import org.apache.ignite.internal.util.GridUnsafe;
-import org.apache.ignite.internal.util.typedef.internal.U;
-import sun.misc.Unsafe;
-
-import static org.apache.ignite.IgniteSystemProperties.IGNITE_MARSHAL_BUFFERS_RECHECK;
-
 /**
  * Thread-local memory allocator.
  */
@@ -31,13 +25,7 @@ public final class PortableMemoryAllocator {
     public static final PortableMemoryAllocator INSTANCE = new PortableMemoryAllocator();
 
     /** Holders. */
-    private static final ThreadLocal<Chunk> holders = new ThreadLocal<>();
-
-    /** Unsafe instance. */
-    protected static final Unsafe UNSAFE = GridUnsafe.unsafe();
-
-    /** Array offset: byte. */
-    protected static final long BYTE_ARR_OFF = UNSAFE.arrayBaseOffset(byte[].class);
+    private static final ThreadLocal<PortableMemoryAllocatorChunk> holders = new ThreadLocal<>();
 
     /**
      * Ensures singleton.
@@ -46,11 +34,11 @@ public final class PortableMemoryAllocator {
         // No-op.
     }
 
-    public Chunk chunk() {
-        Chunk holder = holders.get();
+    public PortableMemoryAllocatorChunk chunk() {
+        PortableMemoryAllocatorChunk holder = holders.get();
 
         if (holder == null)
-            holders.set(holder = new Chunk());
+            holders.set(holder = new PortableMemoryAllocatorChunk());
 
         return holder;
     }
@@ -62,86 +50,8 @@ public final class PortableMemoryAllocator {
      * @return {@code true} if acquired {@code false} otherwise.
      */
     public boolean isAcquired() {
-        Chunk holder = holders.get();
+        PortableMemoryAllocatorChunk holder = holders.get();
 
-        return holder != null && holder.acquired;
-    }
-
-    /**
-     * Thread-local byte array holder.
-     */
-    public static class Chunk {
-        /** */
-        private static final Long CHECK_FREQ = Long.getLong(IGNITE_MARSHAL_BUFFERS_RECHECK, 10000);
-
-        /** Data array */
-        private byte[] data;
-
-        /** Max message size detected between checks. */
-        private int maxMsgSize;
-
-        /** Last time array size is checked. */
-        private long lastCheck = U.currentTimeMillis();
-
-        /** Whether the holder is acquired or not. */
-        private boolean acquired;
-
-        /**
-         * Allocate.
-         *
-         * @param size Desired size.
-         * @return Data.
-         */
-        public byte[] allocate(int size) {
-            if (acquired)
-                return new byte[size];
-
-            acquired = true;
-
-            if (data == null || size > data.length)
-                data = new byte[size];
-
-            return data;
-        }
-
-        /**
-         * Reallocate.
-         *
-         * @param data Old data.
-         * @param size Size.
-         * @return New data.
-         */
-        public byte[] reallocate(byte[] data, int size) {
-            byte[] newData = new byte[size];
-
-            if (this.data == data)
-                this.data = newData;
-
-            UNSAFE.copyMemory(data, BYTE_ARR_OFF, newData, BYTE_ARR_OFF, data.length);
-
-            return newData;
-        }
-
-        /**
-         * Shrinks array size if needed.
-         */
-        public void release(byte[] data, int maxMsgSize) {
-            if (this.data != data)
-                return;
-
-            this.maxMsgSize = maxMsgSize;
-            this.acquired = false;
-
-            long now = U.currentTimeMillis();
-
-            if (now - this.lastCheck >= CHECK_FREQ) {
-                int halfSize = data.length >> 1;
-
-                if (this.maxMsgSize < halfSize)
-                    this.data = new byte[halfSize];
-
-                this.lastCheck = now;
-            }
-        }
+        return holder != null && holder.isAcquired();
     }
 }
