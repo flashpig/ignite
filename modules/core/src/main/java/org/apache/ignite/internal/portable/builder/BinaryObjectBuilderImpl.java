@@ -178,7 +178,9 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
 
     /** {@inheritDoc} */
     @Override public BinaryObject build() {
-        try (BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, typeId)) {
+        try (BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx)) {
+            writer.typeId(typeId);
+
             PortableBuilderSerializer serializationCtx = new PortableBuilderSerializer();
 
             serializationCtx.registerObjectWriting(this, 0);

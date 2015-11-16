@@ -295,7 +295,7 @@ public class GridPortableMarshaller {
      * @return Writer.
      */
     public BinaryWriterExImpl writer(PortableOutputStream out) {
-        return new BinaryWriterExImpl(ctx, out);
+        return new BinaryWriterExImpl(ctx, out, BinaryThreadLocalContext.get().schemaHolder(), null);
     }
 
     /**

@@ -124,53 +124,37 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /**
      * @param ctx Context.
      */
-    BinaryWriterExImpl(PortableContext ctx) {
+    public BinaryWriterExImpl(PortableContext ctx) {
         BinaryThreadLocalContext tlsCtx = BinaryThreadLocalContext.get();
 
         this.ctx = ctx;
         this.out = new PortableHeapOutputStream(INIT_CAP, tlsCtx.chunk());
+        this.schema = tlsCtx.schemaHolder();
 
         start = out.position();
-        schema = tlsCtx.schemaHolder();
-    }
-
-    /**
-     * @param ctx Context.
-     * @param typeId Type ID.
-     */
-    public BinaryWriterExImpl(PortableContext ctx, int typeId) {
-        this(ctx);
-
-        this.typeId = typeId;
     }
 
     /**
      * @param ctx Context.
      * @param out Output stream.
+     * @param handles Handles.
      */
-    BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out) {
+    public BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, BinaryWriterSchemaHolder schema,
+        BinaryWriterHandles handles) {
         this.ctx = ctx;
         this.out = out;
+        this.schema = schema;
+        this.handles = handles;
 
         start = out.position();
-
-        schema = BinaryThreadLocalContext.get().schemaHolder();
     }
 
-     /**
-      * @param ctx Context.
-      * @param out Output stream.
-      * @param handles Handles.
-      */
-     private BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, BinaryWriterSchemaHolder schema,
-         BinaryWriterHandles handles) {
-         this.ctx = ctx;
-         this.out = out;
-         this.schema = schema;
-         this.handles = handles;
-
-         start = out.position();
-     }
+    /**
+     * @param typeId Type ID.
+     */
+    public void typeId(int typeId) {
+        this.typeId = typeId;
+    }
 
     /**
      * Close the writer releasing resources if necessary.
