@@ -567,7 +567,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
             out.writeByte(DOUBLE_ARR);
             out.writeInt(val.length);
-
             out.writeDoubleArray(val);
         }
     }
@@ -584,7 +583,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
             out.writeByte(CHAR_ARR);
             out.writeInt(val.length);
-
             out.writeCharArray(val);
         }
     }
@@ -601,7 +599,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
             out.writeByte(BOOLEAN_ARR);
             out.writeInt(val.length);
-
             out.writeBooleanArray(val);
         }
     }
