@@ -161,7 +161,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             byte val = UNSAFE.getByte(obj, offset);
 
@@ -191,7 +191,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             boolean val = UNSAFE.getBoolean(obj, offset);
 
@@ -221,7 +221,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             short val = UNSAFE.getShort(obj, offset);
 
@@ -251,7 +251,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             char val = UNSAFE.getChar(obj, offset);
 
@@ -281,7 +281,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             int val = UNSAFE.getInt(obj, offset);
 
@@ -311,7 +311,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             long val = UNSAFE.getLong(obj, offset);
 
@@ -341,7 +341,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             float val = UNSAFE.getFloat(obj, offset);
 
@@ -371,7 +371,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void write(Object obj, BinaryWriterExImpl writer) throws BinaryObjectException {
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             double val = UNSAFE.getDouble(obj, offset);
 
@@ -413,7 +413,7 @@ public abstract class BinaryFieldAccessor {
             assert obj != null;
             assert writer != null;
 
-            writer.writeFieldId(id);
+            writer.writeFieldIdNoSchemaUpdate(id);
 
             Object val;
 

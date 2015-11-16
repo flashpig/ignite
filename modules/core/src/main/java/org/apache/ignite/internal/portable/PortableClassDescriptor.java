@@ -620,6 +620,8 @@ public class PortableClassDescriptor {
                         for (BinaryFieldAccessor info : fields)
                             info.write(obj, writer);
 
+                        writer.schemaId(stableSchema.schemaId());
+
                         writer.postWrite(userType);
                     }
                     finally {

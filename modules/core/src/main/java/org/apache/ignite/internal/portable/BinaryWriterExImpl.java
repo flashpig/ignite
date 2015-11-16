@@ -94,9 +94,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** */
     private final PortableContext ctx;
 
-    /** */
-    private final int start;
-
     /** Output stream. */
     private final PortableOutputStream out;
 
@@ -105,6 +102,9 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** */
     private int typeId;
+
+    /** */
+    private final int start;
 
     /** Raw offset position. */
     private int rawOffPos;
@@ -1671,7 +1671,28 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     }
 
     /**
-     * @return Current schema ID.
+     * Write field ID without schema ID update. This method should be used when schema ID is stable because class
+     * is seializable.
+     *
+     * @param fieldId Field ID.
+     */
+    public void writeFieldIdNoSchemaUpdate(int fieldId) {
+        int fieldOff = out.position() - start;
+
+        schema.push(fieldId, fieldOff);
+
+        fieldCnt++;
+    }
+
+    /**
+     * @param schemaId Schema ID.
+     */
+    public void schemaId(int schemaId) {
+        this.schemaId = schemaId;
+    }
+
+    /**
+     * @return Schema ID.
      */
     public int schemaId() {
         return schemaId;
