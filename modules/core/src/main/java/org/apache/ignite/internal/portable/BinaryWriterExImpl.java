@@ -125,13 +125,15 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param ctx Context.
      */
     public BinaryWriterExImpl(PortableContext ctx) {
-        BinaryThreadLocalContext tlsCtx = BinaryThreadLocalContext.get();
+        this(ctx, BinaryThreadLocalContext.get());
+    }
 
-        this.ctx = ctx;
-        this.out = new PortableHeapOutputStream(INIT_CAP, tlsCtx.chunk());
-        this.schema = tlsCtx.schemaHolder();
-
-        start = out.position();
+    /**
+     * @param ctx Context.
+     * @param tlsCtx TLS context.
+     */
+    public BinaryWriterExImpl(PortableContext ctx, BinaryThreadLocalContext tlsCtx) {
+        this(ctx, new PortableHeapOutputStream(INIT_CAP, tlsCtx.chunk()), tlsCtx.schemaHolder(), null);
     }
 
     /**

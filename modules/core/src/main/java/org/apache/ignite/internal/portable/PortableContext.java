@@ -574,8 +574,9 @@ public class PortableContext implements Externalizable {
 
         mappers.putIfAbsent(typeId, idMapper);
 
-        metaHnd.addMeta(typeId, new BinaryMetadata(typeId, typeName, desc.fieldsMeta(), null,
-            Collections.singleton(desc.schema())).wrap(this));
+        Collection<PortableSchema> schemas = desc.schema() != null ? Collections.singleton(desc.schema()) : null;
+
+        metaHnd.addMeta(typeId, new BinaryMetadata(typeId, typeName, desc.fieldsMeta(), null, schemas).wrap(this));
 
         return desc;
     }
@@ -783,7 +784,7 @@ public class PortableContext implements Externalizable {
             );
 
             fieldsMeta = desc.fieldsMeta();
-            schemas = Collections.singleton(desc.schema());
+            schemas = desc.schema() != null ? Collections.singleton(desc.schema()) : null;
 
             if (IgniteUtils.detectClassLoader(cls).equals(dfltLdr))
                 userTypes.put(id, desc);
