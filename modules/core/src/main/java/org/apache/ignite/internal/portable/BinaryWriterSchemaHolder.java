@@ -17,6 +17,8 @@
 
 package org.apache.ignite.internal.portable;
 
+import org.apache.ignite.internal.portable.streams.PortableOutputStream;
+
 /**
  * Binary writer schema holder.
  */
@@ -71,14 +73,17 @@ public class BinaryWriterSchemaHolder {
     /**
      * Write collected frames and pop them.
      *
-     * @param writer Writer.
+     * @param out Output stream.
      * @param fieldCnt Count.
      * @param compactFooter Whether footer should be written in compact form.
      * @return Amount of bytes dedicated to each field offset. Could be 1, 2 or 4.
      */
-    public int write(BinaryWriterExImpl writer, int fieldCnt, boolean compactFooter) {
+    public int write(PortableOutputStream out, int fieldCnt, boolean compactFooter) {
         int startIdx = idx - fieldCnt * 2;
         assert startIdx >= 0;
+
+        // Ensure there are at least 8 bytes for each field to allow for unsafe writes.
+        out.unsafeEnsure(fieldCnt << 3);
 
         int lastOffset = data[idx - 1];
 
@@ -87,19 +92,19 @@ public class BinaryWriterSchemaHolder {
         if (compactFooter) {
             if (lastOffset < MAX_OFFSET_1) {
                 for (int curIdx = startIdx + 1; curIdx < idx; curIdx += 2)
-                    writer.writeByte((byte)data[curIdx]);
+                    out.unsafeWriteByte((byte)data[curIdx]);
 
                 res = PortableUtils.OFFSET_1;
             }
             else if (lastOffset < MAX_OFFSET_2) {
                 for (int curIdx = startIdx + 1; curIdx < idx; curIdx += 2)
-                    writer.writeShort((short)data[curIdx]);
+                    out.unsafeWriteShort((short) data[curIdx]);
 
                 res = PortableUtils.OFFSET_2;
             }
             else {
                 for (int curIdx = startIdx + 1; curIdx < idx; curIdx += 2)
-                    writer.writeInt(data[curIdx]);
+                    out.unsafeWriteInt(data[curIdx]);
 
                 res = PortableUtils.OFFSET_4;
             }
@@ -107,24 +112,24 @@ public class BinaryWriterSchemaHolder {
         else {
             if (lastOffset < MAX_OFFSET_1) {
                 for (int curIdx = startIdx; curIdx < idx;) {
-                    writer.writeInt(data[curIdx++]);
-                    writer.writeByte((byte) data[curIdx++]);
+                    out.unsafeWriteInt(data[curIdx++]);
+                    out.unsafeWriteByte((byte) data[curIdx++]);
                 }
 
                 res = PortableUtils.OFFSET_1;
             }
             else if (lastOffset < MAX_OFFSET_2) {
                 for (int curIdx = startIdx; curIdx < idx;) {
-                    writer.writeInt(data[curIdx++]);
-                    writer.writeShort((short)data[curIdx++]);
+                    out.unsafeWriteInt(data[curIdx++]);
+                    out.unsafeWriteShort((short) data[curIdx++]);
                 }
 
                 res = PortableUtils.OFFSET_2;
             }
             else {
                 for (int curIdx = startIdx; curIdx < idx;) {
-                    writer.writeInt(data[curIdx++]);
-                    writer.writeInt(data[curIdx++]);
+                    out.unsafeWriteInt(data[curIdx++]);
+                    out.unsafeWriteInt(data[curIdx++]);
                 }
 
                 res = PortableUtils.OFFSET_4;
