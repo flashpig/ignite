@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import org.apache.ignite.internal.util.typedef.internal.S;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -98,5 +99,10 @@ public class IgniteTxRemoteSingleStateImpl extends IgniteTxRemoteStateAdapter {
     /** {@inheritDoc} */
     @Nullable @Override public IgniteTxEntry singleWrite() {
         return entry;
+    }
+
+    /** {@inheritDoc} */
+    public String toString() {
+        return S.toString(IgniteTxRemoteSingleStateImpl.class, this);
     }
 }

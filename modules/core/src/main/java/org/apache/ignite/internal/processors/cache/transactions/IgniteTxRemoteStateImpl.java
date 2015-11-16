@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.internal.S;
 
 /**
  *
@@ -114,5 +115,10 @@ public class IgniteTxRemoteStateImpl extends IgniteTxRemoteStateAdapter {
     /** {@inheritDoc} */
     @Override public IgniteTxEntry singleWrite() {
         return null;
+    }
+
+    /** {@inheritDoc} */
+    public String toString() {
+        return S.toString(IgniteTxRemoteStateImpl.class, this);
     }
 }

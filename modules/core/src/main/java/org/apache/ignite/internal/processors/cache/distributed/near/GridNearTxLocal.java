@@ -558,6 +558,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
     /**
      * @param map Mapping.
+     * @param entry Entry.
      */
     void addSingleEntryMapping(GridDistributedTxMapping map, IgniteTxEntry entry) {
         ClusterNode n = map.node();
