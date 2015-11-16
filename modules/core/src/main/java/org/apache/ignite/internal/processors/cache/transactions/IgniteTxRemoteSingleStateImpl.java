@@ -31,14 +31,6 @@ public class IgniteTxRemoteSingleStateImpl extends IgniteTxRemoteStateAdapter {
     private IgniteTxEntry entry;
 
     /** {@inheritDoc} */
-    @Override public void setWriteValue(IgniteTxEntry e) {
-        if (entry == null)
-            entry = e;
-        else
-            copyEntry(e, entry);
-    }
-
-    /** {@inheritDoc} */
     @Override public void addWriteEntry(IgniteTxKey key, IgniteTxEntry e) {
         this.entry = e;
     }

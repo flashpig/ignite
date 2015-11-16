@@ -223,11 +223,6 @@ public class GridDhtTxLocal extends GridDhtTxLocalAdapter implements GridCacheMa
     }
 
     /** {@inheritDoc} */
-    @Override protected IgniteUuid nearMiniId() {
-        return nearMiniId;
-    }
-
-    /** {@inheritDoc} */
     @Override public boolean dht() {
         return true;
     }

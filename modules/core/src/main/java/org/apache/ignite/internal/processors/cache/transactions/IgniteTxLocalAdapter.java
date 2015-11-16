@@ -196,7 +196,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
             cctx,
             xidVer,
             implicit,
-            implicitSingle,
             /*local*/true,
             sys,
             plc,

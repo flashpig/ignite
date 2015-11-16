@@ -27,13 +27,13 @@ public interface IgniteTxLocalState extends IgniteTxState {
     public void addEntry(IgniteTxEntry entry);
 
     /**
-     * @param txSize
-     * @return
+     * @param txSize Transaction size.
+     * @return {@code True} if transaction was successfully  started.
      */
     public boolean init(int txSize);
 
     /**
-     * @return
+     * @return {@code True} if init method was called.
      */
     public boolean initialized();
 

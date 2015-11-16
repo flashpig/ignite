@@ -25,11 +25,6 @@ import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
  */
 public interface IgniteTxRemoteEx extends IgniteInternalTx {
     /**
-     * @return Remote thread ID.
-     */
-    public long remoteThreadId();
-
-    /**
      * @param baseVer Base version.
      * @param committedVers Committed version.
      * @param rolledbackVers Rolled back version.
@@ -39,10 +34,4 @@ public interface IgniteTxRemoteEx extends IgniteInternalTx {
         Collection<GridCacheVersion> committedVers,
         Collection<GridCacheVersion> rolledbackVers,
         Collection<GridCacheVersion> pendingVers);
-
-    /**
-     * @param e Sets write value for pessimistic transactions.
-     * @return {@code True} if entry was found.
-     */
-    public boolean setWriteValue(IgniteTxEntry e);
 }

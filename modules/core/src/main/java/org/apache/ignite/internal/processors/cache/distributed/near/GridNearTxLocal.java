@@ -208,13 +208,6 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
     }
 
     /** {@inheritDoc} */
-    @Override protected IgniteUuid nearMiniId() {
-        assert false : "nearMiniId should not be called for colocated transactions.";
-
-        return null;
-    }
-
-    /** {@inheritDoc} */
     @Override protected IgniteInternalFuture<Boolean> addReader(
         long msgId,
         GridDhtCacheEntry cached,

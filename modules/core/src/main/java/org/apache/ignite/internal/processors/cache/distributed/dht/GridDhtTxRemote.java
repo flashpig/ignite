@@ -79,7 +79,6 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
      * @param nearNodeId Near node ID.
      * @param rmtFutId Remote future ID.
      * @param nodeId Node ID.
-     * @param rmtThreadId Remote thread ID.
      * @param topVer Topology version.
      * @param xidVer XID version.
      * @param commitVer Commit version.
@@ -98,7 +97,6 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
         UUID nearNodeId,
         IgniteUuid rmtFutId,
         UUID nodeId,
-        long rmtThreadId,
         AffinityTopologyVersion topVer,
         GridCacheVersion xidVer,
         GridCacheVersion commitVer,
@@ -118,7 +116,6 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
         super(
             ctx,
             nodeId,
-            rmtThreadId,
             xidVer,
             commitVer,
             sys,
@@ -155,7 +152,6 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
      * @param rmtFutId Remote future ID.
      * @param nodeId Node ID.
      * @param nearXidVer Near transaction ID.
-     * @param rmtThreadId Remote thread ID.
      * @param topVer Topology version.
      * @param xidVer XID version.
      * @param commitVer Commit version.
@@ -173,7 +169,6 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
         IgniteUuid rmtFutId,
         UUID nodeId,
         GridCacheVersion nearXidVer,
-        long rmtThreadId,
         AffinityTopologyVersion topVer,
         GridCacheVersion xidVer,
         GridCacheVersion commitVer,
@@ -190,7 +185,6 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
         super(
             ctx,
             nodeId,
-            rmtThreadId,
             xidVer,
             commitVer,
             sys,

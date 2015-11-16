@@ -107,16 +107,4 @@ public abstract class IgniteTxRemoteStateAdapter implements IgniteTxRemoteState 
     @Override public void onTxEnd(GridCacheSharedContext cctx, IgniteInternalTx tx, boolean commit) {
         assert false;
     }
-
-    protected final void copyEntry(IgniteTxEntry e, IgniteTxEntry entry) {
-        entry.value(e.value(), e.hasWriteValue(), e.hasReadValue());
-        entry.entryProcessors(e.entryProcessors());
-        entry.op(e.op());
-        entry.ttl(e.ttl());
-        entry.explicitVersion(e.explicitVersion());
-
-        // Conflict resolution stuff.
-        entry.conflictVersion(e.conflictVersion());
-        entry.conflictExpireTime(e.conflictExpireTime());
-    }
 }

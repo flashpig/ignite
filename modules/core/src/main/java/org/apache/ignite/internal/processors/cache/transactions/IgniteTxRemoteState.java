@@ -22,11 +22,6 @@ package org.apache.ignite.internal.processors.cache.transactions;
  */
 public interface IgniteTxRemoteState extends IgniteTxState {
     /**
-     * @param e Entry.
-     */
-    public void setWriteValue(IgniteTxEntry e);
-
-    /**
      * @param key Key.
      * @param e Entry.
      */

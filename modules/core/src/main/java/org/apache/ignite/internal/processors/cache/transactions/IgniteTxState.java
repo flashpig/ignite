@@ -34,40 +34,42 @@ import org.jetbrains.annotations.Nullable;
 public interface IgniteTxState {
     /**
      *
-     * @return
+     * @return Flag indicating whether transaction is implicit with only one key.
      */
     public boolean implicitSingle();
 
     /**
-     *
-     * @return
+     * @return First tx cache id.
      */
     @Nullable public Integer firstCacheId();
 
-    @Nullable GridCacheContext singleCacheContext(GridCacheSharedContext cctx);
+    /**
+     * @param cctx Context.
+     * @return cctx Non-null cache context if tx has only one active cache.
+     */
+    @Nullable public GridCacheContext singleCacheContext(GridCacheSharedContext cctx);
 
     /**
-     *
-     * @param cctx
+     * @param cctx Awaits for previous async operations on active caches to be completed.
      */
     public void awaitLastFut(GridCacheSharedContext cctx);
 
     /**
      * @param cctx Context.
      * @param topFut Topology future.
-     * @return
+     * @return Error if validation failed.
      */
     public IgniteCheckedException validateTopology(GridCacheSharedContext cctx, GridDhtTopologyFuture topFut);
 
     /**
      * @param cctx Context.
-     * @return
+     * @return {@code True} if transaction is fully synchronous.
      */
     public boolean sync(GridCacheSharedContext cctx);
 
     /**
      * @param cctx Context.
-     * @return
+     * @return {@code True} is tx has active near cache.
      */
     public boolean hasNearCache(GridCacheSharedContext cctx);
 
@@ -80,8 +82,8 @@ public interface IgniteTxState {
 
     /**
      * @param cctx Context.
-     * @param fut
-     * @return
+     * @param fut Future to finish with error if some cache is stopping.
+     * @return Topology future.
      */
     public GridDhtTopologyFuture topologyReadLock(GridCacheSharedContext cctx, GridFutureAdapter<?> fut);
 
@@ -92,13 +94,14 @@ public interface IgniteTxState {
 
     /**
      * @param cctx Context.
-     * @return
+     * @return {@code True} if transaction is allowed to use store and transactions spans one or more caches with
+     *      store enabled.
      */
     public boolean storeUsed(GridCacheSharedContext cctx);
 
     /**
      * @param cctx Context.
-     * @return
+     * @return Configured stores for active caches.
      */
     public Collection<CacheStoreManager> stores(GridCacheSharedContext cctx);
 
@@ -117,7 +120,7 @@ public interface IgniteTxState {
 
     /**
      * @param key Key.
-     * @return
+     * @return {@code True} if tx has write key.
      */
     public boolean hasWriteKey(IgniteTxKey key);
 

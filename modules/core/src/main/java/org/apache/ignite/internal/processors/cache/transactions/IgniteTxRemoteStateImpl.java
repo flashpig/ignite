@@ -96,30 +96,6 @@ public class IgniteTxRemoteStateImpl extends IgniteTxRemoteStateAdapter {
     }
 
     /** {@inheritDoc} */
-    public void setWriteValue(IgniteTxEntry e) {
-        IgniteTxEntry entry = writeMap.get(e.txKey());
-
-        if (entry == null) {
-            IgniteTxEntry rmv = readMap.remove(e.txKey());
-
-            if (rmv != null) {
-                e.cached(rmv.cached());
-
-                writeMap.put(e.txKey(), e);
-            }
-            // If lock is explicit.
-            else {
-                e.cached(e.context().cache().entryEx(e.key()));
-
-                // explicit lock.
-                writeMap.put(e.txKey(), e);
-            }
-        }
-        else
-            copyEntry(e, entry);
-    }
-
-    /** {@inheritDoc} */
     public void addWriteEntry(IgniteTxKey key, IgniteTxEntry e) {
         writeMap.put(key, e);
     }

@@ -87,10 +87,6 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     /** */
     private static final long serialVersionUID = 0L;
 
-    /** Remote thread ID. */
-    @GridToStringInclude
-    private long rmtThreadId;
-
     /** Explicit versions. */
     @GridToStringInclude
     private List<GridCacheVersion> explicitVers;
@@ -117,7 +113,6 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     /**
      * @param ctx Cache registry.
      * @param nodeId Node ID.
-     * @param rmtThreadId Remote thread ID.
      * @param xidVer XID version.
      * @param commitVer Commit version.
      * @param sys System flag.
@@ -133,7 +128,6 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     public GridDistributedTxRemoteAdapter(
         GridCacheSharedContext<?, ?> ctx,
         UUID nodeId,
-        long rmtThreadId,
         GridCacheVersion xidVer,
         GridCacheVersion commitVer,
         boolean sys,
@@ -161,7 +155,6 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
             subjId,
             taskNameHash);
 
-        this.rmtThreadId = rmtThreadId;
         this.invalidate = invalidate;
 
         commitVersion(commitVer);
@@ -328,27 +321,6 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     /** {@inheritDoc} */
     @Override public boolean isStarted() {
         return started;
-    }
-
-    /**
-     * @return Remote node thread ID.
-     */
-    @Override public long remoteThreadId() {
-        return rmtThreadId;
-    }
-
-    /**
-     * @param e Transaction entry to set.
-     * @return {@code True} if value was set.
-     */
-    @Override public boolean setWriteValue(IgniteTxEntry e) {
-        checkInternal(e.txKey());
-
-        txState.setWriteValue(e);
-
-        addExplicit(e);
-
-        return true;
     }
 
     /** {@inheritDoc} */

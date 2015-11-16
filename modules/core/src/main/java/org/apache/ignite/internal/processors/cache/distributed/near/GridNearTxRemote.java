@@ -76,7 +76,6 @@ public class GridNearTxRemote extends GridDistributedTxRemoteAdapter {
      * @param ldr Class loader.
      * @param nodeId Node ID.
      * @param nearNodeId Near node ID.
-     * @param rmtThreadId Remote thread ID.
      * @param xidVer XID version.
      * @param commitVer Commit version.
      * @param sys System flag.
@@ -94,7 +93,6 @@ public class GridNearTxRemote extends GridDistributedTxRemoteAdapter {
         ClassLoader ldr,
         UUID nodeId,
         UUID nearNodeId,
-        long rmtThreadId,
         GridCacheVersion xidVer,
         GridCacheVersion commitVer,
         boolean sys,
@@ -111,8 +109,7 @@ public class GridNearTxRemote extends GridDistributedTxRemoteAdapter {
         super(
             ctx, 
             nodeId, 
-            rmtThreadId, 
-            xidVer, 
+            xidVer,
             commitVer, 
             sys, 
             plc, 
@@ -149,7 +146,6 @@ public class GridNearTxRemote extends GridDistributedTxRemoteAdapter {
      * @param nodeId Node ID.
      * @param nearNodeId Near node ID.
      * @param nearXidVer Near transaction ID.
-     * @param rmtThreadId Remote thread ID.
      * @param xidVer XID version.
      * @param commitVer Commit version.
      * @param sys System flag.
@@ -165,7 +161,6 @@ public class GridNearTxRemote extends GridDistributedTxRemoteAdapter {
         UUID nodeId,
         UUID nearNodeId,
         GridCacheVersion nearXidVer,
-        long rmtThreadId,
         GridCacheVersion xidVer,
         GridCacheVersion commitVer,
         boolean sys,
@@ -181,8 +176,7 @@ public class GridNearTxRemote extends GridDistributedTxRemoteAdapter {
         super(
             ctx, 
             nodeId, 
-            rmtThreadId, 
-            xidVer, 
+            xidVer,
             commitVer,
             sys,
             plc,

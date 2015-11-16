@@ -256,7 +256,6 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
      * @param cctx Cache registry.
      * @param xidVer Transaction ID.
      * @param implicit Implicit flag.
-     * @param implicitSingle Implicit with one key flag.
      * @param loc Local flag.
      * @param sys System transaction flag.
      * @param plc IO policy.
@@ -269,7 +268,6 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
         GridCacheSharedContext<?, ?> cctx,
         GridCacheVersion xidVer,
         boolean implicit,
-        boolean implicitSingle,
         boolean loc,
         boolean sys,
         byte plc,
@@ -414,7 +412,6 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
     /** {@inheritDoc} */
     @Override public boolean storeUsed() {
         return storeEnabled() && txState().storeUsed(cctx);
-
     }
 
     /**
