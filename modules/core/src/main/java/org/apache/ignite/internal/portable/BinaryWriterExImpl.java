@@ -68,7 +68,6 @@ import static org.apache.ignite.internal.portable.GridPortableMarshaller.LONG_AR
 import static org.apache.ignite.internal.portable.GridPortableMarshaller.MAP;
 import static org.apache.ignite.internal.portable.GridPortableMarshaller.MAP_ENTRY;
 import static org.apache.ignite.internal.portable.GridPortableMarshaller.NULL;
-import static org.apache.ignite.internal.portable.GridPortableMarshaller.OBJ;
 import static org.apache.ignite.internal.portable.GridPortableMarshaller.OBJ_ARR;
 import static org.apache.ignite.internal.portable.GridPortableMarshaller.OPTM_MARSH;
 import static org.apache.ignite.internal.portable.GridPortableMarshaller.PORTABLE_OBJ;
@@ -115,12 +114,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** Raw offset position. */
     private int rawOffPos;
-
-    /** */
-    private boolean metaEnabled;
-
-    /** */
-    private int metaHashSum;
 
     /** Handles. */
     private Map<Object, Integer> handles;
@@ -170,11 +163,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param ctx Context.
      * @param typeId Type ID.
      */
-    public BinaryWriterExImpl(PortableContext ctx, int typeId, boolean metaEnabled) {
+    public BinaryWriterExImpl(PortableContext ctx, int typeId) {
         this(ctx);
 
         this.typeId = typeId;
-        this.metaEnabled = metaEnabled;
     }
 
     /**
@@ -211,13 +203,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     @Override public void close() {
         out.close();
-    }
-
-    /**
-     * @return Meta data hash sum or {@code null} if meta data is disabled.
-     */
-    @Nullable Integer metaDataHashSum() {
-        return metaEnabled ? metaHashSum : null;
     }
 
     /**
@@ -292,7 +277,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         }
 
         typeId = desc.typeId();
-        metaEnabled = desc.userType();
 
         desc.write(obj, this);
     }
@@ -1315,7 +1299,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeByte(String fieldName, byte val) throws BinaryObjectException {
-        writeFieldId(fieldName, BYTE);
+        writeFieldId(fieldName);
         writeByteField(val);
     }
 
@@ -1326,7 +1310,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeShort(String fieldName, short val) throws BinaryObjectException {
-        writeFieldId(fieldName, SHORT);
+        writeFieldId(fieldName);
         writeShortField(val);
     }
 
@@ -1337,7 +1321,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeInt(String fieldName, int val) throws BinaryObjectException {
-        writeFieldId(fieldName, INT);
+        writeFieldId(fieldName);
         writeIntField(val);
     }
 
@@ -1348,7 +1332,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeLong(String fieldName, long val) throws BinaryObjectException {
-        writeFieldId(fieldName, LONG);
+        writeFieldId(fieldName);
         writeLongField(val);
     }
 
@@ -1359,7 +1343,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeFloat(String fieldName, float val) throws BinaryObjectException {
-        writeFieldId(fieldName, FLOAT);
+        writeFieldId(fieldName);
         writeFloatField(val);
     }
 
@@ -1370,7 +1354,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeDouble(String fieldName, double val) throws BinaryObjectException {
-        writeFieldId(fieldName, DOUBLE);
+        writeFieldId(fieldName);
         writeDoubleField(val);
     }
 
@@ -1381,7 +1365,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeChar(String fieldName, char val) throws BinaryObjectException {
-        writeFieldId(fieldName, CHAR);
+        writeFieldId(fieldName);
         writeCharField(val);
     }
 
@@ -1392,7 +1376,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeBoolean(String fieldName, boolean val) throws BinaryObjectException {
-        writeFieldId(fieldName, BOOLEAN);
+        writeFieldId(fieldName);
         writeBooleanField(val);
     }
 
@@ -1403,7 +1387,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeDecimal(String fieldName, @Nullable BigDecimal val) throws BinaryObjectException {
-        writeFieldId(fieldName, DECIMAL);
+        writeFieldId(fieldName);
         writeDecimalField(val);
     }
 
@@ -1414,7 +1398,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeString(String fieldName, @Nullable String val) throws BinaryObjectException {
-        writeFieldId(fieldName, STRING);
+        writeFieldId(fieldName);
         writeStringField(val);
     }
 
@@ -1425,7 +1409,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeUuid(String fieldName, @Nullable UUID val) throws BinaryObjectException {
-        writeFieldId(fieldName, UUID);
+        writeFieldId(fieldName);
         writeUuidField(val);
     }
 
@@ -1436,7 +1420,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeDate(String fieldName, @Nullable Date val) throws BinaryObjectException {
-        writeFieldId(fieldName, DATE);
+        writeFieldId(fieldName);
         writeDateField(val);
     }
 
@@ -1447,7 +1431,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeTimestamp(String fieldName, @Nullable Timestamp val) throws BinaryObjectException {
-        writeFieldId(fieldName, TIMESTAMP);
+        writeFieldId(fieldName);
         writeTimestampField(val);
     }
 
@@ -1458,7 +1442,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeObject(String fieldName, @Nullable Object obj) throws BinaryObjectException {
-        writeFieldId(fieldName, OBJ);
+        writeFieldId(fieldName);
         writeObjectField(obj);
     }
 
@@ -1481,7 +1465,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeByteArray(String fieldName, @Nullable byte[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, BYTE_ARR);
+        writeFieldId(fieldName);
         writeByteArrayField(val);
     }
 
@@ -1492,7 +1476,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeShortArray(String fieldName, @Nullable short[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, SHORT_ARR);
+        writeFieldId(fieldName);
         writeShortArrayField(val);
     }
 
@@ -1503,7 +1487,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeIntArray(String fieldName, @Nullable int[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, INT_ARR);
+        writeFieldId(fieldName);
         writeIntArrayField(val);
     }
 
@@ -1514,7 +1498,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeLongArray(String fieldName, @Nullable long[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, LONG_ARR);
+        writeFieldId(fieldName);
         writeLongArrayField(val);
     }
 
@@ -1525,7 +1509,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeFloatArray(String fieldName, @Nullable float[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, FLOAT_ARR);
+        writeFieldId(fieldName);
         writeFloatArrayField(val);
     }
 
@@ -1537,7 +1521,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** {@inheritDoc} */
     @Override public void writeDoubleArray(String fieldName, @Nullable double[] val)
         throws BinaryObjectException {
-        writeFieldId(fieldName, DOUBLE_ARR);
+        writeFieldId(fieldName);
         writeDoubleArrayField(val);
     }
 
@@ -1548,7 +1532,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeCharArray(String fieldName, @Nullable char[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, CHAR_ARR);
+        writeFieldId(fieldName);
         writeCharArrayField(val);
     }
 
@@ -1560,7 +1544,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** {@inheritDoc} */
     @Override public void writeBooleanArray(String fieldName, @Nullable boolean[] val)
         throws BinaryObjectException {
-        writeFieldId(fieldName, BOOLEAN_ARR);
+        writeFieldId(fieldName);
         writeBooleanArrayField(val);
     }
 
@@ -1572,7 +1556,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** {@inheritDoc} */
     @Override public void writeDecimalArray(String fieldName, @Nullable BigDecimal[] val)
         throws BinaryObjectException {
-        writeFieldId(fieldName, DECIMAL_ARR);
+        writeFieldId(fieldName);
         writeDecimalArrayField(val);
     }
 
@@ -1584,7 +1568,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** {@inheritDoc} */
     @Override public void writeStringArray(String fieldName, @Nullable String[] val)
         throws BinaryObjectException {
-        writeFieldId(fieldName, STRING_ARR);
+        writeFieldId(fieldName);
         writeStringArrayField(val);
     }
 
@@ -1595,7 +1579,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeUuidArray(String fieldName, @Nullable UUID[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, UUID_ARR);
+        writeFieldId(fieldName);
         writeUuidArrayField(val);
     }
 
@@ -1606,7 +1590,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeDateArray(String fieldName, @Nullable Date[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, DATE_ARR);
+        writeFieldId(fieldName);
         writeDateArrayField(val);
     }
 
@@ -1617,7 +1601,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeTimestampArray(String fieldName, @Nullable Timestamp[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, TIMESTAMP_ARR);
+        writeFieldId(fieldName);
         writeTimestampArrayField(val);
     }
 
@@ -1628,7 +1612,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
      /** {@inheritDoc} */
     @Override public void writeObjectArray(String fieldName, @Nullable Object[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, OBJ_ARR);
+        writeFieldId(fieldName);
         writeObjectArrayField(val);
     }
 
@@ -1640,7 +1624,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** {@inheritDoc} */
     @Override public <T> void writeCollection(String fieldName, @Nullable Collection<T> col)
         throws BinaryObjectException {
-        writeFieldId(fieldName, COL);
+        writeFieldId(fieldName);
         writeCollectionField(col);
     }
 
@@ -1652,7 +1636,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** {@inheritDoc} */
     @Override public <K, V> void writeMap(String fieldName, @Nullable Map<K, V> map)
         throws BinaryObjectException {
-        writeFieldId(fieldName, MAP);
+        writeFieldId(fieldName);
         writeMapField(map);
     }
 
@@ -1663,7 +1647,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public <T extends Enum<?>> void writeEnum(String fieldName, T val) throws BinaryObjectException {
-        writeFieldId(fieldName, ENUM);
+        writeFieldId(fieldName);
         writeEnumField(val);
     }
 
@@ -1674,7 +1658,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public <T extends Enum<?>> void writeEnumArray(String fieldName, T[] val) throws BinaryObjectException {
-        writeFieldId(fieldName, ENUM_ARR);
+        writeFieldId(fieldName);
         writeEnumArrayField(val);
     }
 
@@ -1763,7 +1747,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param fieldName Field name.
      * @throws org.apache.ignite.binary.BinaryObjectException If fields are not allowed.
      */
-    private void writeFieldId(String fieldName, byte fieldType) throws BinaryObjectException {
+    private void writeFieldId(String fieldName) throws BinaryObjectException {
         A.notNull(fieldName, "fieldName");
 
         if (rawOffPos != 0)
@@ -1776,9 +1760,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         int id = idMapper.fieldId(typeId, fieldName);
 
         writeFieldId(id);
-
-        if (metaEnabled)
-            metaHashSum = 31 * metaHashSum + (id + fieldType);
     }
 
     /**
@@ -1789,7 +1770,9 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         int fieldOff = out.position() - start;
 
         // Advance schema hash.
-        schemaId = PortableUtils.updateSchemaId(schemaId, fieldId)        schema.push(fieldId, fieldOff);
+        schemaId = PortableUtils.updateSchemaId(schemaId, fieldId);
+
+        schema.push(fieldId, fieldOff);
 
         fieldCnt++;
     }

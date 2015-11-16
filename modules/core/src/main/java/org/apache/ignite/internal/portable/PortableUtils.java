@@ -988,7 +988,8 @@ public class PortableUtils {
         else if (cls == Timestamp[].class)
             return PortableClassDescriptor.Mode.TIMESTAMP_ARR;
         else if (cls.isArray())
-            return cls.getComponentType().isEnum() ? PortableClassDescriptor.Mode.ENUM_ARR : PortableClassDescriptor.Mode.OBJ_ARR;
+            return cls.getComponentType().isEnum() ?
+                PortableClassDescriptor.Mode.ENUM_ARR : PortableClassDescriptor.Mode.OBJECT_ARR;
         else if (cls == BinaryObjectImpl.class)
             return PortableClassDescriptor.Mode.PORTABLE_OBJ;
         else if (Binarylizable.class.isAssignableFrom(cls))

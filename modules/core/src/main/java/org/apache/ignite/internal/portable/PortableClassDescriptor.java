@@ -226,7 +226,7 @@ public class PortableClassDescriptor {
             case OBJECT:
                 ctor = constructor(cls);
                 ArrayList<BinaryFieldAccessor> fields0 = new ArrayList<>();
-                fieldsMeta = metaDataEnabled ? new HashMap<String, String>() : null;
+                stableFieldsMeta = metaDataEnabled ? new HashMap<String, Integer>() : null;
 
                 PortableSchema.Builder schemaBuilder = PortableSchema.Builder.newBuilder();
 

@@ -555,7 +555,7 @@ public abstract class BinaryFieldAccessor {
 
                     break;
 
-                case OBJ_ARR:
+                case OBJECT_ARR:
                     writer.writeObjectArrayField((Object[])val);
 
                     break;
@@ -742,7 +742,7 @@ public abstract class BinaryFieldAccessor {
 
                     break;
 
-                case OBJ_ARR:
+                case OBJECT_ARR:
                     val = reader.readObjectArray(id);
 
                     break;
