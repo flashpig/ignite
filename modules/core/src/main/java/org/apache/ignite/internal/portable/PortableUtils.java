@@ -674,13 +674,12 @@ public class PortableUtils {
     public static int writeHeader(BinaryWriterExImpl writer, int typeId, int hashCode, @Nullable String clsName) {
         PortableOutputStream out = writer.out();
 
-        out.writeByte(GridPortableMarshaller.OBJ);
-        out.writeByte(GridPortableMarshaller.PROTO_VER);
-
-        out.writeShort((short) 0);
-
-        out.writeInt(typeId);
-        out.writeInt(hashCode);
+        out.unsafeEnsure(12);
+        out.unsafeWriteByte(GridPortableMarshaller.OBJ);
+        out.unsafeWriteByte(GridPortableMarshaller.PROTO_VER);
+        out.unsafeWriteShort((short) 0);
+        out.unsafeWriteInt(typeId);
+        out.unsafeWriteInt(hashCode);
 
         int reserved = writer.reserve(12);
 

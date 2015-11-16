@@ -297,10 +297,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             flags |= PortableUtils.FLAG_HAS_SCHEMA;
 
             // Write schema ID.
-            out.writeInt(start + SCHEMA_ID_POS, schemaId);
+            out.unsafeWriteInt(start + SCHEMA_ID_POS, schemaId);
 
             // Write schema offset.
-            out.writeInt(start + SCHEMA_OR_RAW_OFF_POS, out.position() - start);
+            out.unsafeWriteInt(start + SCHEMA_OR_RAW_OFF_POS, out.position() - start);
 
             // Write the schema.
             int offsetByteCnt = schema.write(this, fieldCnt, useCompactFooter);
@@ -322,17 +322,17 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
                 // If there are no schema, we are free to write raw offset to schema offset.
                 flags |= PortableUtils.FLAG_HAS_RAW;
 
-                out.writeInt(start + SCHEMA_OR_RAW_OFF_POS, rawOffPos - start);
+                out.unsafeWriteInt(start + SCHEMA_OR_RAW_OFF_POS, rawOffPos - start);
             }
             else
-                out.writeInt(start + SCHEMA_OR_RAW_OFF_POS, 0);
+                out.unsafeWriteInt(start + SCHEMA_OR_RAW_OFF_POS, 0);
         }
 
         // Write flags.
-        out.writeShort(start + FLAGS_POS, flags);
+        out.unsafeWriteShort(start + FLAGS_POS, flags);
 
         // Write length.
-        out.writeInt(start + TOTAL_LEN_POS, out.position() - start);
+        out.unsafeWriteInt(start + TOTAL_LEN_POS, out.position() - start);
     }
 
     /**
@@ -396,11 +396,12 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (val == null)
             out.writeByte(NULL);
         else {
-            out.writeByte(STRING);
-
             byte[] strArr = val.getBytes(UTF_8);
 
-            out.writeInt(strArr.length);
+            out.unsafeEnsure(1 + 4);
+            out.unsafeWriteByte(STRING);
+            out.unsafeWriteInt(strArr.length);
+
             out.writeByteArray(strArr);
         }
     }
@@ -412,9 +413,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (uuid == null)
             out.writeByte(NULL);
         else {
-            out.writeByte(UUID);
-            out.writeLong(uuid.getMostSignificantBits());
-            out.writeLong(uuid.getLeastSignificantBits());
+            out.unsafeEnsure(1 + 8 + 8);
+            out.unsafeWriteByte(UUID);
+            out.unsafeWriteLong(uuid.getMostSignificantBits());
+            out.unsafeWriteLong(uuid.getLeastSignificantBits());
         }
     }
 
@@ -425,8 +427,9 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (date == null)
             out.writeByte(NULL);
         else {
-            out.writeByte(DATE);
-            out.writeLong(date.getTime());
+            out.unsafeEnsure(1 + 8);
+            out.unsafeWriteByte(DATE);
+            out.unsafeWriteLong(date.getTime());
         }
     }
 
@@ -437,9 +440,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (ts== null)
             out.writeByte(NULL);
         else {
-            out.writeByte(TIMESTAMP);
-            out.writeLong(ts.getTime());
-            out.writeInt(ts.getNanos() % 1000000);
+            out.unsafeEnsure(1 + 8 + 4);
+            out.unsafeWriteByte(TIMESTAMP);
+            out.unsafeWriteLong(ts.getTime());
+            out.unsafeWriteInt(ts.getNanos() % 1000000);
         }
     }
 
@@ -469,8 +473,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             if (tryWriteAsHandle(val))
                 return;
 
-            out.writeByte(BYTE_ARR);
-            out.writeInt(val.length);
+            out.unsafeEnsure(1 + 4);
+            out.unsafeWriteByte(BYTE_ARR);
+            out.unsafeWriteInt(val.length);
+
             out.writeByteArray(val);
         }
     }
@@ -565,8 +571,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             if (tryWriteAsHandle(val))
                 return;
 
-            out.writeByte(CHAR_ARR);
-            out.writeInt(val.length);
+            out.unsafeEnsure(1 + 4);
+            out.unsafeWriteByte(CHAR_ARR);
+            out.unsafeWriteInt(val.length);
+
             out.writeCharArray(val);
         }
     }
@@ -581,8 +589,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             if (tryWriteAsHandle(val))
                 return;
 
-            out.writeByte(BOOLEAN_ARR);
-            out.writeInt(val.length);
+            out.unsafeEnsure(1 + 4);
+            out.unsafeWriteByte(BOOLEAN_ARR);
+            out.unsafeWriteInt(val.length);
+
             out.writeBooleanArray(val);
         }
     }
@@ -717,9 +727,11 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             if (tryWriteAsHandle(col))
                 return;
 
-            out.writeByte(COL);
-            out.writeInt(col.size());
-            out.writeByte(ctx.collectionType(col.getClass()));
+            out.unsafeEnsure(1 + 4 + 1);
+
+            out.unsafeWriteByte(COL);
+            out.unsafeWriteInt(col.size());
+            out.unsafeWriteByte(ctx.collectionType(col.getClass()));
 
             for (Object obj : col)
                 doWriteObject(obj);
@@ -855,8 +867,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeByteFieldPrimitive(byte val) {
-        out.writeByte(BYTE);
-        out.writeByte(val);
+        out.unsafeEnsure(1 + 1);
+
+        out.unsafeWriteByte(BYTE);
+        out.unsafeWriteByte(val);
     }
 
     /**
@@ -880,8 +894,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeShortFieldPrimitive(short val) {
-        out.writeByte(SHORT);
-        out.writeShort(val);
+        out.unsafeEnsure(1 + 2);
+
+        out.unsafeWriteByte(SHORT);
+        out.unsafeWriteShort(val);
     }
 
     /**
@@ -898,8 +914,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeIntFieldPrimitive(int val) {
-        out.writeByte(INT);
-        out.writeInt(val);
+        out.unsafeEnsure(1 + 4);
+
+        out.unsafeWriteByte(INT);
+        out.unsafeWriteInt(val);
     }
 
     /**
@@ -916,8 +934,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeLongFieldPrimitive(long val) {
-        out.writeByte(LONG);
-        out.writeLong(val);
+        out.unsafeEnsure(1 + 8);
+
+        out.unsafeWriteByte(LONG);
+        out.unsafeWriteLong(val);
     }
 
     /**
@@ -934,8 +954,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeFloatFieldPrimitive(float val) {
-        out.writeByte(FLOAT);
-        out.writeFloat(val);
+        out.unsafeEnsure(1 + 4);
+
+        out.unsafeWriteByte(FLOAT);
+        out.unsafeWriteFloat(val);
     }
 
     /**
@@ -952,8 +974,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeDoubleFieldPrimitive(double val) {
-        out.writeByte(DOUBLE);
-        out.writeDouble(val);
+        out.unsafeEnsure(1 + 8);
+
+        out.unsafeWriteByte(DOUBLE);
+        out.unsafeWriteDouble(val);
     }
 
     /**
@@ -970,8 +994,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeCharFieldPrimitive(char val) {
-        out.writeByte(CHAR);
-        out.writeChar(val);
+        out.unsafeEnsure(1 + 2);
+
+        out.unsafeWriteByte(CHAR);
+        out.unsafeWriteChar(val);
     }
 
     /**
@@ -988,8 +1014,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeBooleanFieldPrimitive(boolean val) {
-        out.writeByte(BOOLEAN);
-        out.writeBoolean(val);
+        out.unsafeEnsure(1 + 1);
+
+        out.unsafeWriteByte(BOOLEAN);
+        out.unsafeWriteBoolean(val);
     }
 
     /**

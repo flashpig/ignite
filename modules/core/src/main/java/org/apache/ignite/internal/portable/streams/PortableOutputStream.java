@@ -188,12 +188,33 @@ public interface PortableOutputStream extends PortableStream, AutoCloseable {
     public void unsafeStop(int pos);
 
     /**
+     * Ensure capacity for unsafe writes.
+     *
+     * @param cap Capacity.
+     */
+    public void unsafeEnsure(int cap);
+
+    /**
+     * Write byte in unsafe mode.
+     *
+     * @param val Value.
+     */
+    public void unsafeWriteByte(byte val);
+
+    /**
      * Write byte in unsafe mode.
      *
      * @param pos Position.
      * @param val Value.
      */
     public void unsafeWriteByte(int pos, byte val);
+
+    /**
+     * Write boolean in unsafe mode.
+     *
+     * @param val Value.
+     */
+    public void unsafeWriteBoolean(boolean val);
 
     /**
      * Write boolean in unsafe mode.
@@ -206,10 +227,24 @@ public interface PortableOutputStream extends PortableStream, AutoCloseable {
     /**
      * Write short in unsafe mode.
      *
+     * @param val Value.
+     */
+    public void unsafeWriteShort(short val);
+
+    /**
+     * Write short in unsafe mode.
+     *
      * @param pos Position.
      * @param val Value.
      */
     public void unsafeWriteShort(int pos, short val);
+
+    /**
+     * Write char in unsafe mode.
+     *
+     * @param val Value.
+     */
+    public void unsafeWriteChar(char val);
 
     /**
      * Write char in unsafe mode.
@@ -222,10 +257,24 @@ public interface PortableOutputStream extends PortableStream, AutoCloseable {
     /**
      * Write int in unsafe mode.
      *
+     * @param val Value.
+     */
+    public void unsafeWriteInt(int val);
+
+    /**
+     * Write int in unsafe mode.
+     *
      * @param pos Position.
      * @param val Value.
      */
     public void unsafeWriteInt(int pos, int val);
+
+    /**
+     * Write long in unsafe mode.
+     *
+     * @param val Value.
+     */
+    public void unsafeWriteLong(long val);
 
     /**
      * Write long in unsafe mode.
@@ -238,10 +287,24 @@ public interface PortableOutputStream extends PortableStream, AutoCloseable {
     /**
      * Write float in unsafe mode.
      *
+     * @param val Value.
+     */
+    public void unsafeWriteFloat(float val);
+
+    /**
+     * Write float in unsafe mode.
+     *
      * @param pos Position.
      * @param val Value.
      */
     public void unsafeWriteFloat(int pos, float val);
+
+    /**
+     * Write double in unsafe mode.
+     *
+     * @param val Value.
+     */
+    public void unsafeWriteDouble(double val);
 
     /**
      * Write double in unsafe mode.

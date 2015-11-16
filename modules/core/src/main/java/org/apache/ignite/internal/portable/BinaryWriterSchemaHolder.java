@@ -78,7 +78,6 @@ public class BinaryWriterSchemaHolder {
      */
     public int write(BinaryWriterExImpl writer, int fieldCnt, boolean compactFooter) {
         int startIdx = idx - fieldCnt * 2;
-
         assert startIdx >= 0;
 
         int lastOffset = data[idx - 1];

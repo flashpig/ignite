@@ -224,7 +224,7 @@ public class PlatformOutputStreamImpl implements PlatformOutputStream {
 
     /** {@inheritDoc} */
     @Override public int unsafeStart(int cap) {
-        ensureCapacity(pos + cap);
+        unsafeEnsure(cap);
 
         return pos;
     }
@@ -234,13 +234,36 @@ public class PlatformOutputStreamImpl implements PlatformOutputStream {
         position(pos);
     }
 
+    /** {@inheritDoc} */
+    @Override public void unsafeEnsure(int cap) {
+        ensureCapacity(pos + cap);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteByte(byte val) {
+        UNSAFE.putByte(data + pos++, val);
+    }
+
+    /** {@inheritDoc} */
     @Override public void unsafeWriteByte(int pos, byte val) {
         UNSAFE.putByte(data + pos, val);
     }
 
     /** {@inheritDoc} */
+    @Override public void unsafeWriteBoolean(boolean val) {
+        unsafeWriteByte(val ? (byte) 1 : (byte) 0);
+    }
+
+    /** {@inheritDoc} */
     @Override public void unsafeWriteBoolean(int pos, boolean val) {
-        unsafeWriteByte(pos, val ? (byte)1 : (byte)0);
+        unsafeWriteByte(pos, val ? (byte) 1 : (byte) 0);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteShort(short val) {
+        UNSAFE.putShort(data + pos, val);
+
+        shift(2);
     }
 
     /** {@inheritDoc} */
@@ -249,8 +272,22 @@ public class PlatformOutputStreamImpl implements PlatformOutputStream {
     }
 
     /** {@inheritDoc} */
+    @Override public void unsafeWriteChar(char val) {
+        UNSAFE.putChar(data + pos, val);
+
+        shift(2);
+    }
+
+    /** {@inheritDoc} */
     @Override public void unsafeWriteChar(int pos, char val) {
         UNSAFE.putChar(data + pos, val);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteInt(int val) {
+        UNSAFE.putInt(data + pos, val);
+
+        shift(4);
     }
 
     /** {@inheritDoc} */
@@ -259,13 +296,30 @@ public class PlatformOutputStreamImpl implements PlatformOutputStream {
     }
 
     /** {@inheritDoc} */
+    @Override public void unsafeWriteLong(long val) {
+        UNSAFE.putLong(data + pos, val);
+
+        shift(8);
+    }
+
+    /** {@inheritDoc} */
     @Override public void unsafeWriteLong(int pos, long val) {
         UNSAFE.putLong(data + pos, val);
     }
 
     /** {@inheritDoc} */
+    @Override public void unsafeWriteFloat(float val) {
+        unsafeWriteInt(Float.floatToIntBits(val));
+    }
+
+    /** {@inheritDoc} */
     @Override public void unsafeWriteFloat(int pos, float val) {
         unsafeWriteInt(pos, Float.floatToIntBits(val));
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteDouble(double val) {
+        unsafeWriteLong(Double.doubleToLongBits(val));
     }
 
     /** {@inheritDoc} */
