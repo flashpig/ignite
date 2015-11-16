@@ -19,6 +19,7 @@ package org.apache.ignite.internal.portable;
 
 import org.apache.ignite.binary.Binarylizable;
 import org.apache.ignite.internal.portable.builder.PortableLazyValue;
+import org.apache.ignite.internal.portable.streams.PortableOutputStream;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
@@ -671,13 +672,15 @@ public class PortableUtils {
      * @return Position where length should be written.
      */
     public static int writeHeader(BinaryWriterExImpl writer, int typeId, int hashCode, @Nullable String clsName) {
-        writer.doWriteByte(GridPortableMarshaller.OBJ);
-        writer.doWriteByte(GridPortableMarshaller.PROTO_VER);
+        PortableOutputStream out = writer.out();
 
-        writer.doWriteShort((short) 0);
+        out.writeByte(GridPortableMarshaller.OBJ);
+        out.writeByte(GridPortableMarshaller.PROTO_VER);
 
-        writer.doWriteInt(typeId);
-        writer.doWriteInt(hashCode);
+        out.writeShort((short) 0);
+
+        out.writeInt(typeId);
+        out.writeInt(hashCode);
 
         int reserved = writer.reserve(12);
 

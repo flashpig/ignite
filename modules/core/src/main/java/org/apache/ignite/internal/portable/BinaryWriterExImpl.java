@@ -97,6 +97,12 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** */
     private final int start;
 
+    /** Output stream. */
+    private final PortableOutputStream out;
+
+    /** Schema. */
+    private final BinaryWriterSchemaHolder schema;
+
     /** */
     private int typeId;
 
@@ -105,12 +111,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** Handles. */
     private BinaryWriterHandles handles;
-
-    /** Output stream. */
-    private PortableOutputStream out;
-
-    /** Schema. */
-    private BinaryWriterSchemaHolder schema;
 
     /** Schema ID. */
     private int schemaId = PortableUtils.schemaInitialId();
@@ -203,7 +203,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             throw new BinaryObjectException("Object is not portable: [class=" + cls + ']');
 
         if (desc.excluded()) {
-            doWriteByte(NULL);
+            out.writeByte(NULL);
+
             return;
         }
 
@@ -241,7 +242,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             }
 
             if (replacedObj == null) {
-                doWriteByte(NULL);
+                out.writeByte(NULL);
+
                 return;
             }
 
@@ -378,69 +380,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     }
 
     /**
-     * @param val Value.
-     */
-    public void doWriteByte(byte val) {
-        out.writeByte(val);
-    }
-
-    /**
-     * @param val Value.
-     */
-    public void doWriteShort(short val) {
-        out.writeShort(val);
-    }
-
-    /**
-     * @param val Value.
-     */
-    public void doWriteInt(int val) {
-        out.writeInt(val);
-    }
-
-    /**
-     * @param val Value.
-     */
-    public void doWriteLong(long val) {
-        out.writeLong(val);
-    }
-
-    /**
-     * @param val Value.
-     */
-    public void doWriteFloat(float val) {
-        out.writeFloat(val);
-    }
-
-    /**
-     * @param val Value.
-     */
-    public void doWriteDouble(double val) {
-        out.writeDouble(val);
-    }
-
-    /**
-     * @param val Value.
-     */
-    public void doWriteChar(char val) {
-        out.writeChar(val);
-    }
-
-    /**
-     * @param val Value.
-     */
-    public void doWriteBoolean(boolean val) {
-        out.writeBoolean(val);
-    }
-
-    /**
      * @param val String value.
      */
     public void doWriteDecimal(@Nullable BigDecimal val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
-            doWriteByte(DECIMAL);
+            out.writeByte(DECIMAL);
 
             BigInteger intVal = val.unscaledValue();
 
@@ -464,14 +410,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public void doWriteString(@Nullable String val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
-            doWriteByte(STRING);
+            out.writeByte(STRING);
 
             byte[] strArr = val.getBytes(UTF_8);
 
-            doWriteInt(strArr.length);
-
+            out.writeInt(strArr.length);
             out.writeByteArray(strArr);
         }
     }
@@ -481,11 +426,11 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public void doWriteUuid(@Nullable UUID uuid) {
         if (uuid == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
-            doWriteByte(UUID);
-            doWriteLong(uuid.getMostSignificantBits());
-            doWriteLong(uuid.getLeastSignificantBits());
+            out.writeByte(UUID);
+            out.writeLong(uuid.getMostSignificantBits());
+            out.writeLong(uuid.getLeastSignificantBits());
         }
     }
 
@@ -494,10 +439,10 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public void doWriteDate(@Nullable Date date) {
         if (date == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
-            doWriteByte(DATE);
-            doWriteLong(date.getTime());
+            out.writeByte(DATE);
+            out.writeLong(date.getTime());
         }
     }
 
@@ -506,11 +451,11 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public void doWriteTimestamp(@Nullable Timestamp ts) {
         if (ts== null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
-            doWriteByte(TIMESTAMP);
-            doWriteLong(ts.getTime());
-            doWriteInt(ts.getNanos() % 1000000);
+            out.writeByte(TIMESTAMP);
+            out.writeLong(ts.getTime());
+            out.writeInt(ts.getNanos() % 1000000);
         }
     }
 
@@ -522,7 +467,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public void doWriteObject(@Nullable Object obj) throws BinaryObjectException {
         if (obj == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, schema, handles());
 
@@ -535,14 +480,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteByteArray(@Nullable byte[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(BYTE_ARR);
-            doWriteInt(val.length);
-
+            out.writeByte(BYTE_ARR);
+            out.writeInt(val.length);
             out.writeByteArray(val);
         }
     }
@@ -552,14 +496,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteShortArray(@Nullable short[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(SHORT_ARR);
-            doWriteInt(val.length);
-
+            out.writeByte(SHORT_ARR);
+            out.writeInt(val.length);
             out.writeShortArray(val);
         }
     }
@@ -569,14 +512,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteIntArray(@Nullable int[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(INT_ARR);
-            doWriteInt(val.length);
-
+            out.writeByte(INT_ARR);
+            out.writeInt(val.length);
             out.writeIntArray(val);
         }
     }
@@ -586,14 +528,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteLongArray(@Nullable long[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(LONG_ARR);
-            doWriteInt(val.length);
-
+            out.writeByte(LONG_ARR);
+            out.writeInt(val.length);
             out.writeLongArray(val);
         }
     }
@@ -603,14 +544,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteFloatArray(@Nullable float[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(FLOAT_ARR);
-            doWriteInt(val.length);
-
+            out.writeByte(FLOAT_ARR);
+            out.writeInt(val.length);
             out.writeFloatArray(val);
         }
     }
@@ -620,13 +560,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteDoubleArray(@Nullable double[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(DOUBLE_ARR);
-            doWriteInt(val.length);
+            out.writeByte(DOUBLE_ARR);
+            out.writeInt(val.length);
 
             out.writeDoubleArray(val);
         }
@@ -637,13 +577,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteCharArray(@Nullable char[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(CHAR_ARR);
-            doWriteInt(val.length);
+            out.writeByte(CHAR_ARR);
+            out.writeInt(val.length);
 
             out.writeCharArray(val);
         }
@@ -654,13 +594,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteBooleanArray(@Nullable boolean[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(BOOLEAN_ARR);
-            doWriteInt(val.length);
+            out.writeByte(BOOLEAN_ARR);
+            out.writeInt(val.length);
 
             out.writeBooleanArray(val);
         }
@@ -671,13 +611,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteDecimalArray(@Nullable BigDecimal[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(DECIMAL_ARR);
-            doWriteInt(val.length);
+            out.writeByte(DECIMAL_ARR);
+            out.writeInt(val.length);
 
             for (BigDecimal str : val)
                 doWriteDecimal(str);
@@ -689,13 +629,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteStringArray(@Nullable String[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(STRING_ARR);
-            doWriteInt(val.length);
+            out.writeByte(STRING_ARR);
+            out.writeInt(val.length);
 
             for (String str : val)
                 doWriteString(str);
@@ -707,13 +647,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteUuidArray(@Nullable UUID[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(UUID_ARR);
-            doWriteInt(val.length);
+            out.writeByte(UUID_ARR);
+            out.writeInt(val.length);
 
             for (UUID uuid : val)
                 doWriteUuid(uuid);
@@ -725,13 +665,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteDateArray(@Nullable Date[] val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
-            doWriteByte(DATE_ARR);
-            doWriteInt(val.length);
+            out.writeByte(DATE_ARR);
+            out.writeInt(val.length);
 
             for (Date date : val)
                 doWriteDate(date);
@@ -743,13 +683,13 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
       */
      void doWriteTimestampArray(@Nullable Timestamp[] val) {
          if (val == null)
-             doWriteByte(NULL);
+             out.writeByte(NULL);
          else {
              if (tryWriteAsHandle(val))
                  return;
 
-             doWriteByte(TIMESTAMP_ARR);
-             doWriteInt(val.length);
+             out.writeByte(TIMESTAMP_ARR);
+             out.writeInt(val.length);
 
              for (Timestamp ts : val)
                  doWriteTimestamp(ts);
@@ -762,23 +702,23 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteObjectArray(@Nullable Object[] val) throws BinaryObjectException {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(val))
                 return;
 
             PortableClassDescriptor desc = ctx.descriptorForClass(val.getClass().getComponentType());
 
-            doWriteByte(OBJ_ARR);
+            out.writeByte(OBJ_ARR);
 
             if (desc.registered())
-                doWriteInt(desc.typeId());
+                out.writeInt(desc.typeId());
             else {
-                doWriteInt(UNREGISTERED_TYPE_ID);
+                out.writeInt(UNREGISTERED_TYPE_ID);
                 doWriteString(val.getClass().getComponentType().getName());
             }
 
-            doWriteInt(val.length);
+            out.writeInt(val.length);
 
             for (Object obj : val)
                 doWriteObject(obj);
@@ -791,14 +731,14 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteCollection(@Nullable Collection<?> col) throws BinaryObjectException {
         if (col == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(col))
                 return;
 
-            doWriteByte(COL);
-            doWriteInt(col.size());
-            doWriteByte(ctx.collectionType(col.getClass()));
+            out.writeByte(COL);
+            out.writeInt(col.size());
+            out.writeByte(ctx.collectionType(col.getClass()));
 
             for (Object obj : col)
                 doWriteObject(obj);
@@ -811,14 +751,14 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteMap(@Nullable Map<?, ?> map) throws BinaryObjectException {
         if (map == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(map))
                 return;
 
-            doWriteByte(MAP);
-            doWriteInt(map.size());
-            doWriteByte(ctx.mapType(map.getClass()));
+            out.writeByte(MAP);
+            out.writeInt(map.size());
+            out.writeByte(ctx.mapType(map.getClass()));
 
             for (Map.Entry<?, ?> e : map.entrySet()) {
                 doWriteObject(e.getKey());
@@ -833,12 +773,12 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteMapEntry(@Nullable Map.Entry<?, ?> e) throws BinaryObjectException {
         if (e == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             if (tryWriteAsHandle(e))
                 return;
 
-            doWriteByte(MAP_ENTRY);
+            out.writeByte(MAP_ENTRY);
             doWriteObject(e.getKey());
             doWriteObject(e.getValue());
         }
@@ -849,20 +789,20 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteEnum(@Nullable Enum<?> val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             PortableClassDescriptor desc = ctx.descriptorForClass(val.getClass());
 
-            doWriteByte(ENUM);
+            out.writeByte(ENUM);
 
             if (desc.registered())
-                doWriteInt(desc.typeId());
+                out.writeInt(desc.typeId());
             else {
-                doWriteInt(UNREGISTERED_TYPE_ID);
+                out.writeInt(UNREGISTERED_TYPE_ID);
                 doWriteString(val.getClass().getName());
             }
 
-            doWriteInt(val.ordinal());
+            out.writeInt(val.ordinal());
         }
     }
 
@@ -873,19 +813,19 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         assert val == null || val.getClass().getComponentType().isEnum();
 
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             PortableClassDescriptor desc = ctx.descriptorForClass(val.getClass().getComponentType());
-            doWriteByte(ENUM_ARR);
+            out.writeByte(ENUM_ARR);
 
             if (desc.registered())
-                doWriteInt(desc.typeId());
+                out.writeInt(desc.typeId());
             else {
-                doWriteInt(UNREGISTERED_TYPE_ID);
+                out.writeInt(UNREGISTERED_TYPE_ID);
                 doWriteString(val.getClass().getComponentType().getName());
             }
 
-            doWriteInt(val.length);
+            out.writeInt(val.length);
 
             // TODO: Denis: Redundant data for each element of the array.
             for (Object o : val)
@@ -898,16 +838,16 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void doWriteClass(@Nullable Class val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             PortableClassDescriptor desc = ctx.descriptorForClass(val);
 
-            doWriteByte(CLASS);
+            out.writeByte(CLASS);
 
             if (desc.registered())
-                doWriteInt(desc.typeId());
+                out.writeInt(desc.typeId());
             else {
-                doWriteInt(UNREGISTERED_TYPE_ID);
+                out.writeInt(UNREGISTERED_TYPE_ID);
                 doWriteString(val.getClass().getName());
             }
         }
@@ -918,17 +858,15 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public void doWritePortableObject(@Nullable BinaryObjectImpl po) {
         if (po == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
-            doWriteByte(PORTABLE_OBJ);
+            out.writeByte(PORTABLE_OBJ);
 
             byte[] poArr = po.array();
 
-            doWriteInt(poArr.length);
-
+            out.writeInt(poArr.length);
             out.writeByteArray(poArr);
-
-            doWriteInt(po.start());
+            out.writeInt(po.start());
         }
     }
 
@@ -936,8 +874,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeByteFieldPrimitive(byte val) {
-        doWriteByte(BYTE);
-        doWriteByte(val);
+        out.writeByte(BYTE);
+        out.writeByte(val);
     }
 
     /**
@@ -945,7 +883,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void writeByteField(@Nullable Byte val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else
             writeByteFieldPrimitive(val);
     }
@@ -961,8 +899,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeShortFieldPrimitive(short val) {
-        doWriteByte(SHORT);
-        doWriteShort(val);
+        out.writeByte(SHORT);
+        out.writeShort(val);
     }
 
     /**
@@ -970,7 +908,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void writeShortField(@Nullable Short val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else
             writeShortFieldPrimitive(val);
     }
@@ -979,8 +917,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeIntFieldPrimitive(int val) {
-        doWriteByte(INT);
-        doWriteInt(val);
+        out.writeByte(INT);
+        out.writeInt(val);
     }
 
     /**
@@ -988,7 +926,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void writeIntField(@Nullable Integer val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else
             writeIntFieldPrimitive(val);
     }
@@ -997,8 +935,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeLongFieldPrimitive(long val) {
-        doWriteByte(LONG);
-        doWriteLong(val);
+        out.writeByte(LONG);
+        out.writeLong(val);
     }
 
     /**
@@ -1006,7 +944,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void writeLongField(@Nullable Long val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else
             writeLongFieldPrimitive(val);
     }
@@ -1015,8 +953,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeFloatFieldPrimitive(float val) {
-        doWriteByte(FLOAT);
-        doWriteFloat(val);
+        out.writeByte(FLOAT);
+        out.writeFloat(val);
     }
 
     /**
@@ -1024,7 +962,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void writeFloatField(@Nullable Float val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else
             writeFloatFieldPrimitive(val);
     }
@@ -1033,8 +971,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeDoubleFieldPrimitive(double val) {
-        doWriteByte(DOUBLE);
-        doWriteDouble(val);
+        out.writeByte(DOUBLE);
+        out.writeDouble(val);
     }
 
     /**
@@ -1042,7 +980,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void writeDoubleField(@Nullable Double val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else
             writeDoubleFieldPrimitive(val);
     }
@@ -1051,8 +989,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeCharFieldPrimitive(char val) {
-        doWriteByte(CHAR);
-        doWriteChar(val);
+        out.writeByte(CHAR);
+        out.writeChar(val);
     }
 
     /**
@@ -1060,7 +998,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void writeCharField(@Nullable Character val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else
             writeCharFieldPrimitive(val);
     }
@@ -1069,8 +1007,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @param val Value.
      */
     void writeBooleanFieldPrimitive(boolean val) {
-        doWriteByte(BOOLEAN);
-        doWriteBoolean(val);
+        out.writeByte(BOOLEAN);
+        out.writeBoolean(val);
     }
 
     /**
@@ -1078,7 +1016,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     void writeBooleanField(@Nullable Boolean val) {
         if (val == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else
             writeBooleanFieldPrimitive(val);
     }
@@ -1279,7 +1217,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeByte(byte val) throws BinaryObjectException {
-        doWriteByte(val);
+        out.writeByte(val);
     }
 
     /** {@inheritDoc} */
@@ -1290,7 +1228,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeShort(short val) throws BinaryObjectException {
-        doWriteShort(val);
+        out.writeShort(val);
     }
 
     /** {@inheritDoc} */
@@ -1301,7 +1239,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeInt(int val) throws BinaryObjectException {
-        doWriteInt(val);
+        out.writeInt(val);
     }
 
     /** {@inheritDoc} */
@@ -1312,7 +1250,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeLong(long val) throws BinaryObjectException {
-        doWriteLong(val);
+        out.writeLong(val);
     }
 
     /** {@inheritDoc} */
@@ -1323,7 +1261,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeFloat(float val) throws BinaryObjectException {
-        doWriteFloat(val);
+        out.writeFloat(val);
     }
 
     /** {@inheritDoc} */
@@ -1334,7 +1272,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeDouble(double val) throws BinaryObjectException {
-        doWriteDouble(val);
+        out.writeDouble(val);
     }
 
     /** {@inheritDoc} */
@@ -1345,7 +1283,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeChar(char val) throws BinaryObjectException {
-        doWriteChar(val);
+        out.writeChar(val);
     }
 
     /** {@inheritDoc} */
@@ -1356,7 +1294,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeBoolean(boolean val) throws BinaryObjectException {
-        doWriteBoolean(val);
+        out.writeBoolean(val);
     }
 
     /** {@inheritDoc} */
@@ -1428,7 +1366,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** {@inheritDoc} */
     @Override public void writeObjectDetached(@Nullable Object obj) throws BinaryObjectException {
         if (obj == null)
-            doWriteByte(NULL);
+            out.writeByte(NULL);
         else {
             BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, schema, null);
 
@@ -1683,22 +1621,22 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
     /** {@inheritDoc} */
     @Override public void writeByte(int v) throws IOException {
-        doWriteByte((byte) v);
+        out.writeByte((byte) v);
     }
 
     /** {@inheritDoc} */
     @Override public void writeShort(int v) throws IOException {
-        doWriteShort((short) v);
+        out.writeShort((short) v);
     }
 
     /** {@inheritDoc} */
     @Override public void writeChar(int v) throws IOException {
-        doWriteChar((char) v);
+        out.writeChar((char) v);
     }
 
     /** {@inheritDoc} */
     @Override public void write(int b) throws IOException {
-        doWriteByte((byte) b);
+        out.writeByte((byte) b);
     }
 
     /** {@inheritDoc} */
@@ -1799,8 +1737,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (old == BinaryWriterHandles.POS_NULL)
             return false;
         else {
-            doWriteByte(GridPortableMarshaller.HANDLE);
-            doWriteInt(pos - old);
+            out.writeByte(GridPortableMarshaller.HANDLE);
+            out.writeInt(pos - old);
 
             return true;
         }

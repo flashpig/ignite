@@ -384,50 +384,42 @@ public class PortableClassDescriptor {
 
         switch (mode) {
             case BYTE:
-                writer.doWriteByte(GridPortableMarshaller.BYTE);
-                writer.doWriteByte((byte)obj);
+                writer.writeByteFieldPrimitive((byte) obj);
 
                 break;
 
             case SHORT:
-                writer.doWriteByte(GridPortableMarshaller.SHORT);
-                writer.doWriteShort((short)obj);
+                writer.writeShortFieldPrimitive((short)obj);
 
                 break;
 
             case INT:
-                writer.doWriteByte(GridPortableMarshaller.INT);
-                writer.doWriteInt((int)obj);
+                writer.writeIntFieldPrimitive((int) obj);
 
                 break;
 
             case LONG:
-                writer.doWriteByte(GridPortableMarshaller.LONG);
-                writer.doWriteLong((long)obj);
+                writer.writeLongFieldPrimitive((long) obj);
 
                 break;
 
             case FLOAT:
-                writer.doWriteByte(GridPortableMarshaller.FLOAT);
-                writer.doWriteFloat((float)obj);
+                writer.writeFloatFieldPrimitive((float) obj);
 
                 break;
 
             case DOUBLE:
-                writer.doWriteByte(GridPortableMarshaller.DOUBLE);
-                writer.doWriteDouble((double)obj);
+                writer.writeDoubleFieldPrimitive((double) obj);
 
                 break;
 
             case CHAR:
-                writer.doWriteByte(GridPortableMarshaller.CHAR);
-                writer.doWriteChar((char)obj);
+                writer.writeCharFieldPrimitive((char) obj);
 
                 break;
 
             case BOOLEAN:
-                writer.doWriteByte(GridPortableMarshaller.BOOLEAN);
-                writer.doWriteBoolean((boolean)obj);
+                writer.writeBooleanFieldPrimitive((boolean) obj);
 
                 break;
 
