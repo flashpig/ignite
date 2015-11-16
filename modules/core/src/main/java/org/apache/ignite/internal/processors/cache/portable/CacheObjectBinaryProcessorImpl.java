@@ -725,7 +725,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
      * Processor responsible for metadata update.
      */
     private static class MetadataProcessor
-        implements EntryProcessor<PortableMetaDataKey, BinaryMetadata, BinaryObjectException>, Externalizable {
+        implements EntryProcessor<PortableMetadataKey, BinaryMetadata, BinaryObjectException>, Externalizable {
         /** */
         private static final long serialVersionUID = 0L;
 
@@ -749,7 +749,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
         }
 
         /** {@inheritDoc} */
-        @Override public BinaryObjectException process(MutableEntry<PortableMetaDataKey, BinaryMetadata> entry,
+        @Override public BinaryObjectException process(MutableEntry<PortableMetadataKey, BinaryMetadata> entry,
             Object... args) {
             try {
                 BinaryMetadata oldMeta = entry.getValue();
