@@ -591,10 +591,17 @@ public class GridCacheSharedContext<K, V> {
      * @param tx Transaction to commit.
      * @return Commit future.
      */
+    @SuppressWarnings("unchecked")
     public IgniteInternalFuture<IgniteInternalTx> commitTxAsync(IgniteInternalTx tx) {
-        tx.txState().awaitLastFut(this);
+        GridCacheContext ctx = tx.txState().singleCacheContext(this);
 
-        return tx.commitAsync();
+        if (ctx == null) {
+            tx.txState().awaitLastFut(this);
+
+            return tx.commitAsync();
+        }
+        else
+            return ctx.cache().commitTxAsync(tx);
     }
 
     /**

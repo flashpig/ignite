@@ -69,11 +69,20 @@ public class IgniteTxStateImpl extends IgniteTxLocalStateAdapter {
     }
 
     /** {@inheritDoc} */
-    @Override public void awaitLastFut(GridCacheSharedContext cctx) {
-        if (activeCacheIds.size() > 1) {
-            for (Integer cacheId : activeCacheIds)
-                cctx.cacheContext(cacheId).cache().awaitLastFut();
+    @Nullable @Override public GridCacheContext singleCacheContext(GridCacheSharedContext cctx) {
+        if (activeCacheIds.size() == 1) {
+            int cacheId = F.first(activeCacheIds);
+
+            return cctx.cacheContext(cacheId);
         }
+
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void awaitLastFut(GridCacheSharedContext cctx) {
+        for (Integer cacheId : activeCacheIds)
+            cctx.cacheContext(cacheId).cache().awaitLastFut();
     }
 
     /** {@inheritDoc} */

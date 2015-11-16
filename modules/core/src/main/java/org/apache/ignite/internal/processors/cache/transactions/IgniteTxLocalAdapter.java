@@ -1922,7 +1922,15 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         V val,
         boolean retval,
         CacheEntryPredicate[] filter) {
-        return putAsync0(cacheCtx, key, val, retval, filter);
+        return putAsync0(cacheCtx, key, val, null, null, retval, filter);
+    }
+
+    /** {@inheritDoc} */
+    @Override public <K, V> IgniteInternalFuture<GridCacheReturn> invokeAsync(GridCacheContext cacheCtx,
+        K key,
+        EntryProcessor<K, V, Object> entryProcessor,
+        Object... invokeArgs) {
+        return (IgniteInternalFuture)putAsync0(cacheCtx, key, null, entryProcessor, invokeArgs, true, null);
     }
 
     /** {@inheritDoc} */
@@ -2014,6 +2022,9 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
             final boolean hasFilters = !F.isEmptyOrNulls(filter) && !F.isAlwaysTrue(filter);
             final boolean needVal = singleRmv || retval || hasFilters;
             final boolean needReadVer = needVal && (serializable() && optimistic());
+
+            if (entryProcessor != null)
+                transform = true;
 
             boolean loadMissed = enlistWriteEntry(cacheCtx,
                 cacheKey,
@@ -2847,6 +2858,8 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
      * @param cacheCtx Cache context.
      * @param key Key.
      * @param val Value.
+     * @param entryProcessor Entry processor.
+     * @param invokeArgs Optional arguments for EntryProcessor.
      * @param retval Return value flag.
      * @param filter Filter.
      * @return Operation future.
@@ -2854,7 +2867,9 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     private <K, V> IgniteInternalFuture putAsync0(
         final GridCacheContext cacheCtx,
         K key,
-        V val,
+        @Nullable V val,
+        @Nullable EntryProcessor entryProcessor,
+        @Nullable final Object[] invokeArgs,
         final boolean retval,
         @Nullable final CacheEntryPredicate[] filter
     ) {
@@ -2874,8 +2889,8 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 cacheKey,
                 val,
                 opCtx != null ? opCtx.expiry() : null,
-                null,
-                null,
+                entryProcessor,
+                invokeArgs,
                 retval,
                 /*lockOnly*/false,
                 filter,

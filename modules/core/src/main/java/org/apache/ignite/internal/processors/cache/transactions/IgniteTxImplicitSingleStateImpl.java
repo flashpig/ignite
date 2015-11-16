@@ -58,6 +58,11 @@ public class IgniteTxImplicitSingleStateImpl extends IgniteTxLocalStateAdapter {
     }
 
     /** {@inheritDoc} */
+    @Nullable @Override public GridCacheContext singleCacheContext(GridCacheSharedContext cctx) {
+        return cacheCtx;
+    }
+
+    /** {@inheritDoc} */
     @Nullable @Override public Integer firstCacheId() {
         return cacheCtx != null ? cacheCtx.cacheId() : null;
     }

@@ -44,6 +44,8 @@ public interface IgniteTxState {
      */
     @Nullable public Integer firstCacheId();
 
+    @Nullable GridCacheContext singleCacheContext(GridCacheSharedContext cctx);
+
     /**
      *
      * @param cctx
