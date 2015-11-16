@@ -165,9 +165,6 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
     /** {@code True} if this is last prepare operation for node. */
     private boolean last;
 
-    /** IDs of backup nodes receiving last prepare request during this prepare. */
-    private Collection<UUID> lastBackups;
-
     /** Needs return value flag. */
     private boolean retVal;
 
@@ -197,7 +194,6 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
      * @param dhtVerMap DHT versions map.
      * @param last {@code True} if this is last prepare operation for node.
      * @param retVal Return value flag.
-     * @param lastBackups IDs of backup nodes receiving last prepare request during this prepare.
      */
     public GridDhtTxPrepareFuture(
         GridCacheSharedContext cctx,
@@ -205,8 +201,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
         IgniteUuid nearMiniId,
         Map<IgniteTxKey, GridCacheVersion> dhtVerMap,
         boolean last,
-        boolean retVal,
-        Collection<UUID> lastBackups
+        boolean retVal
     ) {
         super(REDUCER);
 
@@ -214,7 +209,6 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
         this.tx = tx;
         this.dhtVerMap = dhtVerMap;
         this.last = last;
-        this.lastBackups = lastBackups;
 
         futId = IgniteUuid.randomUuid();
 
@@ -861,14 +855,6 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
         readyLocks();
 
         mapIfLocked();
-    }
-
-    /**
-     * @param backupId Backup node ID.
-     * @return {@code True} if backup node receives last prepare request for this transaction.
-     */
-    private boolean lastBackup(UUID backupId) {
-        return lastBackups != null && lastBackups.contains(backupId);
     }
 
     /**

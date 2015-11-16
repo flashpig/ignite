@@ -19,6 +19,8 @@ package org.apache.ignite.internal.processors.cache.transactions;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.cluster.ClusterTopologyServerNotFoundException;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
@@ -38,6 +40,12 @@ import static org.apache.ignite.cache.CacheWriteSynchronizationMode.FULL_SYNC;
 public class IgniteTxImplicitSingleStateImpl extends IgniteTxStateAdapter {
     /** */
     private GridCacheContext cacheCtx;
+
+    /** */
+    private IgniteTxEntry entry;
+
+    /** */
+    private boolean init;
 
     /** {@inheritDoc} */
     @Override public void addActiveCache(GridCacheContext ctx, IgniteTxLocalAdapter tx)
@@ -149,5 +157,92 @@ public class IgniteTxImplicitSingleStateImpl extends IgniteTxStateAdapter {
     @Override public void onTxEnd(GridCacheSharedContext cctx, IgniteInternalTx tx, boolean commit) {
         if (cacheCtx != null)
             onTxEnd(cacheCtx, tx, commit);
+    }
+
+    /** {@inheritDoc} */
+    @Override public IgniteTxEntry entry(IgniteTxKey key) {
+        if (entry != null && entry.txKey().equals(key))
+            return entry;
+
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean hasWriteKey(IgniteTxKey key) {
+        return entry != null && entry.txKey().equals(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<IgniteTxKey> readSet() {
+        return Collections.emptySet();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<IgniteTxKey> writeSet() {
+        return entry != null ? Collections.singleton(entry.txKey()) : Collections.<IgniteTxKey>emptySet();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<IgniteTxEntry> writeEntries() {
+        return entry != null ? Collections.singletonList(entry) : Collections.<IgniteTxEntry>emptyList();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<IgniteTxEntry> readEntries() {
+        return Collections.emptyList();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Map<IgniteTxKey, IgniteTxEntry> writeMap() {
+        return entry != null ? Collections.singletonMap(entry.txKey(), entry) :
+            Collections.<IgniteTxKey, IgniteTxEntry>emptyMap();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Map<IgniteTxKey, IgniteTxEntry> readMap() {
+        return Collections.emptyMap();
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean empty() {
+        return entry == null;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<IgniteTxEntry> allEntries() {
+        return entry != null ? Collections.singletonList(entry) : Collections.<IgniteTxEntry>emptyList();
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean init(int txSize) {
+        if (!init) {
+            init = true;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean initialized() {
+        return init;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void addEntry(IgniteTxEntry entry) {
+        assert this.entry == null : "Entry already set [cur=" + this.entry + ", new=" + entry + ']';
+
+        this.entry = entry;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void seal() {
+        // No-op.
+    }
+
+    /** {@inheritDoc} */
+    @Override public IgniteTxEntry singleWrite() {
+        return entry;
     }
 }

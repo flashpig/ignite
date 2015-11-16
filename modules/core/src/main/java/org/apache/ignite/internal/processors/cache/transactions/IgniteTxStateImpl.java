@@ -19,7 +19,9 @@ package org.apache.ignite.internal.processors.cache.transactions;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.cluster.ClusterTopologyServerNotFoundException;
@@ -28,6 +30,8 @@ import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtTopologyFuture;
 import org.apache.ignite.internal.processors.cache.store.CacheStoreManager;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
+import org.apache.ignite.internal.util.tostring.GridToStringExclude;
+import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -41,6 +45,18 @@ import static org.apache.ignite.cache.CacheWriteSynchronizationMode.FULL_SYNC;
 public class IgniteTxStateImpl extends IgniteTxStateAdapter {
     /** Active cache IDs. */
     private Set<Integer> activeCacheIds = new HashSet<>();
+    /** Per-transaction read map. */
+
+    @GridToStringInclude
+    protected Map<IgniteTxKey, IgniteTxEntry> txMap;
+
+    /** Read view on transaction map. */
+    @GridToStringExclude
+    protected IgniteTxMap readView;
+
+    /** Write view on transaction map. */
+    @GridToStringExclude
+    protected IgniteTxMap writeView;
 
     /** {@inheritDoc} */
     @Override public boolean implicitSingle() {
@@ -252,5 +268,93 @@ public class IgniteTxStateImpl extends IgniteTxStateAdapter {
 
             onTxEnd(cacheCtx, tx, commit);
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean init(int txSize) {
+        if (txMap == null) {
+            txMap = U.newLinkedHashMap(txSize > 0 ? txSize : 16);
+
+            readView = new IgniteTxMap(txMap, CU.reads());
+            writeView = new IgniteTxMap(txMap, CU.writes());
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean initialized() {
+        return txMap != null;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<IgniteTxEntry> allEntries() {
+        return txMap == null ? Collections.<IgniteTxEntry>emptySet() : txMap.values();
+    }
+
+    /** {@inheritDoc} */
+    @Override public IgniteTxEntry entry(IgniteTxKey key) {
+        return txMap == null ? null : txMap.get(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean hasWriteKey(IgniteTxKey key) {
+        return writeView.containsKey(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<IgniteTxKey> readSet() {
+        return txMap == null ? Collections.<IgniteTxKey>emptySet() : readView.keySet();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<IgniteTxKey> writeSet() {
+        return txMap == null ? Collections.<IgniteTxKey>emptySet() : writeView.keySet();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<IgniteTxEntry> writeEntries() {
+        return writeView == null ? Collections.<IgniteTxEntry>emptyList() : writeView.values();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<IgniteTxEntry> readEntries() {
+        return readView == null ? Collections.<IgniteTxEntry>emptyList() : readView.values();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Map<IgniteTxKey, IgniteTxEntry> writeMap() {
+        return writeView == null ? Collections.<IgniteTxKey, IgniteTxEntry>emptyMap() : writeView;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Map<IgniteTxKey, IgniteTxEntry> readMap() {
+        return readView == null ? Collections.<IgniteTxKey, IgniteTxEntry>emptyMap() : readView;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean empty() {
+        return txMap.isEmpty();
+    }
+
+    /** {@inheritDoc} */
+    @Override public void addEntry(IgniteTxEntry entry) {
+        txMap.put(entry.txKey(), entry);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void seal() {
+        if (readView != null)
+            readView.seal();
+
+        if (writeView != null)
+            writeView.seal();
+    }
+
+    /** {@inheritDoc} */
+    @Override public IgniteTxEntry singleWrite() {
+        return writeView != null && writeView.size() == 1 ? F.firstValue(writeView) : null;
     }
 }

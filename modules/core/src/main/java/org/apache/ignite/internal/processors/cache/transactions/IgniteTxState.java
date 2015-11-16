@@ -18,6 +18,8 @@
 package org.apache.ignite.internal.processors.cache.transactions;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.processors.cache.GridCacheContext;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
@@ -54,5 +56,33 @@ public interface IgniteTxState {
 
     public void onTxEnd(GridCacheSharedContext cctx, IgniteInternalTx tx, boolean commit);
 
-    // public IgniteTxEntry entry(IgniteTxKey key);
+    public IgniteTxEntry entry(IgniteTxKey key);
+
+    public boolean hasWriteKey(IgniteTxKey key);
+
+    public Set<IgniteTxKey> readSet();
+
+    public Set<IgniteTxKey> writeSet();
+
+    public Collection<IgniteTxEntry> writeEntries();
+
+    public Collection<IgniteTxEntry> readEntries();
+
+    public Map<IgniteTxKey, IgniteTxEntry> writeMap();
+
+    public Map<IgniteTxKey, IgniteTxEntry> readMap();
+
+    public boolean empty();
+
+    public Collection<IgniteTxEntry> allEntries();
+
+    public boolean init(int txSize);
+
+    public boolean initialized();
+
+    public void addEntry(IgniteTxEntry entry);
+
+    public void seal();
+
+    @Nullable public IgniteTxEntry singleWrite();
 }

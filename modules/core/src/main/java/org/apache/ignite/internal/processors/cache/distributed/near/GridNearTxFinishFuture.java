@@ -534,7 +534,9 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
 
             mapping.dhtVersion(xidVer, xidVer);
 
-            tx.readyNearLocks(mapping, Collections.<GridCacheVersion>emptyList(), Collections.<GridCacheVersion>emptyList(),
+            tx.readyNearLocks(mapping,
+                Collections.<GridCacheVersion>emptyList(),
+                Collections.<GridCacheVersion>emptyList(),
                 Collections.<GridCacheVersion>emptyList());
         }
     }

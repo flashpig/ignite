@@ -36,6 +36,7 @@ import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.distributed.GridDistributedTxRemoteAdapter;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxKey;
+import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteStateImpl;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.tostring.GridToStringBuilder;
 import org.apache.ignite.internal.util.typedef.T2;
@@ -137,9 +138,9 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
         this.nearXidVer = nearXidVer;
         this.txNodes = txNodes;
 
-        readMap = Collections.emptyMap();
-
-        writeMap = new ConcurrentLinkedHashMap<>(U.capacity(txSize), 0.75f, 1);
+        txState = new IgniteTxRemoteStateImpl(
+            Collections.<IgniteTxKey, IgniteTxEntry>emptyMap(),
+            new ConcurrentLinkedHashMap<IgniteTxKey, IgniteTxEntry>(U.capacity(txSize), 0.75f, 1));
 
         topologyVersion(topVer);
     }
@@ -207,8 +208,9 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
         this.nearNodeId = nearNodeId;
         this.rmtFutId = rmtFutId;
 
-        readMap = Collections.emptyMap();
-        writeMap = new ConcurrentLinkedHashMap<>(U.capacity(txSize), 0.75f, 1);
+        txState = new IgniteTxRemoteStateImpl(
+            Collections.<IgniteTxKey, IgniteTxEntry>emptyMap(),
+            new ConcurrentLinkedHashMap<IgniteTxKey, IgniteTxEntry>(U.capacity(txSize), 0.75f, 1));
 
         topologyVersion(topVer);
     }
@@ -280,6 +282,8 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
     @Override public void addInvalidPartition(GridCacheContext cacheCtx, int part) {
         super.addInvalidPartition(cacheCtx, part);
 
+        Map<IgniteTxKey, IgniteTxEntry> writeMap = txState.writeMap();
+
         for (Iterator<IgniteTxEntry> it = writeMap.values().iterator(); it.hasNext();) {
             IgniteTxEntry e = it.next();
 
@@ -312,7 +316,7 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
             // Initialize cache entry.
             entry.cached(cached);
 
-            writeMap.put(entry.txKey(), entry);
+            txState.addWriteEntry(entry.txKey(), entry);
 
             addExplicit(entry);
         }
@@ -356,7 +360,7 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
 
         txEntry.entryProcessors(entryProcessors);
 
-        writeMap.put(key, txEntry);
+        txState.addWriteEntry(key, txEntry);
     }
 
     /** {@inheritDoc} */

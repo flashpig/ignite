@@ -121,18 +121,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     /** */
     private static final long serialVersionUID = 0L;
 
-    /** Per-transaction read map. */
-    @GridToStringInclude
-    protected Map<IgniteTxKey, IgniteTxEntry> txMap;
-
-    /** Read view on transaction map. */
-    @GridToStringExclude
-    protected IgniteTxMap readView;
-
-    /** Write view on transaction map. */
-    @GridToStringExclude
-    protected IgniteTxMap writeView;
-
     /** Minimal version encountered (either explicit lock or XID of this transaction). */
     protected GridCacheVersion minVer;
 
@@ -252,7 +240,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
 
     /** {@inheritDoc} */
     @Override public boolean empty() {
-        return txMap.isEmpty();
+        return txState.empty();
     }
 
     /** {@inheritDoc} */
@@ -273,6 +261,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     /** {@inheritDoc} */
     @Override public boolean onOwnerChanged(GridCacheEntryEx entry, GridCacheMvccCandidate owner) {
         assert false;
+
         return false;
     }
 
@@ -290,75 +279,61 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
 
     /** {@inheritDoc} */
     @Override public boolean isStarted() {
-        return txMap != null;
+        return txState.initialized();
     }
 
     /** {@inheritDoc} */
     @Override public boolean hasWriteKey(IgniteTxKey key) {
-        return writeView.containsKey(key);
+        return txState.hasWriteKey(key);
     }
 
     /**
      * @return Transaction read set.
      */
     @Override public Set<IgniteTxKey> readSet() {
-        return txMap == null ? Collections.<IgniteTxKey>emptySet() : readView.keySet();
+        return txState.readSet();
     }
 
     /**
      * @return Transaction write set.
      */
     @Override public Set<IgniteTxKey> writeSet() {
-        return txMap == null ? Collections.<IgniteTxKey>emptySet() : writeView.keySet();
-    }
-
-    /** {@inheritDoc} */
-    @Override public boolean removed(IgniteTxKey key) {
-        if (txMap == null)
-            return false;
-
-        IgniteTxEntry e = txMap.get(key);
-
-        return e != null && e.op() == DELETE;
+        return txState.writeSet();
     }
 
     /** {@inheritDoc} */
     @Override public Map<IgniteTxKey, IgniteTxEntry> readMap() {
-        return readView == null ? Collections.<IgniteTxKey, IgniteTxEntry>emptyMap() : readView;
+        return txState.readMap();
     }
 
     /** {@inheritDoc} */
     @Override public Map<IgniteTxKey, IgniteTxEntry> writeMap() {
-        return writeView == null ? Collections.<IgniteTxKey, IgniteTxEntry>emptyMap() : writeView;
+        return txState.writeMap();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<IgniteTxEntry> allEntries() {
-        return txMap == null ? Collections.<IgniteTxEntry>emptySet() : txMap.values();
+        return txState.allEntries();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<IgniteTxEntry> readEntries() {
-        return readView == null ? Collections.<IgniteTxEntry>emptyList() : readView.values();
+        return txState.readEntries();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<IgniteTxEntry> writeEntries() {
-        return writeView == null ? Collections.<IgniteTxEntry>emptyList() : writeView.values();
+        return txState.writeEntries();
     }
 
     /** {@inheritDoc} */
     @Nullable @Override public IgniteTxEntry entry(IgniteTxKey key) {
-        return txMap == null ? null : txMap.get(key);
+        return txState.entry(key);
     }
 
     /** {@inheritDoc} */
     @Override public void seal() {
-        if (readView != null)
-            readView.seal();
-
-        if (writeView != null)
-            writeView.seal();
+        txState.seal();
     }
 
     /** {@inheritDoc} */
@@ -413,7 +388,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         KeyCacheObject key,
         CacheEntryPredicate[] filter
     ) throws GridCacheFilterFailedException {
-        IgniteTxEntry e = txMap == null ? null : txMap.get(cacheCtx.txKey(key));
+        IgniteTxEntry e = entry(cacheCtx.txKey(key));
 
         if (e != null) {
             // We should look at tx entry previous value. If this is a user peek then previous
@@ -858,7 +833,9 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
 
         checkValid();
 
-        boolean empty = F.isEmpty(near() ? txMap : writeMap());
+        Collection<IgniteTxEntry> commitEntries = near() ? allEntries() : writeEntries();
+
+        boolean empty = F.isEmpty(commitEntries);
 
         // Register this transaction as completed prior to write-phase to
         // ensure proper lock ordering for removed entries.
@@ -878,7 +855,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 /*
                  * Commit to cache. Note that for 'near' transaction we loop through all the entries.
                  */
-                for (IgniteTxEntry txEntry : (near() ? allEntries() : writeEntries())) {
+                for (IgniteTxEntry txEntry : commitEntries) {
                     GridCacheContext cacheCtx = txEntry.context();
 
                     GridDrType drType = cacheCtx.isDrEnabled() ? DR_PRIMARY : DR_NONE;
@@ -3195,7 +3172,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
      *
      */
     private void onException() {
-        for (IgniteTxEntry txEntry : txMap.values()) {
+        for (IgniteTxEntry txEntry : allEntries()) {
             GridCacheEntryEx cached0 = txEntry.cached();
 
             if (cached0 != null)
@@ -3442,16 +3419,8 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
      * @return {@code True} if transaction was successfully  started.
      */
     public boolean init() {
-        if (txMap == null) {
-            txMap = U.newLinkedHashMap(txSize > 0 ? txSize : 16);
+        return !txState.init(txSize) || cctx.tm().onStarted(this);
 
-            readView = new IgniteTxMap(txMap, CU.reads());
-            writeView = new IgniteTxMap(txMap, CU.writes());
-
-            return cctx.tm().onStarted(this);
-        }
-
-        return true;
     }
 
     /**
@@ -3462,7 +3431,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
      *      cache (e.g. they have different stores).
      */
     protected final void addActiveCache(GridCacheContext cacheCtx) throws IgniteCheckedException {
-        txState().addActiveCache(cacheCtx, this);
+        txState.addActiveCache(cacheCtx, this);
     }
 
     /**
@@ -3537,7 +3506,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
             "Invalid tx state for adding entry [op=" + op + ", val=" + val + ", entry=" + entry + ", filter=" +
                 Arrays.toString(filter) + ", txCtx=" + cctx.tm().txContextVersion() + ", tx=" + this + ']';
 
-        IgniteTxEntry old = txMap.get(key);
+        IgniteTxEntry old = entry(key);
 
         // Keep old filter if already have one (empty filter is always overridden).
         if (!filtersSet || !F.isEmptyOrNulls(filter)) {
@@ -3601,7 +3570,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
             if (!hasDrTtl)
                 txEntry.expiry(expiryPlc);
 
-            txMap.put(key, txEntry);
+            txState.addEntry(txEntry);
 
             if (log.isDebugEnabled())
                 log.debug("Created transaction entry: " + txEntry);
@@ -3663,7 +3632,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     /** {@inheritDoc} */
     @Override public String toString() {
         return GridToStringBuilder.toString(IgniteTxLocalAdapter.class, this, "super", super.toString(),
-            "size", (txMap == null ? 0 : txMap.size()));
+            "size", allEntries().size());
     }
 
     /**

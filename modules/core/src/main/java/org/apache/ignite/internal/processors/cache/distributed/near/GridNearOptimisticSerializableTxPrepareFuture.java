@@ -422,7 +422,6 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
             m.near(),
             txMapping.transactionNodes(),
             m.last(),
-            m.lastBackups(),
             tx.onePhaseCommit(),
             tx.needReturnValue() && tx.implicit(),
             tx.implicitSingle(),

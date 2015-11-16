@@ -669,14 +669,6 @@ public interface IgniteInternalTx extends AutoCloseable, GridTimeoutObject {
     public boolean serializable();
 
     /**
-     * Checks whether given key has been removed within transaction.
-     *
-     * @param key Key to check.
-     * @return {@code True} if key has been removed.
-     */
-    public boolean removed(IgniteTxKey key);
-
-    /**
      * Gets allowed remaining time for this transaction.
      *
      * @return Remaining time.

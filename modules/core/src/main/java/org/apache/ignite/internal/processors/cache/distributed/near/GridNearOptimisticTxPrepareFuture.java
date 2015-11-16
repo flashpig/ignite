@@ -19,7 +19,9 @@ package org.apache.ignite.internal.processors.cache.distributed.near;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -265,7 +267,12 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
                 return;
             }
 
-            prepare(tx.writeEntries(), topLocked);
+            IgniteTxEntry singleWrite = tx.singleWrite();
+
+            if (singleWrite != null)
+                prepareSingle(singleWrite, topLocked);
+            else
+                prepare(tx.writeEntries(), topLocked);
 
             markInitialized();
         }
@@ -275,6 +282,46 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
         catch (IgniteCheckedException e) {
             onDone(e);
         }
+    }
+
+    /**
+     * @param write Write.
+     * @param topLocked {@code True} if thread already acquired lock preventing topology change.
+     */
+    private void prepareSingle(IgniteTxEntry write, boolean topLocked) {
+        AffinityTopologyVersion topVer = tx.topologyVersion();
+
+        assert topVer.topologyVersion() > 0;
+
+        txMapping = new GridDhtTxMapping();
+
+        GridDistributedTxMapping mapping = map(write, topVer, null, topLocked);
+
+        if (mapping.node().isLocal()) {
+            if (write.context().isNear())
+                tx.nearLocallyMapped(true);
+            else if (write.context().isColocated())
+                tx.colocatedLocallyMapped(true);
+        }
+
+        if (isDone()) {
+            if (log.isDebugEnabled())
+                log.debug("Abandoning (re)map because future is done: " + this);
+
+            return;
+        }
+
+        tx.addEntryMapping(mapping);
+
+        cctx.mvcc().recheckPendingLocks();
+
+        mapping.last(true);
+
+        tx.transactionNodes(txMapping.transactionNodes());
+
+        checkOnePhase();
+
+        proceedPrepare(mapping, null);
     }
 
     /**
@@ -292,16 +339,25 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
 
         txMapping = new GridDhtTxMapping();
 
-        Queue<GridDistributedTxMapping> mappings = new ArrayDeque<>();
+        Map<UUID, GridDistributedTxMapping> map = new HashMap<>();
 
         // Assign keys to primary nodes.
         GridDistributedTxMapping cur = null;
+
+        Queue<GridDistributedTxMapping> mappings = new ArrayDeque<>();
 
         for (IgniteTxEntry write : writes) {
             GridDistributedTxMapping updated = map(write, topVer, cur, topLocked);
 
             if (cur != updated) {
                 mappings.offer(updated);
+
+                updated.last(true);
+
+                GridDistributedTxMapping prev = map.put(updated.node().id(), updated);
+
+                if (prev != null)
+                    prev.last(false);
 
                 if (updated.node().isLocal()) {
                     if (write.context().isNear())
@@ -325,8 +381,6 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
 
         cctx.mvcc().recheckPendingLocks();
 
-        txMapping.initLast(mappings);
-
         tx.transactionNodes(txMapping.transactionNodes());
 
         checkOnePhase();
@@ -340,12 +394,22 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
      * @param mappings Queue of mappings.
      */
     private void proceedPrepare(final Queue<GridDistributedTxMapping> mappings) {
-        if (isDone())
-            return;
-
         final GridDistributedTxMapping m = mappings.poll();
 
         if (m == null)
+            return;
+
+        proceedPrepare(m, mappings);
+    }
+
+    /**
+     * Continues prepare after previous mapping successfully finished.
+     *
+     * @param m Mapping.
+     * @param mappings Queue of mappings.
+     */
+    private void proceedPrepare(GridDistributedTxMapping m, @Nullable final Queue<GridDistributedTxMapping> mappings) {
+        if (isDone())
             return;
 
         assert !m.empty();
@@ -361,7 +425,6 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
             m.near(),
             txMapping.transactionNodes(),
             m.last(),
-            m.lastBackups(),
             tx.onePhaseCommit(),
             tx.needReturnValue() && tx.implicit(),
             tx.implicitSingle(),
@@ -442,7 +505,14 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
     ) {
         GridCacheContext cacheCtx = entry.context();
 
-        List<ClusterNode> nodes = cacheCtx.affinity().nodes(entry.key(), topVer);
+        List<ClusterNode> nodes;
+
+        GridCacheEntryEx cached0 = entry.cached();
+
+        if (cached0.isDht())
+            nodes = cacheCtx.affinity().nodes(cached0.partition(), topVer);
+        else
+            nodes = cacheCtx.affinity().nodes(entry.key(), topVer);
 
         txMapping.addMapping(nodes);
 

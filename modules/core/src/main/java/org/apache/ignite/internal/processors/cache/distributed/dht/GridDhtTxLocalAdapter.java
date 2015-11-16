@@ -435,7 +435,7 @@ public abstract class GridDhtTxLocalAdapter extends IgniteTxLocalAdapter {
             if (log.isDebugEnabled())
                 log.debug("Removing mapping for entry [nodeId=" + nodeId + ", entry=" + entry + ']');
 
-            IgniteTxEntry txEntry = txMap.get(entry.txKey());
+            IgniteTxEntry txEntry = entry(entry.txKey());
 
             if (txEntry == null)
                 return false;
@@ -469,7 +469,7 @@ public abstract class GridDhtTxLocalAdapter extends IgniteTxLocalAdapter {
             List<GridDhtCacheEntry> entries = mapping.getValue();
 
             for (GridDhtCacheEntry entry : entries) {
-                IgniteTxEntry txEntry = txMap.get(entry.txKey());
+                IgniteTxEntry txEntry = entry(entry.txKey());
 
                 if (txEntry != null) {
                     if (m == null)
@@ -529,7 +529,7 @@ public abstract class GridDhtTxLocalAdapter extends IgniteTxLocalAdapter {
         GridDhtCacheAdapter dhtCache = cacheCtx.isNear() ? cacheCtx.near().dht() : cacheCtx.dht();
 
         try {
-            IgniteTxEntry existing = txMap.get(e.txKey());
+            IgniteTxEntry existing = entry(e.txKey());
 
             if (existing != null) {
                 // Must keep NOOP operation if received READ because it means that the lock was sent to a backup node.
@@ -569,7 +569,7 @@ public abstract class GridDhtTxLocalAdapter extends IgniteTxLocalAdapter {
                     existing.explicitVersion(dhtVer);
                 }
 
-                txMap.put(existing.txKey(), existing);
+                txState.addEntry(existing);
 
                 if (log.isDebugEnabled())
                     log.debug("Added entry to transaction: " + existing);

@@ -47,7 +47,6 @@ import org.apache.ignite.internal.processors.cache.transactions.IgniteTxKey;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteEx;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteStateImpl;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxState;
-import org.apache.ignite.internal.processors.cache.transactions.IgniteTxStateImpl;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersionConflictContext;
 import org.apache.ignite.internal.transactions.IgniteTxHeuristicCheckedException;
@@ -88,14 +87,6 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     /** */
     private static final long serialVersionUID = 0L;
 
-    /** Read set. */
-    @GridToStringInclude
-    protected Map<IgniteTxKey, IgniteTxEntry> readMap;
-
-    /** Write map. */
-    @GridToStringInclude
-    protected Map<IgniteTxKey, IgniteTxEntry> writeMap;
-
     /** Remote thread ID. */
     @GridToStringInclude
     private long rmtThreadId;
@@ -114,7 +105,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
 
     /** */
     @GridToStringInclude
-    protected IgniteTxState txState;
+    protected IgniteTxRemoteStateImpl txState;
 
     /**
      * Empty constructor required for {@link Externalizable}.
@@ -173,8 +164,6 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
         this.rmtThreadId = rmtThreadId;
         this.invalidate = invalidate;
 
-        txState = new IgniteTxRemoteStateImpl();
-
         commitVersion(commitVer);
 
         // Must set started flag after concurrency and isolation.
@@ -210,14 +199,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
      * @return Checks if transaction has no entries.
      */
     @Override public boolean empty() {
-        return readMap.isEmpty() && writeMap.isEmpty();
-    }
-
-    /** {@inheritDoc} */
-    @Override public boolean removed(IgniteTxKey key) {
-        IgniteTxEntry e = writeMap.get(key);
-
-        return e != null && e.op() == DELETE;
+        return txState.empty();
     }
 
     /** {@inheritDoc} */
@@ -227,12 +209,12 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
 
     /** {@inheritDoc} */
     @Override public Map<IgniteTxKey, IgniteTxEntry> writeMap() {
-        return writeMap;
+        return txState.writeMap();
     }
 
     /** {@inheritDoc} */
     @Override public Map<IgniteTxKey, IgniteTxEntry> readMap() {
-        return readMap;
+        return txState.readMap();
     }
 
     /** {@inheritDoc} */
@@ -254,12 +236,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
 
     /** {@inheritDoc} */
     @Override public IgniteTxEntry entry(IgniteTxKey key) {
-        IgniteTxEntry e = writeMap == null ? null : writeMap.get(key);
-
-        if (e == null)
-            e = readMap == null ? null : readMap.get(key);
-
-        return e;
+        return txState.entry(key);
     }
 
     /**
@@ -268,8 +245,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
      * @param key key to be removed.
      */
     public void clearEntry(IgniteTxKey key) {
-        readMap.remove(key);
-        writeMap.remove(key);
+        txState.clearEntry(key);
     }
 
     /**
@@ -277,12 +253,18 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
      * @param committedVers Committed versions.
      * @param rolledbackVers Rolled back versions.
      */
-    @Override public void doneRemote(GridCacheVersion baseVer, Collection<GridCacheVersion> committedVers,
-        Collection<GridCacheVersion> rolledbackVers, Collection<GridCacheVersion> pendingVers) {
+    @Override public void doneRemote(GridCacheVersion baseVer,
+        Collection<GridCacheVersion> committedVers,
+        Collection<GridCacheVersion> rolledbackVers,
+        Collection<GridCacheVersion> pendingVers) {
+        Map<IgniteTxKey, IgniteTxEntry> readMap = txState.readMap();
+
         if (readMap != null && !readMap.isEmpty()) {
             for (IgniteTxEntry txEntry : readMap.values())
                 doneRemote(txEntry, baseVer, committedVers, rolledbackVers, pendingVers);
         }
+
+        Map<IgniteTxKey, IgniteTxEntry> writeMap = txState.writeMap();
 
         if (writeMap != null && !writeMap.isEmpty()) {
             for (IgniteTxEntry txEntry : writeMap.values())
@@ -299,8 +281,10 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
      * @param rolledbackVers Rolled back versions relative to base version.
      * @param pendingVers Pending versions.
      */
-    private void doneRemote(IgniteTxEntry txEntry, GridCacheVersion baseVer,
-        Collection<GridCacheVersion> committedVers, Collection<GridCacheVersion> rolledbackVers,
+    private void doneRemote(IgniteTxEntry txEntry,
+        GridCacheVersion baseVer,
+        Collection<GridCacheVersion> committedVers,
+        Collection<GridCacheVersion> rolledbackVers,
         Collection<GridCacheVersion> pendingVers) {
         while (true) {
             GridDistributedCacheEntry entry = (GridDistributedCacheEntry)txEntry.cached();
@@ -360,36 +344,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     @Override public boolean setWriteValue(IgniteTxEntry e) {
         checkInternal(e.txKey());
 
-        IgniteTxEntry entry = writeMap.get(e.txKey());
-
-        if (entry == null) {
-            IgniteTxEntry rmv = readMap.remove(e.txKey());
-
-            if (rmv != null) {
-                e.cached(rmv.cached());
-
-                writeMap.put(e.txKey(), e);
-            }
-            // If lock is explicit.
-            else {
-                e.cached(e.context().cache().entryEx(e.key()));
-
-                // explicit lock.
-                writeMap.put(e.txKey(), e);
-            }
-        }
-        else {
-            // Copy values.
-            entry.value(e.value(), e.hasWriteValue(), e.hasReadValue());
-            entry.entryProcessors(e.entryProcessors());
-            entry.op(e.op());
-            entry.ttl(e.ttl());
-            entry.explicitVersion(e.explicitVersion());
-
-            // Conflict resolution stuff.
-            entry.conflictVersion(e.conflictVersion());
-            entry.conflictExpireTime(e.conflictExpireTime());
-        }
+        txState.setWriteValue(e);
 
         addExplicit(e);
 
@@ -398,7 +353,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
 
     /** {@inheritDoc} */
     @Override public boolean hasWriteKey(IgniteTxKey key) {
-        return writeMap.containsKey(key);
+        return txState.hasWriteKey(key);
     }
 
     /** {@inheritDoc} */
@@ -409,27 +364,27 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
 
     /** {@inheritDoc} */
     @Override public Set<IgniteTxKey> readSet() {
-        return readMap.keySet();
+        return txState.readSet();
     }
 
     /** {@inheritDoc} */
     @Override public Set<IgniteTxKey> writeSet() {
-        return writeMap.keySet();
+        return txState.writeSet();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<IgniteTxEntry> allEntries() {
-        return F.concat(false, writeEntries(), readEntries());
+        return txState.allEntries();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<IgniteTxEntry> writeEntries() {
-        return writeMap.values();
+        return txState.writeEntries();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<IgniteTxEntry> readEntries() {
-        return readMap.values();
+        return txState.readEntries();
     }
 
     /**
@@ -468,7 +423,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     @SuppressWarnings({"CatchGenericClass"})
     private void commitIfLocked() throws IgniteCheckedException {
         if (state() == COMMITTING) {
-            for (IgniteTxEntry txEntry : writeMap.values()) {
+            for (IgniteTxEntry txEntry : writeEntries()) {
                 assert txEntry != null : "Missing transaction entry for tx: " + this;
 
                 while (true) {
@@ -502,6 +457,8 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
             // Only one thread gets to commit.
             if (commitAllowed.compareAndSet(false, true)) {
                 IgniteCheckedException err = null;
+
+                Map<IgniteTxKey, IgniteTxEntry> writeMap = txState.writeMap();
 
                 if (!F.isEmpty(writeMap)) {
                     // Register this transaction as completed prior to write-phase to

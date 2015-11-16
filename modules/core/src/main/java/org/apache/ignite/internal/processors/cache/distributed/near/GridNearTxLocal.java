@@ -512,7 +512,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
         if (m == null)
             mappings.put(node.id(), m = new GridDistributedTxMapping(node));
 
-        IgniteTxEntry txEntry = txMap.get(key);
+        IgniteTxEntry txEntry = entry(key);
 
         assert txEntry != null;
 
@@ -526,26 +526,10 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
     }
 
     /**
-     * Adds keys mapping.
-     *
-     * @param n Mapped node.
-     * @param mappedKeys Mapped keys.
+     * @return Non {@code null} entry if tx has only one write entry.
      */
-    private void addKeyMapping(ClusterNode n, Iterable<IgniteTxKey> mappedKeys) {
-        GridDistributedTxMapping m = mappings.get(n.id());
-
-        if (m == null)
-            mappings.put(n.id(), m = new GridDistributedTxMapping(n));
-
-        for (IgniteTxKey key : mappedKeys) {
-            IgniteTxEntry txEntry = txMap.get(key);
-
-            assert txEntry != null;
-
-            txEntry.nodeId(n.id());
-
-            m.add(txEntry);
-        }
+    @Nullable IgniteTxEntry singleWrite() {
+        return txState.singleWrite();
     }
 
     /**
@@ -553,30 +537,36 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
      */
     void addEntryMapping(@Nullable Collection<GridDistributedTxMapping> maps) {
         if (!F.isEmpty(maps)) {
-            for (GridDistributedTxMapping map : maps) {
-                ClusterNode n = map.node();
+            for (GridDistributedTxMapping map : maps)
+                addEntryMapping(map);
 
-                GridDistributedTxMapping m = mappings.get(n.id());
-
-                if (m == null) {
-                    m = F.addIfAbsent(mappings, n.id(), new GridDistributedTxMapping(n));
-
-                    m.near(map.near());
-
-                    if (map.explicitLock())
-                        m.markExplicitLock();
-                }
-
-                assert m != null;
-
-                for (IgniteTxEntry entry : map.entries())
-                    m.add(entry);
-            }
-
-            if (log.isDebugEnabled())
-                log.debug("Added mappings to transaction [locId=" + cctx.localNodeId() + ", mappings=" + maps +
+            if (log.isDebugEnabled()) {
+                log.debug("Added mappings to transaction [locId=" + cctx.localNodeId() +
+                    ", mappings=" + maps +
                     ", tx=" + this + ']');
+            }
         }
+    }
+
+    /**
+     * @param map Mapping.
+     */
+    void addEntryMapping(GridDistributedTxMapping map) {
+        ClusterNode n = map.node();
+
+        GridDistributedTxMapping m = mappings.get(n.id());
+
+        if (m == null) {
+            m = F.addIfAbsent(mappings, n.id(), new GridDistributedTxMapping(n));
+
+            m.near(map.near());
+
+            if (map.explicitLock())
+                m.markExplicitLock();
+        }
+
+        for (IgniteTxEntry entry : map.entries())
+            m.add(entry);
     }
 
     /**
@@ -615,8 +605,23 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
         Collection<GridCacheVersion> committedVers,
         Collection<GridCacheVersion> rolledbackVers)
     {
-        Collection<IgniteTxEntry> entries = F.concat(false, mapping.writes(), mapping.reads());
+        readyNearLocks(mapping.writes(), mapping.dhtVersion(), pendingVers, committedVers, rolledbackVers);
+        readyNearLocks(mapping.reads(), mapping.dhtVersion(), pendingVers, committedVers, rolledbackVers);
+    }
 
+    /**
+     * @param entries Entries.
+     * @param dhtVer DHT version.
+     * @param pendingVers Pending versions.
+     * @param committedVers Committed versions.
+     * @param rolledbackVers Rolled back versions.
+     */
+    void readyNearLocks(Collection<IgniteTxEntry> entries,
+        GridCacheVersion dhtVer,
+        Collection<GridCacheVersion> pendingVers,
+        Collection<GridCacheVersion> committedVers,
+        Collection<GridCacheVersion> rolledbackVers)
+    {
         for (IgniteTxEntry txEntry : entries) {
             while (true) {
                 GridCacheContext cacheCtx = txEntry.cached().context();
@@ -629,8 +634,13 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
                     // Handle explicit locks.
                     GridCacheVersion explicit = txEntry.explicitVersion();
 
-                    if (explicit == null)
-                        entry.readyNearLock(xidVer, mapping.dhtVersion(), committedVers, rolledbackVers, pendingVers);
+                    if (explicit == null) {
+                        entry.readyNearLock(xidVer,
+                            dhtVer,
+                            committedVers,
+                            rolledbackVers,
+                            pendingVers);
+                    }
 
                     break;
                 }
@@ -863,7 +873,6 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
      * @param writes Write entries.
      * @param txNodes Transaction nodes mapping.
      * @param last {@code True} if this is last prepare request.
-     * @param lastBackups IDs of backup nodes receiving last prepare request.
      * @return Future that will be completed when locks are acquired.
      */
     @SuppressWarnings("TypeMayBeWeakened")
@@ -871,8 +880,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
         @Nullable Collection<IgniteTxEntry> reads,
         @Nullable Collection<IgniteTxEntry> writes,
         Map<UUID, Collection<UUID>> txNodes,
-        boolean last,
-        Collection<UUID> lastBackups
+        boolean last
     ) {
         if (state() != PREPARING) {
             if (timedOut())
@@ -893,8 +901,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
             IgniteUuid.randomUuid(),
             Collections.<IgniteTxKey, GridCacheVersion>emptyMap(),
             last,
-            needReturnValue() && implicit(),
-            lastBackups);
+            needReturnValue() && implicit());
 
         try {
             // At this point all the entries passed in must be enlisted in transaction because this is an

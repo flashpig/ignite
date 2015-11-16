@@ -216,8 +216,7 @@ public class IgniteTxHandler {
             req.reads(),
             req.writes(),
             req.transactionNodes(),
-            req.last(),
-            req.lastBackups());
+            req.last());
 
         if (locTx.isRollbackOnly())
             locTx.rollbackAsync();
@@ -398,7 +397,6 @@ public class IgniteTxHandler {
 
             if (req.onePhaseCommit()) {
                 assert req.last();
-                assert F.isEmpty(req.lastBackups()) || req.lastBackups().size() <= 1;
 
                 tx.onePhaseCommit(true);
             }
@@ -413,8 +411,7 @@ public class IgniteTxHandler {
                 req.messageId(),
                 req.miniId(),
                 req.transactionNodes(),
-                req.last(),
-                req.lastBackups());
+                req.last());
 
             if (tx.isRollbackOnly()) {
                 try {
