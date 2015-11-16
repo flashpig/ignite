@@ -93,12 +93,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** Initial capacity. */
     private static final int INIT_CAP = 1024;
 
-    /** Maximum offset which fits in 1 byte. */
-    private static final int MAX_OFFSET_1 = 1 << 8;
-
-    /** Maximum offset which fits in 2 bytes. */
-    private static final int MAX_OFFSET_2 = 1 << 16;
-
     /** */
     private final PortableContext ctx;
 
@@ -118,7 +112,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     private PortableOutputStream out;
 
     /** Schema. */
-    private SchemaHolder schema;
+    private BinaryWriterSchemaHolder schema;
 
     /** Schema ID. */
     private int schemaId = PortableUtils.schemaInitialId();
@@ -138,7 +132,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     private static class TLSContext {
 
         public PortableMemoryAllocatorChunk chunk = PortableMemoryAllocator.INSTANCE.chunk();
-        public SchemaHolder schema = new SchemaHolder();
+        public BinaryWriterSchemaHolder schema = new BinaryWriterSchemaHolder();
     }
     
     /**
@@ -182,7 +176,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
       * @param out Output stream.
       * @param handles Handles.
       */
-     private BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, SchemaHolder schema,
+     private BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, BinaryWriterSchemaHolder schema,
          BinaryWriterHandles handles) {
          this.ctx = ctx;
          this.out = out;
@@ -1845,139 +1839,5 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      */
     public PortableContext context() {
         return ctx;
-    }
-
-    /**
-     * Schema holder.
-     */
-    private static class SchemaHolder {
-        /** Grow step. */
-        private static final int GROW_STEP = 64;
-
-        /** Maximum stable size. */
-        private static final int MAX_SIZE = 1024;
-
-        /** Data. */
-        private int[] data;
-
-        /** Index. */
-        private int idx;
-
-        /**
-         * Constructor.
-         */
-        public SchemaHolder() {
-            data = new int[GROW_STEP];
-        }
-
-        /**
-         * Push another frame.
-         *
-         * @param id Field ID.
-         * @param off Field offset.
-         */
-        public void push(int id, int off) {
-            if (idx == data.length) {
-                int[] data0 = new int[data.length + GROW_STEP];
-
-                System.arraycopy(data, 0, data0, 0, data.length);
-
-                data = data0;
-            }
-
-            data[idx] = id;
-            data[idx + 1] = off;
-
-            idx += 2;
-        }
-
-        /**
-         * Build the schema.
-         *
-         * @param builder Builder.
-         * @param fieldCnt Fields count.
-         */
-        public void build(PortableSchema.Builder builder, int fieldCnt) {
-            for (int curIdx = idx - fieldCnt * 2; curIdx < idx; curIdx += 2)
-                builder.addField(data[curIdx]);
-        }
-
-        /**
-         * Write collected frames and pop them.
-         *
-         * @param writer Writer.
-         * @param fieldCnt Count.
-         * @param compactFooter Whether footer should be written in compact form.
-         * @return Amount of bytes dedicated to each field offset. Could be 1, 2 or 4.
-         */
-        public int write(BinaryWriterExImpl writer, int fieldCnt, boolean compactFooter) {
-            int startIdx = idx - fieldCnt * 2;
-
-            assert startIdx >= 0;
-
-            int lastOffset = data[idx - 1];
-
-            int res;
-
-            if (compactFooter) {
-                if (lastOffset < MAX_OFFSET_1) {
-                    for (int curIdx = startIdx + 1; curIdx < idx; curIdx += 2)
-                        writer.writeByte((byte)data[curIdx]);
-
-                    res = PortableUtils.OFFSET_1;
-                }
-                else if (lastOffset < MAX_OFFSET_2) {
-                    for (int curIdx = startIdx + 1; curIdx < idx; curIdx += 2)
-                        writer.writeShort((short)data[curIdx]);
-
-                    res = PortableUtils.OFFSET_2;
-                }
-                else {
-                    for (int curIdx = startIdx + 1; curIdx < idx; curIdx += 2)
-                        writer.writeInt(data[curIdx]);
-
-                    res = PortableUtils.OFFSET_4;
-                }
-            }
-            else {
-                if (lastOffset < MAX_OFFSET_1) {
-                    for (int curIdx = startIdx; curIdx < idx;) {
-                        writer.writeInt(data[curIdx++]);
-                        writer.writeByte((byte) data[curIdx++]);
-                    }
-
-                    res = PortableUtils.OFFSET_1;
-                }
-                else if (lastOffset < MAX_OFFSET_2) {
-                    for (int curIdx = startIdx; curIdx < idx;) {
-                        writer.writeInt(data[curIdx++]);
-                        writer.writeShort((short)data[curIdx++]);
-                    }
-
-                    res = PortableUtils.OFFSET_2;
-                }
-                else {
-                    for (int curIdx = startIdx; curIdx < idx;) {
-                        writer.writeInt(data[curIdx++]);
-                        writer.writeInt(data[curIdx++]);
-                    }
-
-                    res = PortableUtils.OFFSET_4;
-                }
-            }
-
-            return res;
-        }
-
-        /**
-         * Pop current object's frame.
-         */
-        public void pop(int fieldCnt) {
-            idx = idx - fieldCnt * 2;
-
-            // Shrink data array if needed.
-            if (idx == 0 && data.length > MAX_SIZE)
-                data = new int[MAX_SIZE];
-        }
     }
 }
