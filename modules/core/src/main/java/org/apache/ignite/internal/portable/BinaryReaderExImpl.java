@@ -334,6 +334,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    byte readBytePrimitive(int fieldId) throws BinaryObjectException {
+        return hasField(fieldId) && checkFlag(BYTE) == Flag.NORMAL ? in.readByte() : 0;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
      * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
      */
     @Nullable Byte readByte(int fieldId) throws BinaryObjectException {
@@ -345,6 +354,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         }
         else
             return null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    short readShortPrimitive(int fieldId) throws BinaryObjectException {
+        return hasField(fieldId) && checkFlag(SHORT) == Flag.NORMAL ? in.readShort() : 0;
     }
 
     /**
@@ -366,6 +384,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    int readIntPrimitive(int fieldId) throws BinaryObjectException {
+        return hasField(fieldId) && checkFlag(INT) == Flag.NORMAL ? in.readInt() : 0;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
      * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
      */
     @Nullable Integer readInt(int fieldId) throws BinaryObjectException {
@@ -377,6 +404,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         }
         else
             return null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    long readLongPrimitive(int fieldId) throws BinaryObjectException {
+        return hasField(fieldId) && checkFlag(LONG) == Flag.NORMAL ? in.readLong() : 0;
     }
 
     /**
@@ -398,6 +434,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    float readFloatPrimitive(int fieldId) throws BinaryObjectException {
+        return hasField(fieldId) && checkFlag(FLOAT) == Flag.NORMAL ? in.readFloat() : 0;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
      * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
      */
     @Nullable Float readFloat(int fieldId) throws BinaryObjectException {
@@ -409,6 +454,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         }
         else
             return null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    double readDoublePrimitive(int fieldId) throws BinaryObjectException {
+        return hasField(fieldId) && checkFlag(DOUBLE) == Flag.NORMAL ? in.readDouble() : 0;
     }
 
     /**
@@ -430,6 +484,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    char readCharPrimitive(int fieldId) throws BinaryObjectException {
+        return hasField(fieldId) && checkFlag(CHAR) == Flag.NORMAL ? in.readChar() : 0;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
      * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
      */
     @Nullable Character readChar(int fieldId) throws BinaryObjectException {
@@ -441,6 +504,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         }
         else
             return null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    boolean readBooleanPrimitive(int fieldId) throws BinaryObjectException {
+        return hasField(fieldId) && checkFlag(BOOLEAN) == Flag.NORMAL && in.readBoolean();
     }
 
     /**

@@ -19,12 +19,14 @@ package org.apache.ignite.internal.portable;
 
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.binary.BinaryIdMapper;
-import org.apache.ignite.internal.portable.streams.PortableHeapOutputStream;
-import org.apache.ignite.internal.portable.streams.PortableOutputStream;
-import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.binary.BinaryRawWriter;
 import org.apache.ignite.binary.BinaryWriter;
+import org.apache.ignite.internal.portable.streams.PortableHeapOutputStream;
+import org.apache.ignite.internal.portable.streams.PortableMemoryAllocator;
+import org.apache.ignite.internal.portable.streams.PortableMemoryAllocatorChunk;
+import org.apache.ignite.internal.portable.streams.PortableOutputStream;
+import org.apache.ignite.internal.util.typedef.internal.A;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -99,9 +101,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** Maximum offset which fits in 2 bytes. */
     private static final int MAX_OFFSET_2 = 1 << 16;
 
-    /** Thread-local schema. */
-    private static final ThreadLocal<SchemaHolder> SCHEMA = new ThreadLocal<>();
-
     /** */
     private final PortableContext ctx;
 
@@ -141,33 +140,31 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /** ID mapper. */
     private BinaryIdMapper idMapper;
 
+    private static final ThreadLocal<TLSContext> TLS_CTX = new ThreadLocal<TLSContext>() {
+        @Override protected TLSContext initialValue() {
+            return new TLSContext();
+        }
+    };
+
+    private static class TLSContext {
+
+        public PortableMemoryAllocatorChunk chunk = PortableMemoryAllocator.INSTANCE.chunk();
+        public SchemaHolder schema = new SchemaHolder();
+    }
+    
     /**
      * @param ctx Context.
      */
     BinaryWriterExImpl(PortableContext ctx) {
-        this(ctx, new PortableHeapOutputStream(INIT_CAP));
+        TLSContext tlsCtx = TLS_CTX.get();
+
+        this.ctx = ctx;
+        this.out = new PortableHeapOutputStream(INIT_CAP, tlsCtx.chunk);
+        this.handles = new IdentityHashMap<>();
+
+        start = out.position();
+        schema = tlsCtx.schema;
     }
-
-    /**
-     * @param ctx Context.
-     * @param out Output stream.
-     */
-    BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out) {
-        this(ctx, out, new IdentityHashMap<Object, Integer>());
-    }
-
-     /**
-      * @param ctx Context.
-      * @param out Output stream.
-      * @param handles Handles.
-      */
-     private BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, Map<Object, Integer> handles) {
-         this.ctx = ctx;
-         this.out = out;
-         this.handles = handles;
-
-         start = out.position();
-     }
 
     /**
      * @param ctx Context.
@@ -179,6 +176,35 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         this.typeId = typeId;
         this.metaEnabled = metaEnabled;
     }
+
+    /**
+     * @param ctx Context.
+     * @param out Output stream.
+     */
+    BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out) {
+        this.ctx = ctx;
+        this.out = out;
+        this.handles = new IdentityHashMap<>();
+
+        start = out.position();
+
+        schema = TLS_CTX.get().schema;
+    }
+
+     /**
+      * @param ctx Context.
+      * @param out Output stream.
+      * @param handles Handles.
+      */
+     private BinaryWriterExImpl(PortableContext ctx, PortableOutputStream out, SchemaHolder schema,
+         Map<Object, Integer> handles) {
+         this.ctx = ctx;
+         this.out = out;
+         this.schema = schema;
+         this.handles = handles;
+
+         start = out.position();
+     }
 
     /**
      * Close the writer releasing resources if necessary.
@@ -272,24 +298,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     }
 
     /**
-     * @param obj Object.
-     * @return Handle.
-     */
-    int handle(Object obj) {
-        assert obj != null;
-
-        Integer h = handles.get(obj);
-
-        if (h != null)
-            return out.position() - h;
-        else {
-            handles.put(obj, out.position());
-
-            return -1;
-        }
-    }
-
-    /**
      * @return Array.
      */
     public byte[] array() {
@@ -340,8 +348,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
 
         if (useCompactFooter)
             flags |= PortableUtils.FLAG_COMPACT_FOOTER;
-        
-        if (schema != null) {
+
+        if (fieldCnt != 0) {
             flags |= PortableUtils.FLAG_HAS_SCHEMA;
 
             // Write schema ID.
@@ -387,11 +395,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * Pop schema.
      */
     public void popSchema() {
-        if (schema != null) {
-            assert fieldCnt > 0;
-
+        if (fieldCnt > 0)
             schema.pop(fieldCnt);
-        }
     }
 
     /**
@@ -561,7 +566,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (obj == null)
             doWriteByte(NULL);
         else {
-            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, handles);
+            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, schema, handles);
 
             writer.marshal(obj);
         }
@@ -972,13 +977,19 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /**
      * @param val Value.
      */
+    void writeByteFieldPrimitive(byte val) {
+        doWriteByte(BYTE);
+        doWriteByte(val);
+    }
+
+    /**
+     * @param val Value.
+     */
     void writeByteField(@Nullable Byte val) {
         if (val == null)
             doWriteByte(NULL);
-        else {
-            doWriteByte(BYTE);
-            doWriteByte(val);
-        }
+        else
+            writeByteFieldPrimitive(val);
     }
 
     /**
@@ -991,13 +1002,27 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     /**
      * @param val Value.
      */
+    void writeShortFieldPrimitive(short val) {
+        doWriteByte(SHORT);
+        doWriteShort(val);
+    }
+
+    /**
+     * @param val Value.
+     */
     void writeShortField(@Nullable Short val) {
         if (val == null)
             doWriteByte(NULL);
-        else {
-            doWriteByte(SHORT);
-            doWriteShort(val);
-        }
+        else
+            writeShortFieldPrimitive(val);
+    }
+
+    /**
+     * @param val Value.
+     */
+    void writeIntFieldPrimitive(int val) {
+        doWriteByte(INT);
+        doWriteInt(val);
     }
 
     /**
@@ -1006,10 +1031,16 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     void writeIntField(@Nullable Integer val) {
         if (val == null)
             doWriteByte(NULL);
-        else {
-            doWriteByte(INT);
-            doWriteInt(val);
-        }
+        else
+            writeIntFieldPrimitive(val);
+    }
+
+    /**
+     * @param val Value.
+     */
+    void writeLongFieldPrimitive(long val) {
+        doWriteByte(LONG);
+        doWriteLong(val);
     }
 
     /**
@@ -1018,10 +1049,16 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     void writeLongField(@Nullable Long val) {
         if (val == null)
             doWriteByte(NULL);
-        else {
-            doWriteByte(LONG);
-            doWriteLong(val);
-        }
+        else
+            writeLongFieldPrimitive(val);
+    }
+
+    /**
+     * @param val Value.
+     */
+    void writeFloatFieldPrimitive(float val) {
+        doWriteByte(FLOAT);
+        doWriteFloat(val);
     }
 
     /**
@@ -1030,10 +1067,16 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     void writeFloatField(@Nullable Float val) {
         if (val == null)
             doWriteByte(NULL);
-        else {
-            doWriteByte(FLOAT);
-            doWriteFloat(val);
-        }
+        else
+            writeFloatFieldPrimitive(val);
+    }
+
+    /**
+     * @param val Value.
+     */
+    void writeDoubleFieldPrimitive(double val) {
+        doWriteByte(DOUBLE);
+        doWriteDouble(val);
     }
 
     /**
@@ -1042,10 +1085,16 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     void writeDoubleField(@Nullable Double val) {
         if (val == null)
             doWriteByte(NULL);
-        else {
-            doWriteByte(DOUBLE);
-            doWriteDouble(val);
-        }
+        else
+            writeDoubleFieldPrimitive(val);
+    }
+
+    /**
+     * @param val Value.
+     */
+    void writeCharFieldPrimitive(char val) {
+        doWriteByte(CHAR);
+        doWriteChar(val);
     }
 
     /**
@@ -1054,10 +1103,16 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     void writeCharField(@Nullable Character val) {
         if (val == null)
             doWriteByte(NULL);
-        else {
-            doWriteByte(CHAR);
-            doWriteChar(val);
-        }
+        else
+            writeCharFieldPrimitive(val);
+    }
+
+    /**
+     * @param val Value.
+     */
+    void writeBooleanFieldPrimitive(boolean val) {
+        doWriteByte(BOOLEAN);
+        doWriteBoolean(val);
     }
 
     /**
@@ -1066,10 +1121,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     void writeBooleanField(@Nullable Boolean val) {
         if (val == null)
             doWriteByte(NULL);
-        else {
-            doWriteByte(BOOLEAN);
-            doWriteBoolean(val);
-        }
+        else
+            writeBooleanFieldPrimitive(val);
     }
 
     /**
@@ -1419,7 +1472,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         if (obj == null)
             doWriteByte(NULL);
         else {
-            BinaryWriterExImpl writer = new BinaryWriterExImpl(ctx, out, new IdentityHashMap<Object, Integer>());
+            BinaryWriterExImpl writer =
+                new BinaryWriterExImpl(ctx, out, schema, new IdentityHashMap<Object, Integer>());
 
             writer.marshal(obj);
         }
@@ -1734,19 +1788,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     public void writeFieldId(int fieldId) {
         int fieldOff = out.position() - start;
 
-        if (schema == null) {
-            schema = SCHEMA.get();
-
-            if (schema == null) {
-                schema = new SchemaHolder();
-
-                SCHEMA.set(schema);
-            }
-        }
-
-        schemaId = PortableUtils.updateSchemaId(schemaId, fieldId);
-
-        schema.push(fieldId, fieldOff);
+        // Advance schema hash.
+        schemaId = PortableUtils.updateSchemaId(schemaId, fieldId)        schema.push(fieldId, fieldOff);
 
         fieldCnt++;
     }
@@ -1777,16 +1820,22 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @return {@code true} if the object has been written as a handle.
      */
     boolean tryWriteAsHandle(Object obj) {
-        int handle = handle(obj);
+        assert obj != null;
 
-        if (handle >= 0) {
+        int pos = out.position();
+
+        Integer old = handles.put(obj, pos);
+
+        if (old == null)
+            return false;
+        else {
+            handles.put(obj, old);
+
             doWriteByte(GridPortableMarshaller.HANDLE);
-            doWriteInt(handle);
+            doWriteInt(pos - old);
 
             return true;
         }
-
-        return false;
     }
 
     /**
@@ -1796,7 +1845,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @return New writer.
      */
     public BinaryWriterExImpl newWriter(int typeId) {
-        BinaryWriterExImpl res = new BinaryWriterExImpl(ctx, out, handles);
+        BinaryWriterExImpl res = new BinaryWriterExImpl(ctx, out, schema, handles);
 
         res.typeId = typeId;
 

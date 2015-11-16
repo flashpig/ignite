@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.portable;
 
+import org.apache.ignite.binary.Binarylizable;
 import org.apache.ignite.internal.portable.builder.PortableLazyValue;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -26,6 +27,7 @@ import org.apache.ignite.binary.BinaryObject;
 import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
 
+import java.io.Externalizable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -902,5 +904,108 @@ public class PortableUtils {
             return changed ? new BinaryMetadata(oldMeta.typeId(), oldMeta.typeName(), mergedFields,
                 oldMeta.affinityKeyFieldName(), mergedSchemas) : oldMeta;
         }
+    }
+
+    /**
+     * @param cls Class.
+     * @return Mode.
+     */
+    @SuppressWarnings("IfMayBeConditional")
+    public static PortableClassDescriptor.Mode mode(Class<?> cls) {
+        assert cls != null;
+
+        /** Primitives. */
+        if (cls == byte.class)
+            return PortableClassDescriptor.Mode.P_BYTE;
+        else if (cls == boolean.class)
+            return PortableClassDescriptor.Mode.P_BOOLEAN;
+        else if (cls == short.class)
+            return PortableClassDescriptor.Mode.P_SHORT;
+        else if (cls == char.class)
+            return PortableClassDescriptor.Mode.P_CHAR;
+        else if (cls == int.class)
+            return PortableClassDescriptor.Mode.P_INT;
+        else if (cls == long.class)
+            return PortableClassDescriptor.Mode.P_LONG;
+        else if (cls == float.class)
+            return PortableClassDescriptor.Mode.P_FLOAT;
+        else if (cls == double.class)
+            return PortableClassDescriptor.Mode.P_DOUBLE;
+
+        /** Boxed primitives. */
+        else if (cls == Byte.class)
+            return PortableClassDescriptor.Mode.BYTE;
+        else if (cls == Boolean.class)
+            return PortableClassDescriptor.Mode.BOOLEAN;
+        else if (cls == Short.class)
+            return PortableClassDescriptor.Mode.SHORT;
+        else if (cls == Character.class)
+            return PortableClassDescriptor.Mode.CHAR;
+        else if (cls == Integer.class)
+            return PortableClassDescriptor.Mode.INT;
+        else if (cls == Long.class)
+            return PortableClassDescriptor.Mode.LONG;
+        else if (cls == Float.class)
+            return PortableClassDescriptor.Mode.FLOAT;
+        else if (cls == Double.class)
+            return PortableClassDescriptor.Mode.DOUBLE;
+
+        /** The rest types. */
+        else if (cls == BigDecimal.class)
+            return PortableClassDescriptor.Mode.DECIMAL;
+        else if (cls == String.class)
+            return PortableClassDescriptor.Mode.STRING;
+        else if (cls == UUID.class)
+            return PortableClassDescriptor.Mode.UUID;
+        else if (cls == Date.class)
+            return PortableClassDescriptor.Mode.DATE;
+        else if (cls == Timestamp.class)
+            return PortableClassDescriptor.Mode.TIMESTAMP;
+        else if (cls == byte[].class)
+            return PortableClassDescriptor.Mode.BYTE_ARR;
+        else if (cls == short[].class)
+            return PortableClassDescriptor.Mode.SHORT_ARR;
+        else if (cls == int[].class)
+            return PortableClassDescriptor.Mode.INT_ARR;
+        else if (cls == long[].class)
+            return PortableClassDescriptor.Mode.LONG_ARR;
+        else if (cls == float[].class)
+            return PortableClassDescriptor.Mode.FLOAT_ARR;
+        else if (cls == double[].class)
+            return PortableClassDescriptor.Mode.DOUBLE_ARR;
+        else if (cls == char[].class)
+            return PortableClassDescriptor.Mode.CHAR_ARR;
+        else if (cls == boolean[].class)
+            return PortableClassDescriptor.Mode.BOOLEAN_ARR;
+        else if (cls == BigDecimal[].class)
+            return PortableClassDescriptor.Mode.DECIMAL_ARR;
+        else if (cls == String[].class)
+            return PortableClassDescriptor.Mode.STRING_ARR;
+        else if (cls == UUID[].class)
+            return PortableClassDescriptor.Mode.UUID_ARR;
+        else if (cls == Date[].class)
+            return PortableClassDescriptor.Mode.DATE_ARR;
+        else if (cls == Timestamp[].class)
+            return PortableClassDescriptor.Mode.TIMESTAMP_ARR;
+        else if (cls.isArray())
+            return cls.getComponentType().isEnum() ? PortableClassDescriptor.Mode.ENUM_ARR : PortableClassDescriptor.Mode.OBJ_ARR;
+        else if (cls == BinaryObjectImpl.class)
+            return PortableClassDescriptor.Mode.PORTABLE_OBJ;
+        else if (Binarylizable.class.isAssignableFrom(cls))
+            return PortableClassDescriptor.Mode.PORTABLE;
+        else if (Externalizable.class.isAssignableFrom(cls))
+            return PortableClassDescriptor.Mode.EXTERNALIZABLE;
+        else if (Map.Entry.class.isAssignableFrom(cls))
+            return PortableClassDescriptor.Mode.MAP_ENTRY;
+        else if (Collection.class.isAssignableFrom(cls))
+            return PortableClassDescriptor.Mode.COL;
+        else if (Map.class.isAssignableFrom(cls))
+            return PortableClassDescriptor.Mode.MAP;
+        else if (cls.isEnum())
+            return PortableClassDescriptor.Mode.ENUM;
+        else if (cls == Class.class)
+            return PortableClassDescriptor.Mode.CLASS;
+        else
+            return PortableClassDescriptor.Mode.OBJECT;
     }
 }

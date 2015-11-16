@@ -17,28 +17,15 @@
 
 package org.apache.ignite.internal.portable.streams;
 
-import static org.apache.ignite.internal.portable.PortableThreadLocalMemoryAllocator.DFLT_ALLOC;
-import static org.apache.ignite.internal.portable.PortableThreadLocalMemoryAllocator.THREAD_LOCAL_ALLOC;
-
 /**
  * Portable heap output stream.
  */
 public final class PortableHeapOutputStream extends PortableAbstractOutputStream {
-    /** Default capacity. */
-    private static final int DFLT_CAP = 1024;
-
     /** Allocator. */
-    private final PortableMemoryAllocator alloc;
+    private final PortableMemoryAllocatorChunk chunk;
 
     /** Data. */
     private byte[] data;
-
-    /**
-     * Constructor.
-     */
-    public PortableHeapOutputStream() {
-        this(DFLT_CAP, DFLT_ALLOC);
-    }
 
     /**
      * Constructor.
@@ -46,44 +33,24 @@ public final class PortableHeapOutputStream extends PortableAbstractOutputStream
      * @param cap Initial capacity.
      */
     public PortableHeapOutputStream(int cap) {
-        this(cap, THREAD_LOCAL_ALLOC);
+        this(cap, PortableMemoryAllocator.INSTANCE.chunk());
     }
 
     /**
      * Constructor.
      *
-     * @param cap Initial capacity.
-     * @param alloc Allocator.
+     * @param cap Capacity.
+     * @param chunk Chunk.
      */
-    public PortableHeapOutputStream(int cap, PortableMemoryAllocator alloc) {
-        data = alloc.allocate(cap);
+    public PortableHeapOutputStream(int cap, PortableMemoryAllocatorChunk chunk) {
+        this.chunk = chunk;
 
-        this.alloc = alloc;
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param data Data.
-     */
-    public PortableHeapOutputStream(byte[] data) {
-        this(data, DFLT_ALLOC);
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param data Data.
-     * @param alloc Allocator.
-     */
-    public PortableHeapOutputStream(byte[] data, PortableMemoryAllocator alloc) {
-        this.data = data;
-        this.alloc = alloc;
+        data = chunk.allocate(cap);
     }
 
     /** {@inheritDoc} */
     @Override public void close() {
-        alloc.release(data, pos);
+        chunk.release(data, pos);
     }
 
     /** {@inheritDoc} */
@@ -91,7 +58,7 @@ public final class PortableHeapOutputStream extends PortableAbstractOutputStream
         if (cnt > data.length) {
             int newCap = capacity(data.length, cnt);
 
-            data = alloc.reallocate(data, newCap);
+            data = chunk.reallocate(data, newCap);
         }
     }
 
