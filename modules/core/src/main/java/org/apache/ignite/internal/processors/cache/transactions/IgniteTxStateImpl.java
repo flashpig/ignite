@@ -42,7 +42,7 @@ import static org.apache.ignite.cache.CacheWriteSynchronizationMode.FULL_SYNC;
 /**
  *
  */
-public class IgniteTxStateImpl extends IgniteTxStateAdapter {
+public class IgniteTxStateImpl extends IgniteTxLocalStateAdapter {
     /** Active cache IDs. */
     private Set<Integer> activeCacheIds = new HashSet<>();
     /** Per-transaction read map. */

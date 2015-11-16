@@ -37,7 +37,7 @@ import static org.apache.ignite.cache.CacheWriteSynchronizationMode.FULL_SYNC;
 /**
  *
  */
-public class IgniteTxImplicitSingleStateImpl extends IgniteTxStateAdapter {
+public class IgniteTxImplicitSingleStateImpl extends IgniteTxLocalStateAdapter {
     /** */
     private GridCacheContext cacheCtx;
 

@@ -153,7 +153,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
 
     /** */
     @GridToStringInclude
-    protected IgniteTxState txState;
+    protected IgniteTxLocalState txState;
 
     /**
      * Empty constructor required for {@link Externalizable}.

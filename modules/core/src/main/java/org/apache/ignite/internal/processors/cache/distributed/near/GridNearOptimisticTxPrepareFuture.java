@@ -311,7 +311,7 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
             return;
         }
 
-        tx.addEntryMapping(mapping);
+        tx.addSingleEntryMapping(mapping, write);
 
         cctx.mvcc().recheckPendingLocks();
 

@@ -32,57 +32,135 @@ import org.jetbrains.annotations.Nullable;
  *
  */
 public interface IgniteTxState {
+    /**
+     *
+     * @return
+     */
     public boolean implicitSingle();
 
+    /**
+     *
+     * @return
+     */
     @Nullable public Integer firstCacheId();
 
+    /**
+     *
+     * @param cctx
+     */
     public void awaitLastFut(GridCacheSharedContext cctx);
 
+    /**
+     * @param cctx Context.
+     * @param topFut Topology future.
+     * @return
+     */
     public IgniteCheckedException validateTopology(GridCacheSharedContext cctx, GridDhtTopologyFuture topFut);
 
+    /**
+     * @param cctx Context.
+     * @return
+     */
     public boolean sync(GridCacheSharedContext cctx);
 
+    /**
+     * @param cctx Context.
+     * @return
+     */
     public boolean hasNearCache(GridCacheSharedContext cctx);
 
+    /**
+     * @param cacheCtx Ccntext.
+     * @param tx Transaction.
+     * @throws IgniteCheckedException If cache check failed.
+     */
     public void addActiveCache(GridCacheContext cacheCtx, IgniteTxLocalAdapter tx) throws IgniteCheckedException;
 
+    /**
+     * @param cctx Context.
+     * @param fut
+     * @return
+     */
     public GridDhtTopologyFuture topologyReadLock(GridCacheSharedContext cctx, GridFutureAdapter<?> fut);
 
+    /**
+     * @param cctx Context.
+     */
     public void topologyReadUnlock(GridCacheSharedContext cctx);
 
+    /**
+     * @param cctx Context.
+     * @return
+     */
     public boolean storeUsed(GridCacheSharedContext cctx);
 
+    /**
+     * @param cctx Context.
+     * @return
+     */
     public Collection<CacheStoreManager> stores(GridCacheSharedContext cctx);
 
+    /**
+     * @param cctx Context.
+     * @param tx Transaction.
+     * @param commit Commit flag.
+     */
     public void onTxEnd(GridCacheSharedContext cctx, IgniteInternalTx tx, boolean commit);
 
-    public IgniteTxEntry entry(IgniteTxKey key);
+    /**
+     * @param key Key.
+     * @return Entry.
+     */
+    @Nullable public IgniteTxEntry entry(IgniteTxKey key);
 
+    /**
+     * @param key Key.
+     * @return
+     */
     public boolean hasWriteKey(IgniteTxKey key);
 
+    /**
+     * @return Read entries keys.
+     */
     public Set<IgniteTxKey> readSet();
 
+    /**
+     * @return Write entries keys.
+     */
     public Set<IgniteTxKey> writeSet();
 
+    /**
+     * @return Write entries.
+     */
     public Collection<IgniteTxEntry> writeEntries();
 
+    /**
+     * @return Read entries.
+     */
     public Collection<IgniteTxEntry> readEntries();
 
+    /**
+     * @return Write entries map.
+     */
     public Map<IgniteTxKey, IgniteTxEntry> writeMap();
 
+    /**
+     * @return Read entries map.
+     */
     public Map<IgniteTxKey, IgniteTxEntry> readMap();
 
-    public boolean empty();
-
+    /**
+     * @return All entries.
+     */
     public Collection<IgniteTxEntry> allEntries();
 
-    public boolean init(int txSize);
-
-    public boolean initialized();
-
-    public void addEntry(IgniteTxEntry entry);
-
-    public void seal();
-
+    /**
+     * @return Non-null entry if tx has only one write entry.
+     */
     @Nullable public IgniteTxEntry singleWrite();
+
+    /**
+     * @return {@code True} if transaction is empty.
+     */
+    public boolean empty();
 }

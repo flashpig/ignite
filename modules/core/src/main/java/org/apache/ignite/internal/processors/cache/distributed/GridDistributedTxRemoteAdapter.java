@@ -45,7 +45,7 @@ import org.apache.ignite.internal.processors.cache.transactions.IgniteTxAdapter;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxKey;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteEx;
-import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteStateImpl;
+import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteState;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxState;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersionConflictContext;
@@ -105,7 +105,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
 
     /** */
     @GridToStringInclude
-    protected IgniteTxRemoteStateImpl txState;
+    protected IgniteTxRemoteState txState;
 
     /**
      * Empty constructor required for {@link Externalizable}.

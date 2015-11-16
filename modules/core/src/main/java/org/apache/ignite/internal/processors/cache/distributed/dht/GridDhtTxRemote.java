@@ -36,6 +36,7 @@ import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.distributed.GridDistributedTxRemoteAdapter;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxEntry;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxKey;
+import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteSingleStateImpl;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxRemoteStateImpl;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.tostring.GridToStringBuilder;
@@ -111,7 +112,8 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
         GridCacheVersion nearXidVer,
         Map<UUID, Collection<UUID>> txNodes,
         @Nullable UUID subjId,
-        int taskNameHash
+        int taskNameHash,
+        boolean single
     ) {
         super(
             ctx,
@@ -138,7 +140,8 @@ public class GridDhtTxRemote extends GridDistributedTxRemoteAdapter {
         this.nearXidVer = nearXidVer;
         this.txNodes = txNodes;
 
-        txState = new IgniteTxRemoteStateImpl(
+        txState = single ? new IgniteTxRemoteSingleStateImpl() :
+            new IgniteTxRemoteStateImpl(
             Collections.<IgniteTxKey, IgniteTxEntry>emptyMap(),
             new ConcurrentLinkedHashMap<IgniteTxKey, IgniteTxEntry>(U.capacity(txSize), 0.75f, 1));
 

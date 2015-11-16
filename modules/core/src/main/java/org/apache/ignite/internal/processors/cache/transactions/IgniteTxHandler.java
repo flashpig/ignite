@@ -1088,6 +1088,8 @@ public class IgniteTxHandler {
             GridDhtTxRemote tx = ctx.tm().tx(req.version());
 
             if (tx == null) {
+                boolean single = req.last() && req.writes().size() == 1;
+
                 tx = new GridDhtTxRemote(
                     ctx,
                     req.nearNodeId(),
@@ -1107,7 +1109,8 @@ public class IgniteTxHandler {
                     req.nearXidVersion(),
                     req.transactionNodes(),
                     req.subjectId(),
-                    req.taskNameHash());
+                    req.taskNameHash(),
+                    single);
 
                 tx.writeVersion(req.writeVersion());
 
@@ -1135,7 +1138,7 @@ public class IgniteTxHandler {
                 tx.transactionNodes(req.transactionNodes());
             }
 
-            if (!tx.isSystemInvalidate() && !F.isEmpty(req.writes())) {
+            if (!tx.isSystemInvalidate()) {
                 int idx = 0;
 
                 for (IgniteTxEntry entry : req.writes()) {

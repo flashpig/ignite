@@ -17,25 +17,28 @@
 
 package org.apache.ignite.internal.processors.cache.transactions;
 
-import org.apache.ignite.internal.processors.cache.GridCacheContext;
-import org.apache.ignite.internal.util.typedef.internal.U;
-
 /**
  *
  */
-public abstract class IgniteTxStateAdapter implements IgniteTxState {
+public interface IgniteTxLocalState extends IgniteTxState {
     /**
-     * @param cacheCtx Cache context.
-     * @param tx Transaction.
-     * @param commit {@code False} if transaction rolled back.
+     * @param entry Entry.
      */
-    protected final void onTxEnd(GridCacheContext cacheCtx, IgniteInternalTx tx, boolean commit) {
-        if (cacheCtx.cache().configuration().isStatisticsEnabled()) {
-            // Convert start time from ms to ns.
-            if (commit)
-                cacheCtx.cache().metrics0().onTxCommit((U.currentTimeMillis() - tx.startTime()) * 1000);
-            else
-                cacheCtx.cache().metrics0().onTxRollback((U.currentTimeMillis() - tx.startTime()) * 1000);
-        }
-    }
+    public void addEntry(IgniteTxEntry entry);
+
+    /**
+     * @param txSize
+     * @return
+     */
+    public boolean init(int txSize);
+
+    /**
+     * @return
+     */
+    public boolean initialized();
+
+    /**
+     *
+     */
+    public void seal();
 }

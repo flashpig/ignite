@@ -526,7 +526,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
     }
 
     /**
-     * @return Non {@code null} entry if tx has only one write entry.
+     * @return Non-null entry if tx has only one write entry.
      */
     @Nullable IgniteTxEntry singleWrite() {
         return txState.singleWrite();
@@ -537,36 +537,48 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
      */
     void addEntryMapping(@Nullable Collection<GridDistributedTxMapping> maps) {
         if (!F.isEmpty(maps)) {
-            for (GridDistributedTxMapping map : maps)
-                addEntryMapping(map);
+            for (GridDistributedTxMapping map : maps) {
+                ClusterNode n = map.node();
 
-            if (log.isDebugEnabled()) {
-                log.debug("Added mappings to transaction [locId=" + cctx.localNodeId() +
-                    ", mappings=" + maps +
-                    ", tx=" + this + ']');
+                GridDistributedTxMapping m = mappings.get(n.id());
+
+                if (m == null) {
+                    m = F.addIfAbsent(mappings, n.id(), new GridDistributedTxMapping(n));
+
+                    m.near(map.near());
+
+                    if (map.explicitLock())
+                        m.markExplicitLock();
+                }
+
+                assert m != null;
+
+                for (IgniteTxEntry entry : map.entries())
+                    m.add(entry);
             }
+
+            if (log.isDebugEnabled())
+                log.debug("Added mappings to transaction [locId=" + cctx.localNodeId() + ", mappings=" + maps +
+                    ", tx=" + this + ']');
         }
     }
 
     /**
      * @param map Mapping.
      */
-    void addEntryMapping(GridDistributedTxMapping map) {
+    void addSingleEntryMapping(GridDistributedTxMapping map, IgniteTxEntry entry) {
         ClusterNode n = map.node();
 
-        GridDistributedTxMapping m = mappings.get(n.id());
+        GridDistributedTxMapping m = new GridDistributedTxMapping(n);
 
-        if (m == null) {
-            m = F.addIfAbsent(mappings, n.id(), new GridDistributedTxMapping(n));
+        mappings.put(n.id(), m);
 
-            m.near(map.near());
+        m.near(map.near());
 
-            if (map.explicitLock())
-                m.markExplicitLock();
-        }
+        if (map.explicitLock())
+            m.markExplicitLock();
 
-        for (IgniteTxEntry entry : map.entries())
-            m.add(entry);
+        m.add(entry);
     }
 
     /**
