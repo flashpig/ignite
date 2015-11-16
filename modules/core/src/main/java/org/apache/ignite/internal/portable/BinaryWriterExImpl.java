@@ -304,26 +304,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     }
 
     /**
-     * @param obj Object.
-     * @return Handle.
-     */
-    int handle(Object obj) {
-        assert obj != null;
-
-        int pos = out.position();
-
-        Integer old = handles.put(obj, pos);
-
-        if (old == null)
-            return -1;
-        else {
-            handles.put(obj, old);
-
-            return pos - old;
-        }
-    }
-
-    /**
      * @return Array.
      */
     public byte[] array() {
@@ -1827,16 +1807,22 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @return {@code true} if the object has been written as a handle.
      */
     boolean tryWriteAsHandle(Object obj) {
-        int handle = handle(obj);
+        assert obj != null;
 
-        if (handle >= 0) {
+        int pos = out.position();
+
+        Integer old = handles.put(obj, pos);
+
+        if (old == null)
+            return false;
+        else {
+            handles.put(obj, old);
+
             doWriteByte(GridPortableMarshaller.HANDLE);
-            doWriteInt(handle);
+            doWriteInt(pos - old);
 
             return true;
         }
-
-        return false;
     }
 
     /**
