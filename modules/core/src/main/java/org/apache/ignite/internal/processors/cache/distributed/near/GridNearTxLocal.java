@@ -68,9 +68,7 @@ import org.apache.ignite.transactions.TransactionConcurrency;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.apache.ignite.transactions.TransactionState;
 import org.jetbrains.annotations.Nullable;
-import org.jsr166.ConcurrentHashMap8;
 
-import static org.apache.ignite.cache.CacheWriteSynchronizationMode.FULL_SYNC;
 import static org.apache.ignite.transactions.TransactionState.COMMITTED;
 import static org.apache.ignite.transactions.TransactionState.COMMITTING;
 import static org.apache.ignite.transactions.TransactionState.PREPARING;
@@ -87,7 +85,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
     private static final long serialVersionUID = 0L;
 
     /** DHT mappings. */
-    private Map<UUID, GridDistributedTxMapping> mappings = new ConcurrentHashMap8<>();
+    private IgniteTxMappings mappings;
 
     /** Future. */
     @GridToStringExclude
@@ -171,6 +169,8 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
             txSize,
             subjId,
             taskNameHash);
+
+        mappings = implicitSingle ? new IgniteTxMappingsSingleImpl() : new IgniteTxMappingsImpl();
 
         initResult();
     }
@@ -456,7 +456,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
     /**
      * @return DHT map.
      */
-    Map<UUID, GridDistributedTxMapping> mappings() {
+    IgniteTxMappings mappings() {
         return mappings;
     }
 
@@ -503,7 +503,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
         GridDistributedTxMapping m = mappings.get(node.id());
 
         if (m == null)
-            mappings.put(node.id(), m = new GridDistributedTxMapping(node));
+            mappings.put(m = new GridDistributedTxMapping(node));
 
         IgniteTxEntry txEntry = entry(key);
 
@@ -536,15 +536,13 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
                 GridDistributedTxMapping m = mappings.get(n.id());
 
                 if (m == null) {
-                    m = F.addIfAbsent(mappings, n.id(), new GridDistributedTxMapping(n));
+                    mappings.put(m = new GridDistributedTxMapping(n));
 
                     m.near(map.near());
 
                     if (map.explicitLock())
                         m.markExplicitLock();
                 }
-
-                assert m != null;
 
                 for (IgniteTxEntry entry : map.entries())
                     m.add(entry);
@@ -565,7 +563,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
         GridDistributedTxMapping m = new GridDistributedTxMapping(n);
 
-        mappings.put(n.id(), m);
+        mappings.put(m);
 
         m.near(map.near());
 
@@ -1279,6 +1277,6 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return S.toString(GridNearTxLocal.class, this, "mappings", mappings.keySet(), "super", super.toString());
+        return S.toString(GridNearTxLocal.class, this, "mappings", mappings, "super", super.toString());
     }
 }
