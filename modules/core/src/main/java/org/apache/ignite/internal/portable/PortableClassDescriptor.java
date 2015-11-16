@@ -69,7 +69,7 @@ public class PortableClassDescriptor {
     private final BinaryIdMapper idMapper;
 
     /** */
-    private final Mode mode;
+    private final BinaryWriteMode mode;
 
     /** */
     private final boolean userType;
@@ -167,9 +167,9 @@ public class PortableClassDescriptor {
         useOptMarshaller = !predefined && initUseOptimizedMarshallerFlag();
 
         if (excluded)
-            mode = Mode.EXCLUSION;
+            mode = BinaryWriteMode.EXCLUSION;
         else
-            mode = serializer != null ? Mode.PORTABLE : PortableUtils.mode(cls);
+            mode = serializer != null ? BinaryWriteMode.PORTABLE : PortableUtils.mode(cls);
 
         switch (mode) {
             case BYTE:
@@ -273,7 +273,8 @@ public class PortableClassDescriptor {
                 throw new BinaryObjectException("Invalid mode: " + mode);
         }
 
-        if (mode == Mode.PORTABLE || mode == Mode.EXTERNALIZABLE || mode == Mode.OBJECT) {
+        if (mode == BinaryWriteMode.PORTABLE || mode == BinaryWriteMode.EXTERNALIZABLE ||
+            mode == BinaryWriteMode.OBJECT) {
             readResolveMtd = U.findNonPublicMethod(cls, "readResolve");
             writeReplaceMtd = U.findNonPublicMethod(cls, "writeReplace");
         }
@@ -799,162 +800,5 @@ public class PortableClassDescriptor {
         }
 
         return use;
-    }
-    /** */
-    enum Mode {
-        /** Primitive byte. */
-        P_BYTE(GridPortableMarshaller.BYTE),
-
-        /** Primitive boolean. */
-        P_BOOLEAN(GridPortableMarshaller.BOOLEAN),
-
-        /** Primitive short. */
-        P_SHORT(GridPortableMarshaller.SHORT),
-
-        /** Primitive char. */
-        P_CHAR(GridPortableMarshaller.CHAR),
-
-        /** Primitive int. */
-        P_INT(GridPortableMarshaller.INT),
-
-        /** Primitive long. */
-        P_LONG(GridPortableMarshaller.LONG),
-
-        /** Primitive float. */
-        P_FLOAT(GridPortableMarshaller.FLOAT),
-
-        /** Primitive int. */
-        P_DOUBLE(GridPortableMarshaller.DOUBLE),
-        
-        /** */
-        BYTE(GridPortableMarshaller.BYTE),
-
-        /** */
-        SHORT(GridPortableMarshaller.SHORT),
-
-        /** */
-        INT(GridPortableMarshaller.INT),
-
-        /** */
-        LONG(GridPortableMarshaller.LONG),
-
-        /** */
-        FLOAT(GridPortableMarshaller.FLOAT),
-
-        /** */
-        DOUBLE(GridPortableMarshaller.DOUBLE),
-
-        /** */
-        CHAR(GridPortableMarshaller.CHAR),
-
-        /** */
-        BOOLEAN(GridPortableMarshaller.BOOLEAN),
-
-        /** */
-        DECIMAL(GridPortableMarshaller.DECIMAL),
-
-        /** */
-        STRING(GridPortableMarshaller.STRING),
-
-        /** */
-        UUID(GridPortableMarshaller.UUID),
-
-        /** */
-        DATE(GridPortableMarshaller.DATE),
-
-        /** */
-        TIMESTAMP(GridPortableMarshaller.TIMESTAMP),
-
-        /** */
-        BYTE_ARR(GridPortableMarshaller.BYTE_ARR),
-
-        /** */
-        SHORT_ARR(GridPortableMarshaller.SHORT_ARR),
-
-        /** */
-        INT_ARR(GridPortableMarshaller.INT_ARR),
-
-        /** */
-        LONG_ARR(GridPortableMarshaller.LONG_ARR),
-
-        /** */
-        FLOAT_ARR(GridPortableMarshaller.FLOAT_ARR),
-
-        /** */
-        DOUBLE_ARR(GridPortableMarshaller.DOUBLE_ARR),
-
-        /** */
-        CHAR_ARR(GridPortableMarshaller.CHAR_ARR),
-
-        /** */
-        BOOLEAN_ARR(GridPortableMarshaller.BOOLEAN_ARR),
-
-        /** */
-        DECIMAL_ARR(GridPortableMarshaller.DECIMAL_ARR),
-
-        /** */
-        STRING_ARR(GridPortableMarshaller.STRING_ARR),
-
-        /** */
-        UUID_ARR(GridPortableMarshaller.UUID_ARR),
-
-        /** */
-        DATE_ARR(GridPortableMarshaller.DATE_ARR),
-
-        /** */
-        TIMESTAMP_ARR(GridPortableMarshaller.TIMESTAMP_ARR),
-
-        /** */
-        OBJECT_ARR(GridPortableMarshaller.OBJ_ARR),
-
-        /** */
-        COL(GridPortableMarshaller.COL),
-
-        /** */
-        MAP(GridPortableMarshaller.MAP),
-
-        /** */
-        MAP_ENTRY(GridPortableMarshaller.MAP_ENTRY),
-
-        /** */
-        PORTABLE_OBJ(GridPortableMarshaller.OBJ),
-
-        /** */
-        ENUM(GridPortableMarshaller.ENUM),
-
-        /** */
-        ENUM_ARR(GridPortableMarshaller.ENUM_ARR),
-
-        /** */
-        CLASS(GridPortableMarshaller.CLASS),
-
-        /** */
-        PORTABLE(GridPortableMarshaller.PORTABLE_OBJ),
-
-        /** */
-        EXTERNALIZABLE(GridPortableMarshaller.OBJ),
-
-        /** */
-        OBJECT(GridPortableMarshaller.OBJ),
-
-        /** */
-        EXCLUSION(GridPortableMarshaller.OBJ);
-
-        /** */
-        private final int typeId;
-
-        /**
-         * @param typeId Type ID.
-         */
-        Mode(int typeId) {
-            this.typeId = typeId;
-        }
-
-        /**
-         * @return Type ID.
-         */
-        int typeId() {
-            return typeId;
-        }
     }
 }

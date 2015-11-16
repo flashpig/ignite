@@ -37,7 +37,7 @@ public abstract class BinaryFieldAccessor {
     protected final int id;
 
     /** Mode. */
-    protected final PortableClassDescriptor.Mode mode;
+    protected final BinaryWriteMode mode;
 
     /**
      * Create accessor for the field.
@@ -47,7 +47,7 @@ public abstract class BinaryFieldAccessor {
      * @return Accessor.
      */
     public static BinaryFieldAccessor create(Field field, int id) {
-        PortableClassDescriptor.Mode mode = PortableUtils.mode(field.getType());
+        BinaryWriteMode mode = PortableUtils.mode(field.getType());
 
         switch (mode) {
             case P_BYTE:
@@ -85,7 +85,7 @@ public abstract class BinaryFieldAccessor {
      * @param id Field ID.
      * @param mode Mode;
      */
-    protected BinaryFieldAccessor(int id, PortableClassDescriptor.Mode mode) {
+    protected BinaryFieldAccessor(int id, BinaryWriteMode mode) {
         assert id != 0;
         assert mode != null;
 
@@ -98,7 +98,7 @@ public abstract class BinaryFieldAccessor {
      *
      * @return Mode.
      */
-    public PortableClassDescriptor.Mode mode() {
+    public BinaryWriteMode mode() {
         return mode;
     }
 
@@ -137,7 +137,7 @@ public abstract class BinaryFieldAccessor {
          * @param id Field ID.
          * @param mode Mode.
          */
-        protected AbstractPrimitiveAccessor(Field field, int id, PortableClassDescriptor.Mode mode) {
+        protected AbstractPrimitiveAccessor(Field field, int id, BinaryWriteMode mode) {
             super(id, mode);
 
             assert field != null;
@@ -156,7 +156,7 @@ public abstract class BinaryFieldAccessor {
          * @param field Field.
          */
         public BytePrimitiveAccessor(Field field, int id) {
-            super(field, id, PortableClassDescriptor.Mode.P_BYTE);
+            super(field, id, BinaryWriteMode.P_BYTE);
         }
 
         /** {@inheritDoc} */
@@ -186,7 +186,7 @@ public abstract class BinaryFieldAccessor {
          * @param field Field.
          */
         public BooleanPrimitiveAccessor(Field field, int id) {
-            super(field, id, PortableClassDescriptor.Mode.P_BOOLEAN);
+            super(field, id, BinaryWriteMode.P_BOOLEAN);
         }
 
         /** {@inheritDoc} */
@@ -216,7 +216,7 @@ public abstract class BinaryFieldAccessor {
          * @param field Field.
          */
         public ShortPrimitiveAccessor(Field field, int id) {
-            super(field, id, PortableClassDescriptor.Mode.P_SHORT);
+            super(field, id, BinaryWriteMode.P_SHORT);
         }
 
         /** {@inheritDoc} */
@@ -246,7 +246,7 @@ public abstract class BinaryFieldAccessor {
          * @param field Field.
          */
         public CharPrimitiveAccessor(Field field, int id) {
-            super(field, id, PortableClassDescriptor.Mode.P_CHAR);
+            super(field, id, BinaryWriteMode.P_CHAR);
         }
 
         /** {@inheritDoc} */
@@ -276,7 +276,7 @@ public abstract class BinaryFieldAccessor {
          * @param field Field.
          */
         public IntPrimitiveAccessor(Field field, int id) {
-            super(field, id, PortableClassDescriptor.Mode.P_INT);
+            super(field, id, BinaryWriteMode.P_INT);
         }
 
         /** {@inheritDoc} */
@@ -306,7 +306,7 @@ public abstract class BinaryFieldAccessor {
          * @param field Field.
          */
         public LongPrimitiveAccessor(Field field, int id) {
-            super(field, id, PortableClassDescriptor.Mode.P_LONG);
+            super(field, id, BinaryWriteMode.P_LONG);
         }
 
         /** {@inheritDoc} */
@@ -336,7 +336,7 @@ public abstract class BinaryFieldAccessor {
          * @param field Field.
          */
         public FloatPrimitiveAccessor(Field field, int id) {
-            super(field, id, PortableClassDescriptor.Mode.P_FLOAT);
+            super(field, id, BinaryWriteMode.P_FLOAT);
         }
 
         /** {@inheritDoc} */
@@ -366,7 +366,7 @@ public abstract class BinaryFieldAccessor {
          * @param field Field.
          */
         public DoublePrimitiveAccessor(Field field, int id) {
-            super(field, id, PortableClassDescriptor.Mode.P_DOUBLE);
+            super(field, id, BinaryWriteMode.P_DOUBLE);
         }
 
         /** {@inheritDoc} */
@@ -400,7 +400,7 @@ public abstract class BinaryFieldAccessor {
          * @param id Field ID.
          * @param mode Mode.
          */
-        public DefaultAccessor(Field field, int id, PortableClassDescriptor.Mode mode) {
+        public DefaultAccessor(Field field, int id, BinaryWriteMode mode) {
             super(id, mode);
 
             assert field != null;

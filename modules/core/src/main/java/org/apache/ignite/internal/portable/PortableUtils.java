@@ -914,102 +914,102 @@ public class PortableUtils {
      * @return Mode.
      */
     @SuppressWarnings("IfMayBeConditional")
-    public static PortableClassDescriptor.Mode mode(Class<?> cls) {
+    public static BinaryWriteMode mode(Class<?> cls) {
         assert cls != null;
 
         /** Primitives. */
         if (cls == byte.class)
-            return PortableClassDescriptor.Mode.P_BYTE;
+            return BinaryWriteMode.P_BYTE;
         else if (cls == boolean.class)
-            return PortableClassDescriptor.Mode.P_BOOLEAN;
+            return BinaryWriteMode.P_BOOLEAN;
         else if (cls == short.class)
-            return PortableClassDescriptor.Mode.P_SHORT;
+            return BinaryWriteMode.P_SHORT;
         else if (cls == char.class)
-            return PortableClassDescriptor.Mode.P_CHAR;
+            return BinaryWriteMode.P_CHAR;
         else if (cls == int.class)
-            return PortableClassDescriptor.Mode.P_INT;
+            return BinaryWriteMode.P_INT;
         else if (cls == long.class)
-            return PortableClassDescriptor.Mode.P_LONG;
+            return BinaryWriteMode.P_LONG;
         else if (cls == float.class)
-            return PortableClassDescriptor.Mode.P_FLOAT;
+            return BinaryWriteMode.P_FLOAT;
         else if (cls == double.class)
-            return PortableClassDescriptor.Mode.P_DOUBLE;
+            return BinaryWriteMode.P_DOUBLE;
 
         /** Boxed primitives. */
         else if (cls == Byte.class)
-            return PortableClassDescriptor.Mode.BYTE;
+            return BinaryWriteMode.BYTE;
         else if (cls == Boolean.class)
-            return PortableClassDescriptor.Mode.BOOLEAN;
+            return BinaryWriteMode.BOOLEAN;
         else if (cls == Short.class)
-            return PortableClassDescriptor.Mode.SHORT;
+            return BinaryWriteMode.SHORT;
         else if (cls == Character.class)
-            return PortableClassDescriptor.Mode.CHAR;
+            return BinaryWriteMode.CHAR;
         else if (cls == Integer.class)
-            return PortableClassDescriptor.Mode.INT;
+            return BinaryWriteMode.INT;
         else if (cls == Long.class)
-            return PortableClassDescriptor.Mode.LONG;
+            return BinaryWriteMode.LONG;
         else if (cls == Float.class)
-            return PortableClassDescriptor.Mode.FLOAT;
+            return BinaryWriteMode.FLOAT;
         else if (cls == Double.class)
-            return PortableClassDescriptor.Mode.DOUBLE;
+            return BinaryWriteMode.DOUBLE;
 
         /** The rest types. */
         else if (cls == BigDecimal.class)
-            return PortableClassDescriptor.Mode.DECIMAL;
+            return BinaryWriteMode.DECIMAL;
         else if (cls == String.class)
-            return PortableClassDescriptor.Mode.STRING;
+            return BinaryWriteMode.STRING;
         else if (cls == UUID.class)
-            return PortableClassDescriptor.Mode.UUID;
+            return BinaryWriteMode.UUID;
         else if (cls == Date.class)
-            return PortableClassDescriptor.Mode.DATE;
+            return BinaryWriteMode.DATE;
         else if (cls == Timestamp.class)
-            return PortableClassDescriptor.Mode.TIMESTAMP;
+            return BinaryWriteMode.TIMESTAMP;
         else if (cls == byte[].class)
-            return PortableClassDescriptor.Mode.BYTE_ARR;
+            return BinaryWriteMode.BYTE_ARR;
         else if (cls == short[].class)
-            return PortableClassDescriptor.Mode.SHORT_ARR;
+            return BinaryWriteMode.SHORT_ARR;
         else if (cls == int[].class)
-            return PortableClassDescriptor.Mode.INT_ARR;
+            return BinaryWriteMode.INT_ARR;
         else if (cls == long[].class)
-            return PortableClassDescriptor.Mode.LONG_ARR;
+            return BinaryWriteMode.LONG_ARR;
         else if (cls == float[].class)
-            return PortableClassDescriptor.Mode.FLOAT_ARR;
+            return BinaryWriteMode.FLOAT_ARR;
         else if (cls == double[].class)
-            return PortableClassDescriptor.Mode.DOUBLE_ARR;
+            return BinaryWriteMode.DOUBLE_ARR;
         else if (cls == char[].class)
-            return PortableClassDescriptor.Mode.CHAR_ARR;
+            return BinaryWriteMode.CHAR_ARR;
         else if (cls == boolean[].class)
-            return PortableClassDescriptor.Mode.BOOLEAN_ARR;
+            return BinaryWriteMode.BOOLEAN_ARR;
         else if (cls == BigDecimal[].class)
-            return PortableClassDescriptor.Mode.DECIMAL_ARR;
+            return BinaryWriteMode.DECIMAL_ARR;
         else if (cls == String[].class)
-            return PortableClassDescriptor.Mode.STRING_ARR;
+            return BinaryWriteMode.STRING_ARR;
         else if (cls == UUID[].class)
-            return PortableClassDescriptor.Mode.UUID_ARR;
+            return BinaryWriteMode.UUID_ARR;
         else if (cls == Date[].class)
-            return PortableClassDescriptor.Mode.DATE_ARR;
+            return BinaryWriteMode.DATE_ARR;
         else if (cls == Timestamp[].class)
-            return PortableClassDescriptor.Mode.TIMESTAMP_ARR;
+            return BinaryWriteMode.TIMESTAMP_ARR;
         else if (cls.isArray())
             return cls.getComponentType().isEnum() ?
-                PortableClassDescriptor.Mode.ENUM_ARR : PortableClassDescriptor.Mode.OBJECT_ARR;
+                BinaryWriteMode.ENUM_ARR : BinaryWriteMode.OBJECT_ARR;
         else if (cls == BinaryObjectImpl.class)
-            return PortableClassDescriptor.Mode.PORTABLE_OBJ;
+            return BinaryWriteMode.PORTABLE_OBJ;
         else if (Binarylizable.class.isAssignableFrom(cls))
-            return PortableClassDescriptor.Mode.PORTABLE;
+            return BinaryWriteMode.PORTABLE;
         else if (Externalizable.class.isAssignableFrom(cls))
-            return PortableClassDescriptor.Mode.EXTERNALIZABLE;
+            return BinaryWriteMode.EXTERNALIZABLE;
         else if (Map.Entry.class.isAssignableFrom(cls))
-            return PortableClassDescriptor.Mode.MAP_ENTRY;
+            return BinaryWriteMode.MAP_ENTRY;
         else if (Collection.class.isAssignableFrom(cls))
-            return PortableClassDescriptor.Mode.COL;
+            return BinaryWriteMode.COL;
         else if (Map.class.isAssignableFrom(cls))
-            return PortableClassDescriptor.Mode.MAP;
+            return BinaryWriteMode.MAP;
         else if (cls.isEnum())
-            return PortableClassDescriptor.Mode.ENUM;
+            return BinaryWriteMode.ENUM;
         else if (cls == Class.class)
-            return PortableClassDescriptor.Mode.CLASS;
+            return BinaryWriteMode.CLASS;
         else
-            return PortableClassDescriptor.Mode.OBJECT;
+            return BinaryWriteMode.OBJECT;
     }
 }
