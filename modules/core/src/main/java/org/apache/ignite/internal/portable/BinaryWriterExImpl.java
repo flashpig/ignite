@@ -106,9 +106,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     private final int start;
 
     /** */
-    private Class<?> cls;
-
-    /** */
     private int typeId;
 
     /** Raw offset position. */
@@ -218,7 +215,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     void marshal(Object obj, boolean enableReplace) throws BinaryObjectException {
         assert obj != null;
 
-        cls = obj.getClass();
+        Class<?> cls = obj.getClass();
 
         PortableClassDescriptor desc = ctx.descriptorForClass(cls);
 
@@ -1747,8 +1744,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         A.notNull(fieldName, "fieldName");
 
         if (rawOffPos != 0)
-            throw new BinaryObjectException("Individual field can't be written after raw writer is acquired " +
-                "via rawWriter() method. Consider fixing serialization logic for class: " + cls.getName());
+            throw new BinaryObjectException("Individual field can't be written after raw writer is acquired.");
 
         if (idMapper == null)
             idMapper = ctx.userTypeIdMapper(typeId);
