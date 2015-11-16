@@ -383,6 +383,8 @@ public class PortableClassDescriptor {
         assert obj != null;
         assert writer != null;
 
+        writer.typeId(typeId);
+
         switch (mode) {
             case BYTE:
                 writer.writeByteFieldPrimitive((byte) obj);

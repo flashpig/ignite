@@ -238,8 +238,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             return;
         }
 
-        typeId = desc.typeId();
-
         desc.write(obj, this);
     }
 
@@ -1757,7 +1755,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
     public BinaryWriterExImpl newWriter(int typeId) {
         BinaryWriterExImpl res = new BinaryWriterExImpl(ctx, out, schema, handles());
 
-        res.typeId = typeId;
+        res.typeId(typeId);
 
         return res;
     }
