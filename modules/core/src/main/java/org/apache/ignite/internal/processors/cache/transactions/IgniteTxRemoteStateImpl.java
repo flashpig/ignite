@@ -88,8 +88,6 @@ public class IgniteTxRemoteStateImpl implements IgniteTxState {
 
     /** {@inheritDoc} */
     @Override public boolean storeUsed(GridCacheSharedContext cctx) {
-        assert false;
-
         return false;
     }
 

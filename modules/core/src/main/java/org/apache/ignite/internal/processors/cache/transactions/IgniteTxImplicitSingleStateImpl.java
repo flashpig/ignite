@@ -45,6 +45,8 @@ public class IgniteTxImplicitSingleStateImpl extends IgniteTxStateAdapter {
         assert cacheCtx == null : "Cache already set [cur=" + cacheCtx.name() + ", new=" + ctx.name() + ']';
 
         this.cacheCtx = ctx;
+
+        tx.activeCachesDeploymentEnabled(cacheCtx.deploymentEnabled());
     }
 
     /** {@inheritDoc} */
