@@ -114,7 +114,12 @@ public final class PortableHeapOutputStream extends PortableAbstractOutputStream
     }
 
     /** {@inheritDoc} */
-    @Override protected void writeShortPositioned(int pos, short val) {
+    @Override public void unsafeWriteByte(int pos, byte val) {
+        UNSAFE.putByte(data, BYTE_ARR_OFF + pos, val);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteShort(int pos, short val) {
         if (!LITTLE_ENDIAN)
             val = Short.reverseBytes(val);
 
@@ -122,10 +127,36 @@ public final class PortableHeapOutputStream extends PortableAbstractOutputStream
     }
 
     /** {@inheritDoc} */
-    @Override protected void writeIntPositioned(int pos, int val) {
+    @Override public void unsafeWriteChar(int pos, char val) {
+        if (!LITTLE_ENDIAN)
+            val = Character.reverseBytes(val);
+
+        UNSAFE.putChar(data, BYTE_ARR_OFF + pos, val);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteInt(int pos, int val) {
         if (!LITTLE_ENDIAN)
             val = Integer.reverseBytes(val);
 
         UNSAFE.putInt(data, BYTE_ARR_OFF + pos, val);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteLong(int pos, long val) {
+        if (!LITTLE_ENDIAN)
+            val = Long.reverseBytes(val);
+
+        UNSAFE.putLong(data, BYTE_ARR_OFF + pos, val);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWrite(int pos, byte[] arr, int off, int cnt) {
+        UNSAFE.copyMemory(arr, BYTE_ARR_OFF + off, data, BYTE_ARR_OFF + pos, cnt);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWrite(int pos, long addr, int cnt) {
+        UNSAFE.copyMemory(null, addr, data, BYTE_ARR_OFF + pos, cnt);
     }
 }

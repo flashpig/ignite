@@ -163,4 +163,24 @@ public class PlatformBigEndianOutputStreamImpl extends PlatformOutputStreamImpl 
 
         shift(cnt);
     }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteShort(int pos, short val) {
+        UNSAFE.putShort(data + pos, Short.reverseBytes(val));
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteChar(int pos, char val) {
+        UNSAFE.putChar(data + pos, Character.reverseBytes(val));
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteInt(int pos, int val) {
+        UNSAFE.putInt(data + pos, Integer.reverseBytes(val));
+    }
+
+    /** {@inheritDoc} */
+    @Override public void unsafeWriteLong(int pos, long val) {
+        UNSAFE.putLong(data + pos, val, Long.reverseBytes(val));
+    }
 }
