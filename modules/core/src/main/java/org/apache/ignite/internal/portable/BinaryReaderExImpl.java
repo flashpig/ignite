@@ -24,7 +24,6 @@ import org.apache.ignite.binary.BinaryObject;
 import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.binary.BinaryRawReader;
 import org.apache.ignite.binary.BinaryReader;
-import org.apache.ignite.internal.portable.streams.PortableHeapInputStream;
 import org.apache.ignite.internal.portable.streams.PortableInputStream;
 import org.apache.ignite.internal.util.GridEnumCache;
 import org.apache.ignite.internal.util.lang.GridMapEntry;
@@ -173,20 +172,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @param ctx Context.
-     * @param arr Array.
-     * @param start Start.
-     * @param ldr Class loader.
-     */
-    public BinaryReaderExImpl(PortableContext ctx, byte[] arr, int start, ClassLoader ldr) {
-        this(ctx, new PortableHeapInputStream(arr), start, ldr, new BinaryReaderHandles());
-    }
-
-    /**
-     * @param ctx Context.
      * @param in Input stream.
      * @param start Start.
      */
-    BinaryReaderExImpl(PortableContext ctx, PortableInputStream in, int start, ClassLoader ldr) {
+    public BinaryReaderExImpl(PortableContext ctx, PortableInputStream in, int start, ClassLoader ldr) {
         this(ctx, in, start, ldr, new BinaryReaderHandles());
     }
 

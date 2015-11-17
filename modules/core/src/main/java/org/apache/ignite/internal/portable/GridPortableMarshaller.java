@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.portable;
 
+import org.apache.ignite.internal.portable.streams.PortableHeapInputStream;
 import org.apache.ignite.internal.portable.streams.PortableInputStream;
 import org.apache.ignite.internal.portable.streams.PortableOutputStream;
 import org.apache.ignite.binary.BinaryObjectException;
@@ -254,7 +255,7 @@ public class GridPortableMarshaller {
     @Nullable public <T> T unmarshal(byte[] bytes, @Nullable ClassLoader clsLdr) throws BinaryObjectException {
         assert bytes != null;
 
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, bytes, 0, clsLdr);
+        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(bytes), 0, clsLdr);
 
         return (T)reader.unmarshal();
     }
@@ -283,7 +284,7 @@ public class GridPortableMarshaller {
         if (arr[0] == NULL)
             return null;
 
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, arr, 0, ldr);
+        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), 0, ldr);
 
         return (T)reader.deserialize();
     }

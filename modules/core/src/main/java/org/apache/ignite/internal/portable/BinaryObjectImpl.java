@@ -257,17 +257,13 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Nullable @Override public <F> F field(String fieldName) throws BinaryObjectException {
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, arr, start, null);
-
-        return (F)reader.unmarshalField(fieldName);
+        return (F)newReader().unmarshalField(fieldName);
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Nullable @Override public <F> F field(int fieldId) throws BinaryObjectException {
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, arr, start, null);
-
-        return (F)reader.unmarshalField(fieldId);
+        return (F)newReader().unmarshalField(fieldId);
     }
 
     /** {@inheritDoc} */
@@ -400,11 +396,10 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
 
                 break;
 
-            default: {
-                BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, arr, start, null);
+            default:
+                val = newReader().unmarshalFieldByAbsolutePosition(fieldPos);
 
-                val = reader.unmarshalFieldByAbsolutePosition(fieldPos);
-            }
+                break;
         }
 
         return (F)val;
@@ -413,20 +408,14 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Nullable @Override protected <F> F field(BinaryReaderHandles rCtx, String fieldName) {
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx,
-            new PortableHeapInputStream(arr),
-            start,
-            null,
-            rCtx);
+        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), start, null, rCtx);
 
         return (F)reader.unmarshalField(fieldName);
     }
 
     /** {@inheritDoc} */
     @Override public boolean hasField(String fieldName) {
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, arr, start, null);
-
-        return reader.hasField(fieldName);
+        return newReader().hasField(fieldName);
     }
 
     /** {@inheritDoc} */
@@ -458,9 +447,7 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
 
     /** {@inheritDoc} */
     @Override protected PortableSchema createSchema() {
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, arr, start, null);
-
-        return reader.getOrCreateSchema();
+        return newReader().getOrCreateSchema();
     }
 
     /** {@inheritDoc} */
@@ -576,7 +563,7 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
      */
     private Object deserializeValue() {
         // TODO: IGNITE-1272 - Deserialize with proper class loader.
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, arr, start, null);
+        BinaryReaderExImpl reader = newReader();
 
         Object obj0 = reader.deserialize();
 
@@ -588,5 +575,14 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
             obj = obj0;
 
         return obj0;
+    }
+
+    /**
+     * Create new reader for this object.
+     *
+     * @return Reader.
+     */
+    private BinaryReaderExImpl newReader() {
+        return new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), start, null);
     }
 }

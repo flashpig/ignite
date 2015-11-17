@@ -31,6 +31,7 @@ import org.apache.ignite.internal.portable.PortableSchema;
 import org.apache.ignite.internal.portable.PortableUtils;
 import org.apache.ignite.internal.portable.BinaryWriterExImpl;
 import org.apache.ignite.binary.BinaryObjectException;
+import org.apache.ignite.internal.portable.streams.PortableHeapInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.ignite.internal.portable.GridPortableMarshaller.NULL;
@@ -64,7 +65,7 @@ public class PortableBuilderReader implements PortablePositionReadable {
         pos = objImpl.start();
 
         // TODO: IGNITE-1272 - Is class loader needed here?
-        reader = new BinaryReaderExImpl(ctx, arr, pos, null);
+        reader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), pos, null);
     }
 
     /**
@@ -94,7 +95,7 @@ public class PortableBuilderReader implements PortablePositionReadable {
         if (start == pos)
             targetReader = reader;
         else
-            targetReader = new BinaryReaderExImpl(ctx, arr, start, null);
+            targetReader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), start, null);
 
         return targetReader.getOrCreateSchema();
     }
