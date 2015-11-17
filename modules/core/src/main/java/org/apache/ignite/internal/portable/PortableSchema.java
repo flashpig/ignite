@@ -50,7 +50,7 @@ public class PortableSchema implements Externalizable {
     private PortableSchemaIntIntMap fastIdToOrder;
 
     /** IDs depending on order. */
-    private ArrayList<Integer> ids;
+    private int[] ids;
 
     /** ID 1. */
     private int id0;
@@ -117,13 +117,13 @@ public class PortableSchema implements Externalizable {
 
             id0 = id1 = id2 = id3 = id4 = id5 = id6 = id7 = 0;
 
-            ids = new ArrayList<>();
+            ids = new int[fieldIds.size()];
             idToOrder = new HashMap<>();
 
             for (int i = 0; i < fieldIds.size(); i++) {
                 int fieldId = fieldIds.get(i);
 
-                ids.add(fieldId);
+                ids[i] = fieldId;
                 idToOrder.put(fieldId, i);
             }
 
@@ -178,7 +178,7 @@ public class PortableSchema implements Externalizable {
             }
         }
         else
-            return ids.get(order);
+            return ids[order];
     }
 
     /**
@@ -248,7 +248,7 @@ public class PortableSchema implements Externalizable {
         else {
             out.writeBoolean(false);
 
-            out.writeInt(ids.size());
+            out.writeInt(ids.length);
 
             for (Integer id : ids)
                 out.writeInt(id);
@@ -276,13 +276,13 @@ public class PortableSchema implements Externalizable {
 
             int size = in.readInt();
 
-            ids = new ArrayList<>(size);
+            ids = new int[size];
             idToOrder = U.newHashMap(size);
 
             for (int i = 0; i < size; i++) {
                 int fieldId = in.readInt();
 
-                ids.add(fieldId);
+                ids[i] = fieldId;
                 idToOrder.put(fieldId, i);
             }
 
