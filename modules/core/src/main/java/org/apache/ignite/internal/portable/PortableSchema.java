@@ -47,6 +47,8 @@ public class PortableSchema implements Externalizable {
     /** Map with ID to order. */
     private HashMap<Integer, Integer> idToOrder;
 
+    private PortableSchemaIntIntMap fastIdToOrder;
+
     /** IDs depending on order. */
     private ArrayList<Integer> ids;
 
@@ -108,6 +110,7 @@ public class PortableSchema implements Externalizable {
             id7 = iter.hasNext() ? iter.next() : 0;
 
             idToOrder = null;
+            fastIdToOrder = null;
         }
         else {
             inline = false;
@@ -123,6 +126,8 @@ public class PortableSchema implements Externalizable {
                 ids.add(fieldId);
                 idToOrder.put(fieldId, i);
             }
+
+            fastIdToOrder = new PortableSchemaIntIntMap(idToOrder);
         }
     }
 
@@ -210,11 +215,8 @@ public class PortableSchema implements Externalizable {
 
             return ORDER_NOT_FOUND;
         }
-        else {
-            Integer order = idToOrder.get(id);
-
-            return order != null ? order : ORDER_NOT_FOUND;
-        }
+        else
+            return fastIdToOrder.get(id);
     }
 
     /** {@inheritDoc} */
@@ -283,6 +285,8 @@ public class PortableSchema implements Externalizable {
                 ids.add(fieldId);
                 idToOrder.put(fieldId, i);
             }
+
+            fastIdToOrder = new PortableSchemaIntIntMap(idToOrder);
         }
     }
 
