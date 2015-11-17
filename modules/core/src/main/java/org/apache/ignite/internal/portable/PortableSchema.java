@@ -44,9 +44,6 @@ public class PortableSchema implements Externalizable {
     /** Empty cell. */
     private static final int MAP_EMPTY = 0;
 
-    /** Inline flag. */
-    private boolean inline;
-
     /** IDs depending on order. */
     private int[] ids;
 
@@ -100,8 +97,6 @@ public class PortableSchema implements Externalizable {
         this.schemaId = schemaId;
 
         if (fieldIds.size() <= 8) {
-            inline = true;
-
             Iterator<Integer> iter = fieldIds.iterator();
 
             id0 = iter.hasNext() ? iter.next() : 0;
@@ -114,8 +109,6 @@ public class PortableSchema implements Externalizable {
             id7 = iter.hasNext() ? iter.next() : 0;
         }
         else {
-            inline = false;
-
             id0 = id1 = id2 = id3 = id4 = id5 = id6 = id7 = 0;
 
             ids = new int[fieldIds.size()];
@@ -141,7 +134,7 @@ public class PortableSchema implements Externalizable {
      * @return Field ID.
      */
     public int fieldId(int order) {
-        if (inline) {
+        if (idToOrderData == null) {
             switch (order) {
                 case 0:
                     return id0;
@@ -184,7 +177,7 @@ public class PortableSchema implements Externalizable {
      * @return Offset or {@code 0} if there is no such field.
      */
     public int order(int id) {
-        if (inline) {
+        if (idToOrderData == null) {
             if (id == id0)
                 return 0;
 
@@ -254,7 +247,7 @@ public class PortableSchema implements Externalizable {
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         out.writeInt(schemaId);
 
-        if (inline) {
+        if (idToOrderData == null) {
             out.writeBoolean(true);
 
             out.writeInt(id0);
@@ -281,8 +274,6 @@ public class PortableSchema implements Externalizable {
         schemaId = in.readInt();
 
         if (in.readBoolean()) {
-            inline = true;
-
             id0 = in.readInt();
             id1 = in.readInt();
             id2 = in.readInt();
@@ -293,8 +284,6 @@ public class PortableSchema implements Externalizable {
             id7 = in.readInt();
         }
         else {
-            inline = false;
-
             int size = in.readInt();
 
             ids = new int[size];
