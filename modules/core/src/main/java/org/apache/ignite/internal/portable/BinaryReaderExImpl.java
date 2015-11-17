@@ -125,14 +125,14 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** Class loaded. */
     private final ClassLoader ldr;
 
-    /** */
-    private BinaryReaderHandles rCtx;
+    /** Reader context which is constantly passed between objects. */
+    private final BinaryReaderHandles rCtx;
 
     /** */
     private PortableClassDescriptor desc;
 
     /** */
-    private int start;
+    private final int start;
 
     /** Flag indicating that object header was parsed. */
     private boolean hdrParsed;
@@ -173,18 +173,17 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param ctx Context.
      * @param in Input stream.
-     * @param start Start.
+     * @param ldr Class loader.
      * @param rCtx Context.
      */
-    public BinaryReaderExImpl(PortableContext ctx, PortableInputStream in, int start, ClassLoader ldr,
+    public BinaryReaderExImpl(PortableContext ctx, PortableInputStream in, ClassLoader ldr,
         BinaryReaderHandles rCtx) {
         this.ctx = ctx;
         this.in = in;
-        this.start = start;
         this.ldr = ldr;
         this.rCtx = rCtx;
 
-        in.position(start);
+        start = in.position();
     }
 
     /**
@@ -1764,7 +1763,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
      */
     @Nullable private Object doReadObject() throws BinaryObjectException {
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, in, in.position(), ldr, rCtx);
+        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, in, ldr, rCtx);
 
         return reader.deserialize();
     }

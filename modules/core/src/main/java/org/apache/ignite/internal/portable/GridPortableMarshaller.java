@@ -256,7 +256,7 @@ public class GridPortableMarshaller {
         assert bytes != null;
 
         BinaryReaderExImpl reader =
-            new BinaryReaderExImpl(ctx, new PortableHeapInputStream(bytes), 0, clsLdr, new BinaryReaderHandles());
+            new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(bytes, 0), clsLdr, new BinaryReaderHandles());
 
         return (T)reader.unmarshal();
     }
@@ -286,7 +286,7 @@ public class GridPortableMarshaller {
             return null;
 
         BinaryReaderExImpl reader =
-            new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), 0, ldr, new BinaryReaderHandles());
+            new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, 0), ldr, new BinaryReaderHandles());
 
         return (T)reader.deserialize();
     }
@@ -309,7 +309,7 @@ public class GridPortableMarshaller {
      */
     public BinaryReaderExImpl reader(PortableInputStream in) {
         // TODO: IGNITE-1272 - Is class loader needed here?
-        return new BinaryReaderExImpl(ctx, in, in.position(), null, new BinaryReaderHandles());
+        return new BinaryReaderExImpl(ctx, in, null, new BinaryReaderHandles());
     }
 
     /**

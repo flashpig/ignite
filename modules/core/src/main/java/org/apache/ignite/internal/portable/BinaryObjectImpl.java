@@ -408,7 +408,7 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Nullable @Override protected <F> F field(BinaryReaderHandles rCtx, String fieldName) {
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), start, null, rCtx);
+        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, start), null, rCtx);
 
         return (F)reader.unmarshalField(fieldName);
     }
@@ -583,6 +583,6 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
      * @return Reader.
      */
     private BinaryReaderExImpl newReader() {
-        return new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), start, null, new BinaryReaderHandles());
+        return new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, start), null, new BinaryReaderHandles());
     }
 }

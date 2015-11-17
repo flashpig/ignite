@@ -67,7 +67,7 @@ public class PortableBuilderReader implements PortablePositionReadable {
         pos = objImpl.start();
 
         // TODO: IGNITE-1272 - Is class loader needed here?
-        reader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), pos, null, new BinaryReaderHandles());
+        reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, pos), null, new BinaryReaderHandles());
     }
 
     /**
@@ -97,8 +97,8 @@ public class PortableBuilderReader implements PortablePositionReadable {
         if (start == pos)
             targetReader = reader;
         else
-            targetReader =
-                new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), start, null, new BinaryReaderHandles());
+            targetReader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, start), null,
+                new BinaryReaderHandles());
 
         return targetReader.getOrCreateSchema();
     }
