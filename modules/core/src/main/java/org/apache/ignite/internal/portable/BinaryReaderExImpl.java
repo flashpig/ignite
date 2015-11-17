@@ -168,7 +168,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     private boolean matching = true;
 
     /** Order of a field whose match is expected. */
-    private int matchingOrder = 0;
+    private int matchingOrder;
 
     /**
      * Constructor.
