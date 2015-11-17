@@ -111,6 +111,9 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
     private final ConcurrentMap<GridCacheVersion, GridCacheAtomicFuture<?>> atomicFuts =
         new ConcurrentHashMap8<>();
 
+    /** */
+    private final ConcurrentMap<IgniteUuid, GridCacheFuture<?>> futs2 = new ConcurrentHashMap8<>();
+
     /** Near to DHT version mapping. */
     private final ConcurrentMap<GridCacheVersion, GridCacheVersion> near2dht = newMap();
 
@@ -271,6 +274,8 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
             }
         }
 
+        col.addAll(futs2.values());
+
         return col;
     }
 
@@ -424,6 +429,16 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
     }
 
     /**
+     * @param fut Future.
+     * @param futId Future ID.
+     */
+    public void addFuture(final GridCacheFuture<?> fut, final IgniteUuid futId) {
+        GridCacheFuture<?> old = futs2.put(futId, fut);
+
+        assert old == null : old;
+    }
+
+    /**
      * Adds future.
      *
      * @param fut Future.
@@ -541,6 +556,13 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
     }
 
     /**
+     * @param futId Future ID.
+     */
+    public void removeFuture(IgniteUuid futId) {
+        futs2.remove(futId);
+    }
+
+    /**
      * @param fut Future to remove.
      * @return {@code True} if removed.
      */
@@ -604,6 +626,14 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
             log.debug("Failed to find future in futures map [ver=" + ver + ", futId=" + futId + ']');
 
         return null;
+    }
+
+    /**
+     * @param futId Future ID.
+     * @return Found future.
+     */
+    @Nullable public GridCacheFuture future(IgniteUuid futId) {
+        return futs2.get(futId);
     }
 
     /**

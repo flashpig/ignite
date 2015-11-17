@@ -61,6 +61,8 @@ import org.apache.ignite.lang.IgniteClosure;
 import org.apache.ignite.lang.IgniteUuid;
 import org.jetbrains.annotations.Nullable;
 
+import static org.apache.ignite.internal.processors.cache.distributed.dht.GridPartitionedSingleGetFuture.*;
+
 /**
  * Colocated get future.
  */
@@ -71,14 +73,14 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
     /** Logger reference. */
     private static final AtomicReference<IgniteLogger> logRef = new AtomicReference<>();
 
+    /** Dummy version sent to older nodes for backward compatibility, */
+    private static final GridCacheVersion DUMMY_VER = new GridCacheVersion(0, 0, 0, 0);
+
     /** Logger. */
     private static IgniteLogger log;
 
     /** Topology version. */
     private AffinityTopologyVersion topVer;
-
-    /** Version. */
-    private GridCacheVersion ver;
 
     /**
      * @param cctx Context.
@@ -126,8 +128,6 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
 
         this.topVer = topVer;
 
-        ver = cctx.versions().next();
-
         if (log == null)
             log = U.logger(cctx.kernalContext(), logRef, GridPartitionedGetFuture.class);
     }
@@ -161,7 +161,9 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
 
     /** {@inheritDoc} */
     @Override public GridCacheVersion version() {
-        return ver;
+        assert false : this;
+
+        return null;
     }
 
     /** {@inheritDoc} */
@@ -219,7 +221,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
         if (super.onDone(res, err)) {
             // Don't forget to clean up.
             if (trackable)
-                cctx.mvcc().removeFuture(this);
+                cctx.mvcc().removeFuture(futId);
 
             cache().sendTtlUpdateRequest(expiryPlc);
 
@@ -276,7 +278,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
         if (hasRmtNodes) {
             trackable = true;
 
-            cctx.mvcc().addFuture(this);
+            cctx.mvcc().addFuture(this, futId);
         }
 
         // Create mini futures.
@@ -343,7 +345,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
                     cctx.cacheId(),
                     futId,
                     fut.futureId(),
-                    ver,
+                    n.version().compareTo(SINGLE_GET_MSG_SINCE) >= 0 ? null : DUMMY_VER,
                     mappedKeys,
                     readThrough,
                     topVer,
@@ -518,28 +520,6 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
      */
     private GridDhtCacheAdapter<K, V> cache() {
         return cctx.dht();
-    }
-
-    /**
-     * Finds affinity node to send get request to.
-     *
-     * @param key Key to get.
-     * @param topVer Topology version.
-     * @return Affinity node from which the key will be requested.
-     */
-    private ClusterNode affinityNode(KeyCacheObject key, AffinityTopologyVersion topVer) {
-        if (!canRemap) {
-            List<ClusterNode> nodes = cctx.affinity().nodes(key, topVer);
-
-            for (ClusterNode node : nodes) {
-                if (cctx.discovery().alive(node))
-                    return node;
-            }
-
-            return null;
-        }
-        else
-            return cctx.affinity().primary(key, topVer);
     }
 
     /**
