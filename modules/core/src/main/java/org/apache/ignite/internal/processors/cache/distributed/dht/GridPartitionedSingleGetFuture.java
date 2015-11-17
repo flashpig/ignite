@@ -188,6 +188,7 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
     /**
      * @param topVer Topology version.
      */
+    @SuppressWarnings("unchecked")
     private void map(AffinityTopologyVersion topVer) {
         ClusterNode node = mapKeyToNode(topVer);
 
@@ -375,7 +376,14 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
                                 colocated.removeIfObsolete(key);
                         }
                         else {
-                            setResult(v, ver);
+                            if (!skipVals) {
+                                if (cctx.config().isStatisticsEnabled())
+                                    cctx.cache().metrics0().onRead(true);
+
+                                setResult(v, ver);
+                            }
+                            else
+                                setSkipValueResult(true, ver);
 
                             return null;
                         }
@@ -405,24 +413,34 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
      * @param res Result.
      */
     public void onResult(UUID nodeId, GridNearSingleGetResponse res) {
-        if (!processResponse(nodeId))
+        if (!processResponse(nodeId) || !checkError(res.error(), res.invalidPartitions(), res.topologyVersion()))
             return;
 
         Message res0 = res.result();
 
-        CacheObject val;
-        GridCacheVersion ver = null;
-
         if (needVer) {
             CacheVersionedValue verVal = (CacheVersionedValue)res0;
 
-            val = verVal.value();
-            ver = verVal.version();
+            if (verVal != null) {
+                if (skipVals)
+                    setSkipValueResult(true, verVal.version());
+                else
+                    setResult(null , null);
+            }
+            else {
+                if (skipVals)
+                    setSkipValueResult(false, null);
+                else
+                    setResult(null , null);
+            }
         }
-        else
-            val = (CacheObject)res0;
-
-        onResult(res.error(), res.invalidPartitions(), res.topologyVersion(), val, ver);
+        else {
+            if (skipVals) {
+                setSkipValueResult(res.containsValue(), null);
+            }
+            else
+                setResult((CacheObject)res0, null);
+        }
     }
 
     /**
@@ -430,14 +448,15 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
      * @param res Result.
      */
     public void onResult(UUID nodeId, GridNearGetResponse res) {
-        if (!processResponse(nodeId))
+        if (!processResponse(nodeId) ||
+            !checkError(res.error(), !F.isEmpty(res.invalidPartitions()), res.topologyVersion()))
             return;
 
         Collection<GridCacheEntryInfo> infos = res.entries();
 
         assert F.isEmpty(infos) || infos.size() == 1 : infos;
 
-        onResult(res.error(), !F.isEmpty(res.invalidPartitions()), res.topologyVersion(), F.first(infos));
+        setResult(F.first(infos));
     }
 
     /**
@@ -460,37 +479,14 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
      * @param err Error.
      * @param invalidParts Invalid partitions error flag.
      * @param rmtTopVer Received topology version.
-     * @param info Entry info.
      */
-    private void onResult(@Nullable IgniteCheckedException err,
+    private boolean checkError(@Nullable IgniteCheckedException err,
         boolean invalidParts,
-        AffinityTopologyVersion rmtTopVer,
-        @Nullable GridCacheEntryInfo info) {
-        if (info != null) {
-            assert skipVals == (info.value() == null);
-
-            onResult(err, invalidParts, rmtTopVer, info.value(), info.version());
-        }
-        else
-            onResult(err, invalidParts, rmtTopVer, null, null);
-    }
-
-    /**
-     * @param err Error.
-     * @param invalidParts Invalid partitions error flag.
-     * @param rmtTopVer Received topology version.
-     * @param val Value.
-     * @param ver Version.
-     */
-    private void onResult(@Nullable IgniteCheckedException err,
-        boolean invalidParts,
-        AffinityTopologyVersion rmtTopVer,
-        @Nullable CacheObject val,
-        @Nullable GridCacheVersion ver) {
+        AffinityTopologyVersion rmtTopVer) {
         if (err != null) {
             onDone(err);
 
-            return;
+            return false;
         }
 
         if (invalidParts) {
@@ -503,7 +499,7 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
                     "[topVer=" + topVer + ", rmtTopVer=" + rmtTopVer + ", part=" + cctx.affinity().partition(key) +
                     ", nodeId=" + node.id() + ']'));
 
-                return;
+                return false;
             }
 
             if (canRemap) {
@@ -525,22 +521,47 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
             }
             else
                 map(topVer);
+
+            return false;
         }
-        else
-            setResult(val, ver);
+
+        return true;
     }
 
     /**
      * @param info Entry info.
      */
     private void setResult(@Nullable GridCacheEntryInfo info) {
-        if (info != null) {
-            assert skipVals == (info.value() == null);
+        assert info == null || skipVals == (info.value() == null);
 
-            setResult(info.value(), info.version());
+        if (skipVals) {
+            if (info != null)
+                setSkipValueResult(true, info.version());
+            else
+                setSkipValueResult(false, null);
+        }
+        else {
+            if (info != null)
+                setResult(info.value(), info.version());
+            else
+                setResult(null, null);
+        }
+    }
+
+    /**
+     * @param res Result.
+     * @param ver Version.
+     */
+    private void setSkipValueResult(boolean res, @Nullable GridCacheVersion ver) {
+        assert skipVals;
+
+        if (needVer) {
+            assert ver != null || !res;
+
+            onDone(new T2<>(res, ver));
         }
         else
-            onDone(skipVals ? false : null);
+            onDone(res);
     }
 
     /**
@@ -549,24 +570,29 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
      */
     private void setResult(@Nullable CacheObject val, @Nullable GridCacheVersion ver) {
         try {
-            if (needVer) {
-                assert ver != null;
-                assert skipVals || val != null;
+            assert !skipVals;
 
-                onDone(new T2<>(skipVals ? true : val, ver));
-            }
-            else {
-                if (!keepCacheObjects) {
-                    Object res = skipVals ? true : CU.value(val, cctx, true);
+            if (val != null) {
+                if (needVer) {
+                    assert ver != null;
 
-                    if (deserializePortable && !skipVals)
-                        res = cctx.unwrapPortableIfNeeded(res, false);
-
-                    onDone(res);
+                    onDone(new T2<>(val, ver));
                 }
-                else
-                    onDone(skipVals ? true : val);
+                else {
+                    if (!keepCacheObjects) {
+                        Object res = CU.value(val, cctx, true);
+
+                        if (deserializePortable && !skipVals)
+                            res = cctx.unwrapPortableIfNeeded(res, false);
+
+                        onDone(res);
+                    }
+                    else
+                        onDone(val);
+                }
             }
+            else
+                onDone(null);
         }
         catch (Exception e) {
             onDone(e);

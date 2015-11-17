@@ -515,12 +515,12 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
                 GridNearSingleGetRequest req = (GridNearSingleGetRequest)msg;
 
                 GridNearSingleGetResponse res = new GridNearSingleGetResponse(
-                        ctx.cacheId(),
-                        req.futureId(),
-                        req.topologyVersion(),
-                        null,
-                        false,
-                        req.deployInfo() != null);
+                    ctx.cacheId(),
+                    req.futureId(),
+                    req.topologyVersion(),
+                    null,
+                    false,
+                    req.deployInfo() != null);
 
                 res.error(req.classError());
 
@@ -532,10 +532,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
             case 116: {
                 GridNearSingleGetResponse res = (GridNearSingleGetResponse)msg;
 
-                GridCacheFuture fut = ctx.mvcc().future(res.futureId());
-
-                if (fut == null)
-                    fut = ctx.mvcc().future(res.futureId());
+                GridPartitionedSingleGetFuture fut = (GridPartitionedSingleGetFuture)ctx.mvcc().future(res.futureId());
 
                 if (fut == null) {
                     if (log.isDebugEnabled())
@@ -546,7 +543,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
 
                 res.error(res.classError());
 
-                ((GridPartitionedSingleGetFuture)fut).onResult(nodeId, res);
+                fut.onResult(nodeId, res);
             }
 
             break;

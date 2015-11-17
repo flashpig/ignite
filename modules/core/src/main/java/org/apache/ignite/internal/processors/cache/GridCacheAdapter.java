@@ -599,11 +599,11 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
     }
 
     /** {@inheritDoc} */
-    @Override public IgniteInternalFuture<Boolean> containsKeyAsync(K key) {
+    @Override public final IgniteInternalFuture<Boolean> containsKeyAsync(K key) {
         A.notNull(key, "key");
 
-        return getAllAsync(
-            Collections.singletonList(key),
+        return (IgniteInternalFuture)getAsync(
+            key,
             /*force primary*/false,
             /*skip tx*/false,
             /*subj id*/null,
@@ -611,15 +611,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
             /*deserialize portable*/false,
             /*skip values*/true,
             /*can remap*/true
-        ).chain(new CX1<IgniteInternalFuture<Map<K, V>>, Boolean>() {
-            @Override public Boolean applyx(IgniteInternalFuture<Map<K, V>> fut) throws IgniteCheckedException {
-                Map<K, V> map = fut.get();
-
-                assert map.isEmpty() || map.size() == 1 : map.size();
-
-                return map.isEmpty() ? false : map.values().iterator().next() != null;
-            }
-        });
+        );
     }
 
     /** {@inheritDoc} */
@@ -1484,14 +1476,14 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
      * @return Future for the get operation.
      */
     protected IgniteInternalFuture<V> getAsync(
-        final K key,
-        boolean forcePrimary,
-        boolean skipTx,
-        @Nullable UUID subjId,
-        String taskName,
-        boolean deserializePortable,
-        boolean skipVals,
-        boolean canRemap
+            final K key,
+            boolean forcePrimary,
+            boolean skipTx,
+            @Nullable UUID subjId,
+            String taskName,
+            boolean deserializePortable,
+            final boolean skipVals,
+            boolean canRemap
     ) {
         return getAllAsync(Collections.singletonList(key),
             forcePrimary,
@@ -1504,6 +1496,12 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
             new CX1<IgniteInternalFuture<Map<K, V>>, V>() {
                 @Override public V applyx(IgniteInternalFuture<Map<K, V>> e) throws IgniteCheckedException {
                     Map<K, V> map = e.get();
+
+                    if (skipVals) {
+                        Boolean val = !map.isEmpty();
+
+                        return (V)(val);
+                    }
 
                     assert map.isEmpty() || map.size() == 1 : map.size();
 

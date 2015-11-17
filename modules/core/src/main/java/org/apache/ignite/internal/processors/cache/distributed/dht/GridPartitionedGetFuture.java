@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -392,7 +391,8 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
         boolean remote = false;
 
         // Allow to get cached value from the local node.
-        boolean allowLocRead = !forcePrimary || cctx.affinity().primary(cctx.localNode(), key, topVer);
+        boolean allowLocRead = (cctx.affinityNode() && !forcePrimary) ||
+                cctx.affinity().primary(cctx.localNode(), key, topVer);
 
         while (true) {
             GridCacheEntryEx entry;

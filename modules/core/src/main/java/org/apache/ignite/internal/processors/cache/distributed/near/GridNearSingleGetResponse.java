@@ -44,6 +44,9 @@ public class GridNearSingleGetResponse extends GridCacheMessage implements GridC
     /** */
     public static final int INVALID_PART_FLAG_MASK = 0x1;
 
+    /** */
+    public static final int CONTAINS_VAL_FLAG_MASK = 0x2;
+
     /** Future ID. */
     private IgniteUuid futId;
 
@@ -122,6 +125,20 @@ public class GridNearSingleGetResponse extends GridCacheMessage implements GridC
      */
     public boolean invalidPartitions() {
         return (flags & INVALID_PART_FLAG_MASK) != 0;
+    }
+
+    /**
+     * @return Results for request with set flag {@link GridNearSingleGetRequest#skipValues()}.
+     */
+    public boolean containsValue() {
+        return (flags & CONTAINS_VAL_FLAG_MASK) != 0;
+    }
+
+    /**
+     *
+     */
+    public void setContainsValue() {
+        flags = (byte)(flags | CONTAINS_VAL_FLAG_MASK);
     }
 
     /**

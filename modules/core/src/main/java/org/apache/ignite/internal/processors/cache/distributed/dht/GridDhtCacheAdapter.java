@@ -767,6 +767,9 @@ public abstract class GridDhtCacheAdapter<K, V> extends GridDistributedCacheAdap
                             res0,
                             false,
                             req.addDeploymentInfo());
+
+                        if (info != null && req.skipValues())
+                            res.setContainsValue();
                     }
                     else {
                         res = new GridNearSingleGetResponse(ctx.cacheId(),
