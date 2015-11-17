@@ -412,7 +412,7 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
-    @Nullable @Override protected <F> F field(PortableReaderContext rCtx, String fieldName) {
+    @Nullable @Override protected <F> F field(BinaryReaderHandles rCtx, String fieldName) {
         BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx,
             new PortableHeapInputStream(arr),
             start,

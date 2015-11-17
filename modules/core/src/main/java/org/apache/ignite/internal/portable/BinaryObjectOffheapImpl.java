@@ -342,7 +342,7 @@ public class BinaryObjectOffheapImpl extends BinaryObjectEx implements Externali
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
-    @Nullable @Override protected <F> F field(PortableReaderContext rCtx, String fieldName) {
+    @Nullable @Override protected <F> F field(BinaryReaderHandles rCtx, String fieldName) {
         BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx,
             new PortableOffheapInputStream(ptr, size, false),
             start,

@@ -127,7 +127,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     private final int start;
 
     /** */
-    private final PortableReaderContext rCtx;
+    private final BinaryReaderHandles rCtx;
 
     /** */
     private final ClassLoader ldr;
@@ -178,7 +178,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param ldr Class loader.
      */
     public BinaryReaderExImpl(PortableContext ctx, byte[] arr, int start, ClassLoader ldr) {
-        this(ctx, new PortableHeapInputStream(arr), start, ldr, new PortableReaderContext());
+        this(ctx, new PortableHeapInputStream(arr), start, ldr, new BinaryReaderHandles());
     }
 
     /**
@@ -187,7 +187,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param start Start.
      */
     BinaryReaderExImpl(PortableContext ctx, PortableInputStream in, int start, ClassLoader ldr) {
-        this(ctx, in, start, ldr, new PortableReaderContext());
+        this(ctx, in, start, ldr, new BinaryReaderHandles());
     }
 
     /**
@@ -197,7 +197,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param rCtx Context.
      */
     BinaryReaderExImpl(PortableContext ctx, PortableInputStream in, int start, ClassLoader ldr,
-        PortableReaderContext rCtx) {
+        BinaryReaderHandles rCtx) {
         this.ctx = ctx;
         this.in = in;
         this.start = start;
@@ -1016,7 +1016,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param obj Object.
      */
     void setHandler(Object obj) {
-        rCtx.setObjectHandler(start, obj);
+        rCtx.put(start, obj);
     }
 
     /**
@@ -1024,7 +1024,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param pos Position.
      */
     void setHandler(Object obj, int pos) {
-        rCtx.setObjectHandler(pos, obj);
+        rCtx.put(pos, obj);
     }
 
     /**
@@ -1036,7 +1036,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     private <T> T readHandleField() {
         int handle = (in.position() - 1) - in.readInt();
 
-        Object obj = rCtx.getObjectByHandle(handle);
+        Object obj = rCtx.get(handle);
 
         if (obj == null) {
             in.position(handle);
@@ -1556,7 +1556,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             case HANDLE:
                 int handle = start - in.readInt();
 
-                BinaryObject handledPo = rCtx.getPortableByHandle(handle);
+                BinaryObject handledPo = rCtx.get(handle);
 
                 if (handledPo != null)
                     return handledPo;
@@ -1585,7 +1585,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                         in.remaining() + in.position())
                         : new BinaryObjectImpl(ctx, in.array(), start);
 
-                rCtx.setPortableHandler(start, po);
+                rCtx.put(start, po);
 
                 in.position(start + po.length());
 
@@ -1807,7 +1807,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             case HANDLE:
                 int handle = start - in.readInt();
 
-                obj = rCtx.getObjectByHandle(handle);
+                obj = rCtx.get(handle);
 
                 if (obj == null) {
                     int retPos = in.position();
