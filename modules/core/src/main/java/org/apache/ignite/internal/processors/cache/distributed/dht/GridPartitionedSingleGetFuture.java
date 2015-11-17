@@ -548,23 +548,28 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
      * @param ver Version.
      */
     private void setResult(@Nullable CacheObject val, @Nullable GridCacheVersion ver) {
-        if (needVer) {
-            assert ver != null;
-            assert skipVals || val != null;
+        try {
+            if (needVer) {
+                assert ver != null;
+                assert skipVals || val != null;
 
-            onDone(new T2<>(skipVals ? true : val, ver));
-        }
-        else {
-            if (!keepCacheObjects) {
-                Object res = skipVals ? true : CU.value(val, cctx, true);
-
-                if (deserializePortable && !skipVals)
-                    res = cctx.unwrapPortableIfNeeded(res, false);
-
-                onDone(res);
+                onDone(new T2<>(skipVals ? true : val, ver));
             }
-            else
-                onDone(skipVals ? true : val);
+            else {
+                if (!keepCacheObjects) {
+                    Object res = skipVals ? true : CU.value(val, cctx, true);
+
+                    if (deserializePortable && !skipVals)
+                        res = cctx.unwrapPortableIfNeeded(res, false);
+
+                    onDone(res);
+                }
+                else
+                    onDone(skipVals ? true : val);
+            }
+        }
+        catch (Exception e) {
+            onDone(e);
         }
     }
 

@@ -2511,46 +2511,6 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
     /**
      * @param nodeId Sender node ID.
-     * @param res Near get response.
-     */
-    private void processNearGetResponse(UUID nodeId, GridNearGetResponse res) {
-        if (log.isDebugEnabled())
-            log.debug("Processing near get response [nodeId=" + nodeId + ", res=" + res + ']');
-
-        CacheGetFuture fut = (CacheGetFuture)ctx.mvcc().future(res.futureId());
-
-        if (fut == null) {
-            if (log.isDebugEnabled())
-                log.debug("Failed to find future for get response [sender=" + nodeId + ", res=" + res + ']');
-
-            return;
-        }
-
-        fut.onResult(nodeId, res);
-    }
-
-    /**
-     * @param nodeId Sender node ID.
-     * @param res Near get response.
-     */
-    private void processNearSingleGetResponse(UUID nodeId, GridNearSingleGetResponse res) {
-        if (log.isDebugEnabled())
-            log.debug("Processing near get response [nodeId=" + nodeId + ", res=" + res + ']');
-
-        GridPartitionedSingleGetFuture fut = (GridPartitionedSingleGetFuture)ctx.mvcc().future(res.futureId());
-
-        if (fut == null) {
-            if (log.isDebugEnabled())
-                log.debug("Failed to find future for get response [sender=" + nodeId + ", res=" + res + ']');
-
-            return;
-        }
-
-        fut.onResult(nodeId, res);
-    }
-
-    /**
-     * @param nodeId Sender node ID.
      * @param req Near atomic update request.
      */
     private void processNearAtomicUpdateRequest(UUID nodeId, GridNearAtomicUpdateRequest req) {
