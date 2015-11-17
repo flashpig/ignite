@@ -324,11 +324,8 @@ public class BinaryObjectOffheapImpl extends BinaryObjectEx implements Externali
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Nullable @Override protected <F> F field(BinaryReaderHandles rCtx, String fieldName) {
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx,
-            new PortableOffheapInputStream(ptr, size, false),
-            start,
-            null,
-            rCtx);
+        BinaryReaderExImpl reader =
+            new BinaryReaderExImpl(ctx, new PortableOffheapInputStream(ptr, size, false), start, null, rCtx);
 
         return (F)reader.unmarshalField(fieldName);
     }
@@ -430,6 +427,7 @@ public class BinaryObjectOffheapImpl extends BinaryObjectEx implements Externali
      * @return Reader.
      */
     private BinaryReaderExImpl newReader() {
-        return new BinaryReaderExImpl(ctx, new PortableOffheapInputStream(ptr, size, false), start, null);
+        return new BinaryReaderExImpl(ctx, new PortableOffheapInputStream(ptr, size, false), start, null,
+            new BinaryReaderHandles());
     }
 }

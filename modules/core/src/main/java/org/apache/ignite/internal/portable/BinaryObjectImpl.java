@@ -583,6 +583,6 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
      * @return Reader.
      */
     private BinaryReaderExImpl newReader() {
-        return new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), start, null);
+        return new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), start, null, new BinaryReaderHandles());
     }
 }

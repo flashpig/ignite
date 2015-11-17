@@ -255,7 +255,8 @@ public class GridPortableMarshaller {
     @Nullable public <T> T unmarshal(byte[] bytes, @Nullable ClassLoader clsLdr) throws BinaryObjectException {
         assert bytes != null;
 
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(bytes), 0, clsLdr);
+        BinaryReaderExImpl reader =
+            new BinaryReaderExImpl(ctx, new PortableHeapInputStream(bytes), 0, clsLdr, new BinaryReaderHandles());
 
         return (T)reader.unmarshal();
     }
@@ -284,7 +285,8 @@ public class GridPortableMarshaller {
         if (arr[0] == NULL)
             return null;
 
-        BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), 0, ldr);
+        BinaryReaderExImpl reader =
+            new BinaryReaderExImpl(ctx, new PortableHeapInputStream(arr), 0, ldr, new BinaryReaderHandles());
 
         return (T)reader.deserialize();
     }
@@ -307,7 +309,7 @@ public class GridPortableMarshaller {
      */
     public BinaryReaderExImpl reader(PortableInputStream in) {
         // TODO: IGNITE-1272 - Is class loader needed here?
-        return new BinaryReaderExImpl(ctx, in, in.position(), null);
+        return new BinaryReaderExImpl(ctx, in, in.position(), null, new BinaryReaderHandles());
     }
 
     /**
