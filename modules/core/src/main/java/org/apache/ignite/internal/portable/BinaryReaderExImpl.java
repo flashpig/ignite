@@ -117,20 +117,20 @@ import static org.apache.ignite.internal.portable.GridPortableMarshaller.UUID_AR
  */
 @SuppressWarnings("unchecked")
 public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, ObjectInput {
-    /** */
+    /** Portable context. */
     private final PortableContext ctx;
 
-    /** */
+    /** Input stream. */
     private final PortableInputStream in;
 
-    /** */
-    private final int start;
-
-    /** */
-    private final BinaryReaderHandles rCtx;
-
-    /** */
+    /** Class loaded. */
     private final ClassLoader ldr;
+
+    /** */
+    private int start;
+
+    /** */
+    private BinaryReaderHandles rCtx;
 
     /** */
     private PortableClassDescriptor desc;
