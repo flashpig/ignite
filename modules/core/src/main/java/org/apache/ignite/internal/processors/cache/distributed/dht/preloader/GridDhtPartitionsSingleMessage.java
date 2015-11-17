@@ -23,14 +23,12 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.GridDirectTransient;
-import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.plugin.extensions.communication.MessageReader;
 import org.apache.ignite.plugin.extensions.communication.MessageWriter;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -43,16 +41,13 @@ public class GridDhtPartitionsSingleMessage extends GridDhtPartitionsAbstractMes
     /** Local partitions. */
     @GridToStringInclude
     @GridDirectTransient
-    private Map<Integer, GridDhtPartitionMap> parts;
+    private Map<Integer, GridDhtPartitionMap2> parts;
 
     /** Serialized partitions. */
     private byte[] partsBytes;
 
     /** */
     private boolean client;
-
-    /** Topology version. */
-    private AffinityTopologyVersion topVer;
 
     /**
      * Required by {@link Externalizable}.
@@ -68,12 +63,10 @@ public class GridDhtPartitionsSingleMessage extends GridDhtPartitionsAbstractMes
      */
     public GridDhtPartitionsSingleMessage(GridDhtPartitionExchangeId exchId,
         boolean client,
-        @Nullable GridCacheVersion lastVer,
-        @NotNull AffinityTopologyVersion topVer) {
+        @Nullable GridCacheVersion lastVer) {
         super(exchId, lastVer);
 
         this.client = client;
-        this.topVer = topVer;
     }
 
     /**
@@ -89,7 +82,7 @@ public class GridDhtPartitionsSingleMessage extends GridDhtPartitionsAbstractMes
      * @param cacheId Cache ID to add local partition for.
      * @param locMap Local partition map.
      */
-    public void addLocalPartitionMap(int cacheId, GridDhtPartitionMap locMap) {
+    public void addLocalPartitionMap(int cacheId, GridDhtPartitionMap2 locMap) {
         if (parts == null)
             parts = new HashMap<>();
 
@@ -99,7 +92,7 @@ public class GridDhtPartitionsSingleMessage extends GridDhtPartitionsAbstractMes
     /**
      * @return Local partitions.
      */
-    public Map<Integer, GridDhtPartitionMap> partitions() {
+    public Map<Integer, GridDhtPartitionMap2> partitions() {
         return parts;
     }
 
@@ -147,12 +140,6 @@ public class GridDhtPartitionsSingleMessage extends GridDhtPartitionsAbstractMes
 
                 writer.incrementState();
 
-            case 7:
-                if (!writer.writeMessage("topVer", topVer))
-                    return false;
-
-                writer.incrementState();
-
         }
 
         return true;
@@ -185,14 +172,6 @@ public class GridDhtPartitionsSingleMessage extends GridDhtPartitionsAbstractMes
 
                 reader.incrementState();
 
-            case 7:
-                topVer = reader.readMessage("topVer");
-
-                if (!reader.isLastRead())
-                    return false;
-
-                reader.incrementState();
-
         }
 
         return reader.afterMessageRead(GridDhtPartitionsSingleMessage.class);
@@ -205,7 +184,7 @@ public class GridDhtPartitionsSingleMessage extends GridDhtPartitionsAbstractMes
 
     /** {@inheritDoc} */
     @Override public byte fieldsCount() {
-        return 8;
+        return 7;
     }
 
     /** {@inheritDoc} */
