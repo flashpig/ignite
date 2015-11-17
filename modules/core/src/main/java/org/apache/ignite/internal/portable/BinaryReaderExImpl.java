@@ -129,131 +129,135 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     private final BinaryReaderHandles rCtx;
 
     /** */
-    private PortableClassDescriptor desc;
-
-    /** */
     private final int start;
 
-    /** Flag indicating that object header was parsed. */
-    private boolean hdrParsed;
-
     /** Type ID. */
-    private int typeId;
+    private final int typeId;
 
     /** Raw offset. */
-    private int rawOff;
+    private final int rawOff;
 
     /** */
-    private int hdrLen;
+    private final int hdrLen;
 
     /** Footer start. */
-    private int footerStart;
+    private final int footerStart;
 
     /** Footer end. */
-    private int footerLen;
+    private final int footerLen;
 
     /** ID mapper. */
-    private BinaryIdMapper idMapper;
+    private final BinaryIdMapper idMapper;
 
     /** Schema Id. */
-    private int schemaId;
+    private final int schemaId;
 
     /** Whether this is user type or not. */
-    private boolean userType;
+    private final boolean userType;
 
     /** Whether field IDs exist. */
-    private int fieldIdLen;
+    private final int fieldIdLen;
 
     /** Offset size in bytes. */
-    private int fieldOffsetLen;
+    private final int fieldOffsetLen;
 
     /** Object schema. */
-    private PortableSchema schema;
+    private final PortableSchema schema;
 
     /**
+     * Constructor.
+     *
      * @param ctx Context.
      * @param in Input stream.
      * @param ldr Class loader.
      * @param rCtx Context.
      */
-    public BinaryReaderExImpl(PortableContext ctx, PortableInputStream in, ClassLoader ldr,
-        BinaryReaderHandles rCtx) {
+    public BinaryReaderExImpl(PortableContext ctx, PortableInputStream in, ClassLoader ldr, BinaryReaderHandles rCtx) {
+        // Initialize base members.
         this.ctx = ctx;
         this.in = in;
         this.ldr = ldr;
         this.rCtx = rCtx;
 
         start = in.position();
-    }
 
-    /**
-     * Preloads typeId from the input array.
-     */
-    private void parseHeaderIfNeeded() {
-        if (hdrParsed)
-            return;
+        // Parse header if possible.
+        byte hdr = in.readBytePositioned(start);
 
-        int retPos = in.position();
+        if (hdr == GridPortableMarshaller.OBJ) {
+            // Skip header.
+            in.readByte();
 
-        in.position(start);
+            // Ensure protocol is fine.
+            PortableUtils.checkProtocolVersion(in.readByte());
 
-        byte hdr = in.readByte();
+            // Read and parse flags.
+            short flags = in.readShort();
 
-        if (hdr != GridPortableMarshaller.OBJ)
-            throw new BinaryObjectException("Invalid header [pos=" + retPos + "expected=" + GridPortableMarshaller.OBJ +
-                ", actual=" + hdr + ']');
+            userType = PortableUtils.isUserType(flags);
 
-        PortableUtils.checkProtocolVersion(in.readByte());
+            fieldIdLen = PortableUtils.fieldIdLength(flags);
+            fieldOffsetLen = PortableUtils.fieldOffsetLength(flags);
 
-        short flags = in.readShort();
+            int typeId0 = in.readIntPositioned(start + GridPortableMarshaller.TYPE_ID_POS);
 
-        userType = PortableUtils.isUserType(flags);
+            IgniteBiTuple<Integer, Integer> footer = PortableUtils.footerAbsolute(in, start);
 
-        fieldIdLen = PortableUtils.fieldIdLength(flags);
-        fieldOffsetLen = PortableUtils.fieldOffsetLength(flags);
+            footerStart = footer.get1();
+            footerLen = footer.get2() - footerStart;
 
-        typeId = in.readIntPositioned(start + GridPortableMarshaller.TYPE_ID_POS);
+            schemaId = in.readIntPositioned(start + GridPortableMarshaller.SCHEMA_ID_POS);
 
-        IgniteBiTuple<Integer, Integer> footer = PortableUtils.footerAbsolute(in, start);
+            rawOff = PortableUtils.rawOffsetAbsolute(in, start);
 
-        footerStart = footer.get1();
-        footerLen = footer.get2() - footerStart;
+            if (typeId0 == UNREGISTERED_TYPE_ID) {
+                // Skip to the class name position.
+                in.position(start + GridPortableMarshaller.DFLT_HDR_LEN);
 
-        schemaId = in.readIntPositioned(start + GridPortableMarshaller.SCHEMA_ID_POS);
+                int off = in.position();
 
-        rawOff = PortableUtils.rawOffsetAbsolute(in, start);
+                Class cls = doReadClass(typeId0);
 
-        if (typeId == UNREGISTERED_TYPE_ID) {
-            // Skip to the class name position.
-            in.position(start + GridPortableMarshaller.DFLT_HDR_LEN);
+                // registers class by typeId, at least locally if the cache is not ready yet.
+                PortableClassDescriptor desc = ctx.descriptorForClass(cls);
 
-            int off = in.position();
+                typeId = desc.typeId();
 
-            Class cls = doReadClass(typeId);
+                int clsNameLen = in.position() - off;
 
-            // registers class by typeId, at least locally if the cache is not ready yet.
-            PortableClassDescriptor desc = ctx.descriptorForClass(cls);
+                hdrLen = DFLT_HDR_LEN + clsNameLen;
+            }
+            else {
+                typeId = typeId0;
 
-            typeId = desc.typeId();
+                hdrLen = DFLT_HDR_LEN;
+            }
 
-            int clsNameLen = in.position() - off;
+            idMapper = userType ? ctx.userTypeIdMapper(typeId) : null;
+            schema = PortableUtils.hasSchema(flags) ? getOrCreateSchema() : null;
 
-            hdrLen = DFLT_HDR_LEN + clsNameLen;
+            in.position(start);
         }
-        else
-            hdrLen = DFLT_HDR_LEN;
-
-        // Restore state.
-        in.position(retPos);
-
-        hdrParsed = true;
+        else {
+            typeId = 0;
+            rawOff = 0;
+            hdrLen = 0;
+            footerStart = 0;
+            footerLen = 0;
+            idMapper = null;
+            schemaId = 0;
+            userType = false;
+            fieldIdLen = 0;
+            fieldOffsetLen = 0;
+            schema = null;
+        }
     }
 
     /**
      * @return Descriptor.
      */
     PortableClassDescriptor descriptor() {
-        return desc;
+        return ctx.descriptorForTypeId(userType, typeId, ldr);
     }
 
     /**
@@ -290,24 +294,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
      */
     @Nullable Object unmarshalField(int fieldId) throws BinaryObjectException {
-        parseHeaderIfNeeded();
-
         return hasField(fieldId) ? unmarshal() : null;
-    }
-
-    /**
-     * Unmarshal field by absolute position.
-     *
-     * @param pos Absolute position.
-     * @return Field value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Object unmarshalFieldByAbsolutePosition(int pos) throws BinaryObjectException {
-        parseHeaderIfNeeded();
-
-        in.position(pos);
-
-        return unmarshal();
     }
 
     /**
@@ -1801,10 +1788,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 break;
 
             case OBJ:
-                parseHeaderIfNeeded();
-
-                assert typeId != UNREGISTERED_TYPE_ID;
-
                 PortableUtils.checkProtocolVersion(in.readByte());
 
                 boolean userType = PortableUtils.isUserType(this.readShort());
@@ -1812,7 +1795,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 // Skip typeId and hash code.
                 in.position(in.position() + 8);
 
-                desc = ctx.descriptorForTypeId(userType, typeId, ldr);
+                PortableClassDescriptor desc = ctx.descriptorForTypeId(userType, typeId, ldr);
 
                 int len = in.readInt();
 
@@ -2601,13 +2584,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     private int fieldId(String name) {
         assert name != null;
 
-        parseHeaderIfNeeded();
-
-        assert typeId != UNREGISTERED_TYPE_ID;
-
-        if (idMapper == null)
-            idMapper = ctx.userTypeIdMapper(typeId);
-
         return idMapper.fieldId(typeId, name);
     }
 
@@ -2617,8 +2593,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Schema.
      */
     public PortableSchema getOrCreateSchema() {
-        parseHeaderIfNeeded();
-
         PortableSchema schema = ctx.schemaRegistry(typeId).schema(schemaId);
 
         if (schema == null) {
@@ -2709,15 +2683,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             }
         }
         else {
-            PortableSchema schema0 = schema;
-
-            if (schema0 == null) {
-                schema0 = getOrCreateSchema();
-
-                schema = schema0;
-            }
-
-            int order = schema0.order(id);
+            int order = schema.order(id);
 
             if (order != PortableSchema.ORDER_NOT_FOUND) {
                 int offsetPos = footerStart + order * (fieldIdLen + fieldOffsetLen) + fieldIdLen;
@@ -2739,8 +2705,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param footerLen Footer length.
      */
     private boolean hasLowFieldsCount(int footerLen) {
-        assert hdrParsed;
-
         return footerLen < ((fieldOffsetLen + fieldIdLen) << 3);
     }
 

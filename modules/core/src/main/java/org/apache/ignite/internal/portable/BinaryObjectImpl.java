@@ -397,7 +397,10 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
                 break;
 
             default:
-                val = newReader().unmarshalFieldByAbsolutePosition(fieldPos);
+                BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, fieldPos),
+                    null, new BinaryReaderHandles());
+
+                val = reader.unmarshal();
 
                 break;
         }

@@ -313,7 +313,13 @@ public class BinaryObjectOffheapImpl extends BinaryObjectEx implements Externali
                 break;
 
             default:
-                val = newReader().unmarshalFieldByAbsolutePosition(fieldPos);
+                PortableOffheapInputStream stream = new PortableOffheapInputStream(ptr, size, false);
+
+                stream.position(fieldPos);
+
+                BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, stream, null, new BinaryReaderHandles());
+
+                val = reader.unmarshal();
 
                 break;
         }
