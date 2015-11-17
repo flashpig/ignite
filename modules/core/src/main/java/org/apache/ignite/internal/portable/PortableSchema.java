@@ -38,14 +38,23 @@ public class PortableSchema implements Externalizable {
     /** Order returned if field is not found. */
     public static final int ORDER_NOT_FOUND = -1;
 
+    /** Minimum sensible size. */
+    private static final int MAP_MIN_SIZE = 32;
+
+    /** Empty cell. */
+    private static final int MAP_EMPTY = 0;
+
     /** Inline flag. */
     private boolean inline;
 
     /** IDs depending on order. */
     private int[] ids;
 
-    /** Map form field ID to order. */
-    private PortableSchemaIntIntMap idToOrder;
+    /** ID-to-order data. */
+    private int[] idToOrderData;
+
+    /** ID-to-order mask. */
+    private int idToOrderMask;
 
     /** ID 1. */
     private int id0;
@@ -103,8 +112,6 @@ public class PortableSchema implements Externalizable {
             id5 = iter.hasNext() ? iter.next() : 0;
             id6 = iter.hasNext() ? iter.next() : 0;
             id7 = iter.hasNext() ? iter.next() : 0;
-
-            idToOrder = null;
         }
         else {
             inline = false;
@@ -116,7 +123,7 @@ public class PortableSchema implements Externalizable {
             for (int i = 0; i < fieldIds.size(); i++)
                 ids[i] = fieldIds.get(i);
 
-            idToOrder = new PortableSchemaIntIntMap(ids);
+            initializeMap(ids);
         }
     }
 
@@ -204,8 +211,33 @@ public class PortableSchema implements Externalizable {
 
             return ORDER_NOT_FOUND;
         }
-        else
-            return idToOrder.get(id);
+        else {
+            int idx = (id & idToOrderMask) << 1;
+
+            int curId = idToOrderData[idx];
+
+            if (id == curId) // Hit!
+                return idToOrderData[idx + 1];
+            else if (curId == MAP_EMPTY) // No such ID!
+                return ORDER_NOT_FOUND;
+            else {
+                // Unlikely collision scenario.
+                for (int i = 2; i < idToOrderData.length; i += 2) {
+                    int newIdx = (idx + i) % idToOrderData.length;
+
+                    assert newIdx < idToOrderData.length - 1;
+
+                    curId = idToOrderData[newIdx];
+
+                    if (id == curId)
+                        return idToOrderData[newIdx + 1];
+                    else if (curId == MAP_EMPTY)
+                        return ORDER_NOT_FOUND;
+                }
+
+                return ORDER_NOT_FOUND;
+            }
+        }
     }
 
     /** {@inheritDoc} */
@@ -270,8 +302,129 @@ public class PortableSchema implements Externalizable {
             for (int i = 0; i < size; i++)
                 ids[i] = in.readInt();
 
-            idToOrder = new PortableSchemaIntIntMap(ids);
+            initializeMap(ids);
         }
+    }
+
+    /**
+     * Parse values.
+     *
+     * @param vals Values.
+     * @param size Proposed result size.
+     * @return Parse result.
+     */
+    private static ParseResult parse(int[] vals, int size) {
+        int mask = maskForPowerOfTwo(size);
+
+        int totalSize = size * 2;
+
+        int[] data = new int[totalSize];
+        int collisions = 0;
+
+        for (int order = 0; order < vals.length; order++) {
+            int id = vals[order];
+
+            assert id != 0;
+
+            int idIdx = (id & mask) << 1;
+
+            if (data[idIdx] == 0) {
+                // Found empty slot.
+                data[idIdx] = id;
+                data[idIdx + 1] = order;
+            }
+            else {
+                // Collision!
+                collisions++;
+
+                boolean placeFound = false;
+
+                for (int i = 2; i < totalSize; i += 2) {
+                    int newIdIdx = (idIdx + i) % totalSize;
+
+                    if (data[newIdIdx] == 0) {
+                        data[newIdIdx] = id;
+                        data[newIdIdx + 1] = order;
+
+                        placeFound = true;
+
+                        break;
+                    }
+                }
+
+                assert placeFound : "Should always have a place for entry!";
+            }
+        }
+
+        return new ParseResult(data, collisions);
+    }
+
+    /**
+     * Get next power of two which greater or equal to the given number.
+     * This implementation is not meant to be very efficient, so it is expected to be used relatively rare.
+     *
+     * @param val Number
+     * @return Nearest pow2.
+     */
+    private static int nextPowerOfTwo(int val) {
+        int res = 1;
+
+        while (res < val)
+            res = res << 1;
+
+        if (res < 0)
+            throw new IllegalArgumentException("Value is too big to find positive pow2: " + val);
+
+        return res;
+    }
+
+    /**
+     * Calculate mask for the given value which is a power of two.
+     *
+     * @param val Value.
+     * @return Mask.
+     */
+    private static int maskForPowerOfTwo(int val) {
+        int mask = 0;
+        int comparand = 1;
+
+        while (comparand < val) {
+            mask |= comparand;
+
+            comparand <<= 1;
+        }
+
+        return mask;
+    }
+
+    /**
+     * Initialize the map.
+     *
+     * @param vals Values.
+     */
+    private void initializeMap(int[] vals) {
+        int size = Math.max(nextPowerOfTwo(vals.length) << 2, MAP_MIN_SIZE);
+
+        assert size > 0;
+
+        ParseResult finalRes;
+
+        ParseResult res1 = parse(vals, size);
+
+        if (res1.collisions == 0)
+            finalRes = res1;
+        else {
+            ParseResult res2 = parse(vals, size * 2);
+
+            // Failed to decrease aom
+            if (res2.collisions == 0)
+                finalRes = res2;
+            else
+                finalRes = parse(vals, size * 4);
+        }
+
+        idToOrderData = finalRes.data;
+        idToOrderMask = maskForPowerOfTwo(idToOrderData.length / 2);
     }
 
     /**
@@ -318,6 +471,28 @@ public class PortableSchema implements Externalizable {
          */
         public PortableSchema build() {
             return new PortableSchema(schemaId, fields);
+        }
+    }
+
+    /**
+     * Result of map parsing.
+     */
+    private static class ParseResult {
+        /** Data. */
+        private int[] data;
+
+        /** Collisions. */
+        private int collisions;
+
+        /**
+         * Constructor.
+         *
+         * @param data Data.
+         * @param collisions Collisions.
+         */
+        private ParseResult(int[] data, int collisions) {
+            this.data = data;
+            this.collisions = collisions;
         }
     }
 }
