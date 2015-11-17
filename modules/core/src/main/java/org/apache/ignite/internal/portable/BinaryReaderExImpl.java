@@ -164,6 +164,12 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** Object schema. */
     private final PortableSchema schema;
 
+    /** Whether passed IDs matches schema order. Reset to false as soon as a single mismatch detected. */
+    private boolean matching = true;
+
+    /** Order of a field whose match is expected. */
+    private int matchingOrder = 0;
+
     /**
      * Constructor.
      *
@@ -2660,10 +2666,46 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         if (footerLen == 0)
             return 0;
 
-        int searchPos = footerStart;
-        int searchTail = searchPos + footerLen;
+        if (userType) {
+            int order;
 
-        if (!userType || (fieldIdLen != 0 && hasLowFieldsCount(footerLen))) {
+            if (matching) {
+                // Trying to get field order speculatively.
+                int expOrder = matchingOrder++;
+
+                int realId = schema.fieldId(expOrder);
+
+                if (realId == id)
+                    order = expOrder;
+                else {
+                    // Mismatch detected, no need for further speculations.
+                    matching = false;
+
+                    order = schema.order(id);
+                }
+            }
+            else
+                order = schema.order(id);
+
+            if (order != PortableSchema.ORDER_NOT_FOUND) {
+                int offsetPos = footerStart + order * (fieldIdLen + fieldOffsetLen) + fieldIdLen;
+
+                int pos = start + PortableUtils.fieldOffsetRelative(in, offsetPos, fieldOffsetLen);
+
+                in.position(pos);
+
+                return pos;
+            }
+            else
+                return 0;
+        }
+        else {
+            // System types are never written with compact footers because they do not have metadata.
+            assert footerLen == PortableUtils.FIELD_ID_LEN;
+
+            int searchPos = footerStart;
+            int searchTail = searchPos + footerLen;
+
             while (true) {
                 if (searchPos >= searchTail)
                     return 0;
@@ -2682,30 +2724,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 searchPos += PortableUtils.FIELD_ID_LEN + fieldOffsetLen;
             }
         }
-        else {
-            int order = schema.order(id);
-
-            if (order != PortableSchema.ORDER_NOT_FOUND) {
-                int offsetPos = footerStart + order * (fieldIdLen + fieldOffsetLen) + fieldIdLen;
-
-                int pos = start + PortableUtils.fieldOffsetRelative(in, offsetPos, fieldOffsetLen);
-
-                in.position(pos);
-
-                return pos;
-            }
-            else
-                return 0;
-        }
-    }
-
-    /**
-     * Check whether object has low amount of fields.
-     *
-     * @param footerLen Footer length.
-     */
-    private boolean hasLowFieldsCount(int footerLen) {
-        return footerLen < ((fieldOffsetLen + fieldIdLen) << 3);
     }
 
     /** {@inheritDoc} */
