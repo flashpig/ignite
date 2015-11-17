@@ -17,14 +17,11 @@
 
 package org.apache.ignite.internal.portable;
 
-import org.apache.ignite.internal.util.typedef.internal.U;
-
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -44,11 +41,11 @@ public class PortableSchema implements Externalizable {
     /** Inline flag. */
     private boolean inline;
 
-    /** Map form field ID to order. */
-    private PortableSchemaIntIntMap fastIdToOrder;
-
     /** IDs depending on order. */
     private int[] ids;
+
+    /** Map form field ID to order. */
+    private PortableSchemaIntIntMap idToOrder;
 
     /** ID 1. */
     private int id0;
@@ -107,7 +104,7 @@ public class PortableSchema implements Externalizable {
             id6 = iter.hasNext() ? iter.next() : 0;
             id7 = iter.hasNext() ? iter.next() : 0;
 
-            fastIdToOrder = null;
+            idToOrder = null;
         }
         else {
             inline = false;
@@ -115,16 +112,11 @@ public class PortableSchema implements Externalizable {
             id0 = id1 = id2 = id3 = id4 = id5 = id6 = id7 = 0;
 
             ids = new int[fieldIds.size()];
-            HashMap<Integer, Integer> idToOrder = new HashMap<>();
 
-            for (int i = 0; i < fieldIds.size(); i++) {
-                int fieldId = fieldIds.get(i);
+            for (int i = 0; i < fieldIds.size(); i++)
+                ids[i] = fieldIds.get(i);
 
-                ids[i] = fieldId;
-                idToOrder.put(fieldId, i);
-            }
-
-            fastIdToOrder = new PortableSchemaIntIntMap(idToOrder);
+            idToOrder = new PortableSchemaIntIntMap(ids);
         }
     }
 
@@ -213,7 +205,7 @@ public class PortableSchema implements Externalizable {
             return ORDER_NOT_FOUND;
         }
         else
-            return fastIdToOrder.get(id);
+            return idToOrder.get(id);
     }
 
     /** {@inheritDoc} */
@@ -274,16 +266,11 @@ public class PortableSchema implements Externalizable {
             int size = in.readInt();
 
             ids = new int[size];
-            HashMap<Integer, Integer>idToOrder = U.newHashMap(size);
 
-            for (int i = 0; i < size; i++) {
-                int fieldId = in.readInt();
+            for (int i = 0; i < size; i++)
+                ids[i] = in.readInt();
 
-                ids[i] = fieldId;
-                idToOrder.put(fieldId, i);
-            }
-
-            fastIdToOrder = new PortableSchemaIntIntMap(idToOrder);
+            idToOrder = new PortableSchemaIntIntMap(ids);
         }
     }
 

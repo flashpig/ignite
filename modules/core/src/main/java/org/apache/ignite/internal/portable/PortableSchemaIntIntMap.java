@@ -17,8 +17,6 @@
 
 package org.apache.ignite.internal.portable;
 
-import java.util.Map;
-
 /**
  * Map for fast access to field order by ID.
  */
@@ -41,8 +39,8 @@ public class PortableSchemaIntIntMap {
      *
      * @param vals Values.
      */
-    public PortableSchemaIntIntMap(Map<Integer, Integer> vals) {
-        int size = Math.max(nextPowerOfTwo(vals.size()) << 2, MIN_SIZE);
+    public PortableSchemaIntIntMap(int[] vals) {
+        int size = Math.max(nextPowerOfTwo(vals.length) << 2, MIN_SIZE);
 
         assert size > 0;
 
@@ -108,7 +106,7 @@ public class PortableSchemaIntIntMap {
      * @param size Proposed result size.
      * @return Parse result.
      */
-    private static ParseResult parse(Map<Integer, Integer> vals, int size) {
+    private static ParseResult parse(int[] vals, int size) {
         int mask = maskForPowerOfTwo(size);
 
         int totalSize = size * 2;
@@ -116,9 +114,8 @@ public class PortableSchemaIntIntMap {
         int[] data = new int[totalSize];
         int collisions = 0;
 
-        for (Map.Entry<Integer, Integer> val : vals.entrySet()) {
-            int id = val.getKey();
-            int order = val.getValue();
+        for (int order = 0; order < vals.length; order++) {
+            int id = vals[order];
 
             assert id != 0;
 
