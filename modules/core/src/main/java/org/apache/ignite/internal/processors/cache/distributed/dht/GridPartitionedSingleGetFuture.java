@@ -371,23 +371,26 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
 
                         colocated.context().evicts().touch(entry, topVer);
 
+                        if (!skipVals && cctx.config().isStatisticsEnabled())
+                            cctx.cache().metrics0().onRead(v != null);
+
                         // Entry was not in memory or in swap, so we remove it from cache.
                         if (v == null) {
                             if (isNew && entry.markObsoleteIfEmpty(ver))
                                 colocated.removeIfObsolete(key);
                         }
                         else {
-                            if (!skipVals) {
-                                if (cctx.config().isStatisticsEnabled())
-                                    cctx.cache().metrics0().onRead(true);
-
+                            if (!skipVals)
                                 setResult(v, ver);
-                            }
                             else
                                 setSkipValueResult(true, ver);
 
                             return null;
                         }
+                    }
+                    else {
+                        if (!skipVals && cctx.config().isStatisticsEnabled())
+                            cctx.cache().metrics0().onRead(false);
                     }
 
                     break;
