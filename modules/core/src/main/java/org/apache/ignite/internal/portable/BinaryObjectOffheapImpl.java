@@ -135,13 +135,6 @@ public class BinaryObjectOffheapImpl extends BinaryObjectEx implements Externali
     }
 
     /** {@inheritDoc} */
-    @Override public BinaryField fieldDescriptor(String fieldName) throws BinaryObjectException {
-        A.notNull(fieldName, "fieldName");
-
-        return ctx.createField(typeId(), fieldName);
-    }
-
-    /** {@inheritDoc} */
     @Override public int start() {
         return start;
     }
