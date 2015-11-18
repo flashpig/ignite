@@ -1476,14 +1476,14 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
      * @return Future for the get operation.
      */
     protected IgniteInternalFuture<V> getAsync(
-            final K key,
-            boolean forcePrimary,
-            boolean skipTx,
-            @Nullable UUID subjId,
-            String taskName,
-            boolean deserializePortable,
-            final boolean skipVals,
-            boolean canRemap
+        final K key,
+        boolean forcePrimary,
+        boolean skipTx,
+        @Nullable UUID subjId,
+        String taskName,
+        boolean deserializePortable,
+        final boolean skipVals,
+        boolean canRemap
     ) {
         return getAllAsync(Collections.singletonList(key),
             forcePrimary,

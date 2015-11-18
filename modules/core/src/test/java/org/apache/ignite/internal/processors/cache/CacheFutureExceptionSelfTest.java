@@ -78,13 +78,13 @@ public class CacheFutureExceptionSelfTest extends GridCommonAbstractTest {
 
         startGrid(1);
 
-       // testGet(false, false);
+        testGet(false, false);
 
         testGet(false, true);
 
-       // testGet(true, false);
+        testGet(true, false);
 
-       // testGet(true, true);
+        testGet(true, true);
     }
 
     /**
@@ -139,7 +139,7 @@ public class CacheFutureExceptionSelfTest extends GridCommonAbstractTest {
             }
         });
 
-        assertTrue(futLatch.await(5666, SECONDS));
+        assertTrue(futLatch.await(5, SECONDS));
 
         srv.destroyCache(cache.getName());
     }

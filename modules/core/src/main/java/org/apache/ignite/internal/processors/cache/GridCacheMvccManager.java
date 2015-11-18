@@ -146,7 +146,7 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
 
                 if (futCol != null) {
                     synchronized (futCol) {
-                        for (GridCacheMvccFuture fut : futCol) {
+                        for (GridCacheMvccFuture<?> fut : futCol) {
                             if (!fut.isDone()) {
                                 GridCacheMvccFuture<Boolean> mvccFut = (GridCacheMvccFuture<Boolean>)fut;
 
@@ -430,6 +430,8 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
         GridCacheFuture<?> old = futs.put(futId, fut);
 
         assert old == null : old;
+
+        onFutureAdded(fut);
     }
 
     /**

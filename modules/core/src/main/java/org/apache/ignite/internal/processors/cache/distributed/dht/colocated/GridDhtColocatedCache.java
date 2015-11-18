@@ -214,28 +214,30 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
         if (tx != null && !tx.implicit() && !skipTx) {
             return asyncOp(tx, new AsyncOp<V>() {
                 @Override public IgniteInternalFuture<V> op(IgniteTxLocalAdapter tx) {
-                    return tx.getAllAsync(ctx,
-                            Collections.singleton(ctx.toCacheKeyObject(key)),
-                            deserializePortable,
-                            skipVals,
-                            false,
-                            opCtx != null && opCtx.skipStore()).chain(
-                                new CX1<IgniteInternalFuture<Map<Object, Object>>, V>() {
-                                @Override public V applyx(IgniteInternalFuture<Map<Object, Object>> e)
-                                    throws IgniteCheckedException {
-                                    Map<Object, Object> map = e.get();
+                    IgniteInternalFuture<Map<Object, Object>>  fut = tx.getAllAsync(ctx,
+                        Collections.singleton(ctx.toCacheKeyObject(key)),
+                        deserializePortable,
+                        skipVals,
+                        false,
+                        opCtx != null && opCtx.skipStore());
 
-                                    assert map.isEmpty() || map.size() == 1 : map.size();
+                    return fut.chain(new CX1<IgniteInternalFuture<Map<Object, Object>>, V>() {
+                        @SuppressWarnings("unchecked")
+                        @Override public V applyx(IgniteInternalFuture<Map<Object, Object>> e)
+                            throws IgniteCheckedException {
+                            Map<Object, Object> map = e.get();
 
-                                    if (skipVals) {
-                                        Boolean val = map.isEmpty() ? false : (Boolean)F.firstValue(map);
+                            assert map.isEmpty() || map.size() == 1 : map.size();
 
-                                        return (V)(val);
-                                    }
+                            if (skipVals) {
+                                Boolean val = map.isEmpty() ? false : (Boolean)F.firstValue(map);
 
-                                    return (V)map.get(key);
-                                }
-                            });
+                                return (V)(val);
+                            }
+
+                            return (V)map.get(key);
+                        }
+                    });
                 }
             });
         }
