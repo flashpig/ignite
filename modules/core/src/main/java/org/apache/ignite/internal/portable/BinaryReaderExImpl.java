@@ -308,76 +308,8 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      * @throws BinaryObjectException In case of error.
      */
-    @Nullable Date readDate(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            if (checkFlag(DATE) == Flag.NULL)
-                return null;
-
-            return doReadDate();
-        }
-        else
-            return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Timestamp readTimestamp(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            if (checkFlag(TIMESTAMP) == Flag.NULL)
-                return null;
-
-            return doReadTimestamp();
-        }
-        else
-            return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
     @Nullable Object readObject(int fieldId) throws BinaryObjectException {
         return findFieldById(fieldId) ? doReadObject() : null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Date[] readDateArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(DATE_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadDateArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Timestamp[] readTimestampArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(TIMESTAMP_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadTimestampArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
     }
 
     /**
@@ -1162,29 +1094,97 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public Date readDate(String fieldName) throws BinaryObjectException {
-        return readDate(fieldId(fieldName));
+    @Override @Nullable public Date readDate(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readDate() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Date readDate(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readDate() : null;
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public Date readDate() throws BinaryObjectException {
-        if (checkFlag(DATE) == Flag.NULL)
-            return null;
-
-        return doReadDate();
+    @Override @Nullable public Date readDate() throws BinaryObjectException {
+        return checkFlagNoHandles(DATE) == Flag.NORMAL ? doReadDate() : null;
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public Timestamp readTimestamp(String fieldName) throws BinaryObjectException {
-        return readTimestamp(fieldId(fieldName));
+    @Override @Nullable public Date[] readDateArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readDateArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Date[] readDateArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readDateArray() : null;
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public Timestamp readTimestamp() throws BinaryObjectException {
-        if (checkFlag(TIMESTAMP) == Flag.NULL)
-            return null;
+    @Override @Nullable public Date[] readDateArray() throws BinaryObjectException {
+        switch (checkFlag(DATE_ARR)) {
+            case NORMAL:
+                return doReadDateArray();
 
-        return doReadTimestamp();
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override @Nullable public Timestamp readTimestamp(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readTimestamp() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Timestamp readTimestamp(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readTimestamp() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Override @Nullable public Timestamp readTimestamp() throws BinaryObjectException {
+        return checkFlagNoHandles(TIMESTAMP) == Flag.NORMAL ? doReadTimestamp() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Override @Nullable public Timestamp[] readTimestampArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readTimestampArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Timestamp[] readTimestampArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readTimestampArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Override @Nullable public Timestamp[] readTimestampArray() throws BinaryObjectException {
+        switch (checkFlag(TIMESTAMP_ARR)) {
+            case NORMAL:
+                return doReadTimestampArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
     }
 
     /** {@inheritDoc} */
@@ -1201,32 +1201,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** {@inheritDoc} */
     @Nullable @Override public Object readObjectDetached() throws BinaryObjectException {
         return unmarshal(true);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public Date[] readDateArray(String fieldName) throws BinaryObjectException {
-        return readDateArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public Timestamp[] readTimestampArray(String fieldName) throws BinaryObjectException {
-        return readTimestampArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public Date[] readDateArray() throws BinaryObjectException {
-        if (checkFlag(DATE_ARR) == Flag.NULL)
-            return null;
-
-        return doReadDateArray();
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public Timestamp[] readTimestampArray() throws BinaryObjectException {
-        if (checkFlag(TIMESTAMP_ARR) == Flag.NULL)
-            return null;
-
-        return doReadTimestampArray();
     }
 
     /** {@inheritDoc} */
