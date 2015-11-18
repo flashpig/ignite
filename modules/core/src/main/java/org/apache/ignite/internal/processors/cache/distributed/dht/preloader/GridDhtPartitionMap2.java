@@ -240,8 +240,14 @@ public class GridDhtPartitionMap2 implements Comparable<GridDhtPartitionMap2>, E
 
         assert i == size;
 
-        out.writeLong(topologyVersion().topologyVersion());
-        out.writeInt(topologyVersion().minorTopologyVersion());
+        if (top != null) {
+            out.writeLong(topologyVersion().topologyVersion());
+            out.writeInt(topologyVersion().minorTopologyVersion());
+        }
+        else {
+            out.writeLong(0);
+            out.writeInt(0);
+        }
     }
 
     /** {@inheritDoc} */
@@ -263,7 +269,12 @@ public class GridDhtPartitionMap2 implements Comparable<GridDhtPartitionMap2>, E
             put(part, GridDhtPartitionState.fromOrdinal(ordinal));
         }
 
-        top = new AffinityTopologyVersion(in.readLong(), in.readInt());
+        long ver = in.readLong();
+        int minorVer = in.readInt();
+
+        if (ver != 0) {
+            top = new AffinityTopologyVersion(ver, minorVer);
+        }
     }
 
     /** {@inheritDoc} */
