@@ -427,7 +427,7 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
                 if (skipVals)
                     setSkipValueResult(true, verVal.version());
                 else
-                    setResult(null , null);
+                    setResult(verVal.value() , verVal.version());
             }
             else {
                 if (skipVals)

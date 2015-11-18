@@ -386,6 +386,7 @@ public final class GridNearGetFuture<K, V> extends CacheDistributedGetFutureAdap
      * @param saved Reserved near cache entries.
      * @return Map.
      */
+    @SuppressWarnings("unchecked")
     private Map<KeyCacheObject, GridNearCacheEntry> map(
         KeyCacheObject key,
         Map<ClusterNode, LinkedHashMap<KeyCacheObject, Boolean>> mappings,
@@ -538,10 +539,16 @@ public final class GridNearGetFuture<K, V> extends CacheDistributedGetFutureAdap
                         }
                         else {
                             K key0 = key.value(cctx.cacheObjectContext(), true);
-                            V val0 = v.value(cctx.cacheObjectContext(), true);
-
-                            val0 = (V)cctx.unwrapPortableIfNeeded(val0, !deserializePortable);
                             key0 = (K)cctx.unwrapPortableIfNeeded(key0, !deserializePortable);
+
+                            V val0;
+
+                            if (!skipVals) {
+                                val0 = v.value(cctx.cacheObjectContext(), true);
+                                val0 = (V)cctx.unwrapPortableIfNeeded(val0, !deserializePortable);
+                            }
+                            else
+                                val0 = (V)Boolean.TRUE;
 
                             add(new GridFinishedFuture<>(Collections.singletonMap(key0, val0)));
                         }
