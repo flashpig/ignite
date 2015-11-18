@@ -427,10 +427,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
             case 50: {
                 GridNearGetResponse res = (GridNearGetResponse)msg;
 
-                GridCacheFuture fut = ctx.mvcc().future(res.futureId());
-
-                if (fut == null)
-                    fut = ctx.mvcc().future(res.version(), res.futureId());
+                CacheGetFuture fut = (CacheGetFuture)ctx.mvcc().future(res.futureId());
 
                 if (fut == null) {
                     if (log.isDebugEnabled())
@@ -441,7 +438,7 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
 
                 res.error(res.classError());
 
-                ((CacheGetFuture)fut).onResult(nodeId, res);
+                fut.onResult(nodeId, res);
             }
 
             break;

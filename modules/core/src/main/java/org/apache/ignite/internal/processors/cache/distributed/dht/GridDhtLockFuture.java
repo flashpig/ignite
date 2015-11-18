@@ -721,7 +721,7 @@ public final class GridDhtLockFuture extends GridCompoundIdentityFuture<Boolean>
                 log.debug("Completing future: " + this);
 
             // Clean up.
-            cctx.mvcc().removeFuture(this);
+            cctx.mvcc().removeMvccFuture(this);
 
             if (timeoutObj != null)
                 cctx.time().removeTimeoutObject(timeoutObj);

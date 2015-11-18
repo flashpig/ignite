@@ -837,7 +837,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
         if (fut == null && !commitFut.compareAndSet(null, fut = new GridNearTxFinishFuture<>(cctx, this, true)))
             return commitFut.get();
 
-        cctx.mvcc().addFuture(fut);
+        cctx.mvcc().addFuture(fut, fut.futureId());
 
         final IgniteInternalFuture<?> prepareFut = prepFut.get();
 
@@ -882,7 +882,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
         if (!rollbackFut.compareAndSet(null, fut = new GridNearTxFinishFuture<>(cctx, this, false)))
             return rollbackFut.get();
 
-        cctx.mvcc().addFuture(fut);
+        cctx.mvcc().addFuture(fut, fut.futureId());
 
         IgniteInternalFuture<?> prepFut = this.prepFut.get();
 
@@ -1023,7 +1023,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
         final GridDhtTxFinishFuture fut = new GridDhtTxFinishFuture<>(cctx, this, /*commit*/true);
 
-        cctx.mvcc().addFuture(fut);
+        cctx.mvcc().addFuture(fut, fut.futureId());
 
         if (prep == null || prep.isDone()) {
             assert prep != null || optimistic();
@@ -1082,7 +1082,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
         final GridDhtTxFinishFuture fut = new GridDhtTxFinishFuture<>(cctx, this, /*commit*/false);
 
-        cctx.mvcc().addFuture(fut);
+        cctx.mvcc().addFuture(fut, fut.futureId());
 
         IgniteInternalFuture<?> prep = prepFut.get();
 

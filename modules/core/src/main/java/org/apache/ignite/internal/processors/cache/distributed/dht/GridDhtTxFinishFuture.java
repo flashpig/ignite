@@ -115,11 +115,6 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFutur
     }
 
     /** {@inheritDoc} */
-    @Override public GridCacheVersion version() {
-        return tx.xidVersion();
-    }
-
-    /** {@inheritDoc} */
     @Override public boolean onNodeLeft(UUID nodeId) {
         for (IgniteInternalFuture<?> fut : futures())
             if (isMini(fut)) {
@@ -213,7 +208,7 @@ public final class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFutur
                 this.tx.sendFinishReply(commit, error());
 
                 // Don't forget to clean up.
-                cctx.mvcc().removeFuture(this);
+                cctx.mvcc().removeFuture(futId);
 
                 return true;
             }

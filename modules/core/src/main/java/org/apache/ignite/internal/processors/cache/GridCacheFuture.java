@@ -19,7 +19,6 @@ package org.apache.ignite.internal.processors.cache;
 
 import java.util.UUID;
 import org.apache.ignite.internal.IgniteInternalFuture;
-import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.lang.IgniteUuid;
 
 /**
@@ -30,11 +29,6 @@ public interface GridCacheFuture<R> extends IgniteInternalFuture<R> {
      * @return Unique identifier for this future.
      */
     public IgniteUuid futureId();
-
-    /**
-     * @return Future version.
-     */
-    public GridCacheVersion version();
 
     /**
      * Callback for when node left.

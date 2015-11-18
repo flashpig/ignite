@@ -628,13 +628,6 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
     }
 
     /** {@inheritDoc} */
-    @Override public GridCacheVersion version() {
-        assert false : this;
-
-        return null;
-    }
-
-    /** {@inheritDoc} */
     @Override public boolean onNodeLeft(UUID nodeId) {
         if (!processResponse(nodeId))
             return false;

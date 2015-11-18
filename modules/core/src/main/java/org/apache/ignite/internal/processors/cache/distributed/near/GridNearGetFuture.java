@@ -170,11 +170,6 @@ public final class GridNearGetFuture<K, V> extends CacheDistributedGetFutureAdap
     }
 
     /** {@inheritDoc} */
-    @Override public GridCacheVersion version() {
-        return ver;
-    }
-
-    /** {@inheritDoc} */
     @Override public boolean onNodeLeft(UUID nodeId) {
         boolean found = false;
 
@@ -214,7 +209,7 @@ public final class GridNearGetFuture<K, V> extends CacheDistributedGetFutureAdap
         if (super.onDone(res, err)) {
             // Don't forget to clean up.
             if (trackable)
-                cctx.mvcc().removeFuture(this);
+                cctx.mvcc().removeFuture(futId);
 
             cache().dht().sendTtlUpdateRequest(expiryPlc);
 
@@ -330,7 +325,7 @@ public final class GridNearGetFuture<K, V> extends CacheDistributedGetFutureAdap
                 if (!trackable) {
                     trackable = true;
 
-                    cctx.mvcc().addFuture(this);
+                    cctx.mvcc().addFuture(this, futId);
                 }
 
                 MiniFuture fut = new MiniFuture(n, mappedKeys, saved, topVer);
