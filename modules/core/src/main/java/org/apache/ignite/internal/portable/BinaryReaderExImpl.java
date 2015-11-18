@@ -268,7 +268,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @return Unmarshalled value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Object unmarshal() throws BinaryObjectException {
         return unmarshal(false);
@@ -277,7 +277,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param offset Offset in the array.
      * @return Unmarshalled value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     public Object unmarshal(int offset) throws BinaryObjectException {
         in.position(offset);
@@ -288,7 +288,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldName Field name.
      * @return Unmarshalled value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Object unmarshalField(String fieldName) throws BinaryObjectException {
         return hasField(fieldName) ? unmarshal() : null;
@@ -297,10 +297,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Unmarshalled value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Object unmarshalField(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) ? unmarshal() : null;
+        return findFieldById(fieldId) ? unmarshal() : null;
     }
 
     /**
@@ -309,16 +309,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException If failed.
      */
     byte readBytePrimitive(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) && checkFlag(BYTE) == Flag.NORMAL ? in.readByte() : 0;
+        return findFieldById(fieldId) && checkFlag(BYTE) == Flag.NORMAL ? in.readByte() : 0;
     }
 
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Byte readByte(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(BYTE) == Flag.NULL)
                 return null;
 
@@ -334,16 +334,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException If failed.
      */
     short readShortPrimitive(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) && checkFlag(SHORT) == Flag.NORMAL ? in.readShort() : 0;
+        return findFieldById(fieldId) && checkFlag(SHORT) == Flag.NORMAL ? in.readShort() : 0;
     }
 
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Short readShort(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(SHORT) == Flag.NULL)
                 return null;
 
@@ -358,42 +358,17 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      * @throws BinaryObjectException If failed.
      */
-    int readIntPrimitive(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) && checkFlag(INT) == Flag.NORMAL ? in.readInt() : 0;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
-     */
-    @Nullable Integer readInt(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
-            if (checkFlag(INT) == Flag.NULL)
-                return null;
-
-            return in.readInt();
-        }
-        else
-            return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException If failed.
-     */
     long readLongPrimitive(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) && checkFlag(LONG) == Flag.NORMAL ? in.readLong() : 0;
+        return findFieldById(fieldId) && checkFlag(LONG) == Flag.NORMAL ? in.readLong() : 0;
     }
 
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Long readLong(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(LONG) == Flag.NULL)
                 return null;
 
@@ -409,16 +384,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException If failed.
      */
     float readFloatPrimitive(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) && checkFlag(FLOAT) == Flag.NORMAL ? in.readFloat() : 0;
+        return findFieldById(fieldId) && checkFlag(FLOAT) == Flag.NORMAL ? in.readFloat() : 0;
     }
 
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Float readFloat(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(FLOAT) == Flag.NULL)
                 return null;
 
@@ -434,16 +409,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException If failed.
      */
     double readDoublePrimitive(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) && checkFlag(DOUBLE) == Flag.NORMAL ? in.readDouble() : 0;
+        return findFieldById(fieldId) && checkFlag(DOUBLE) == Flag.NORMAL ? in.readDouble() : 0;
     }
 
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Double readDouble(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(DOUBLE) == Flag.NULL)
                 return null;
 
@@ -459,16 +434,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException If failed.
      */
     char readCharPrimitive(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) && checkFlag(CHAR) == Flag.NORMAL ? in.readChar() : 0;
+        return findFieldById(fieldId) && checkFlag(CHAR) == Flag.NORMAL ? in.readChar() : 0;
     }
 
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Character readChar(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(CHAR) == Flag.NULL)
                 return null;
 
@@ -484,16 +459,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException If failed.
      */
     boolean readBooleanPrimitive(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) && checkFlag(BOOLEAN) == Flag.NORMAL && in.readBoolean();
+        return findFieldById(fieldId) && checkFlag(BOOLEAN) == Flag.NORMAL && in.readBoolean();
     }
 
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Boolean readBoolean(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(BOOLEAN) == Flag.NULL)
                 return null;
 
@@ -506,10 +481,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable BigDecimal readDecimal(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(DECIMAL) == Flag.NULL)
                 return null;
 
@@ -522,10 +497,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable String readString(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(STRING) == Flag.NULL)
                 return null;
 
@@ -538,10 +513,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable UUID readUuid(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(UUID) == Flag.NULL)
                 return null;
 
@@ -554,10 +529,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Date readDate(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(DATE) == Flag.NULL)
                 return null;
 
@@ -570,10 +545,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Timestamp readTimestamp(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(TIMESTAMP) == Flag.NULL)
                 return null;
 
@@ -586,19 +561,19 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Object readObject(int fieldId) throws BinaryObjectException {
-        return hasField(fieldId) ? doReadObject() : null;
+        return findFieldById(fieldId) ? doReadObject() : null;
     }
 
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable byte[] readByteArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(BYTE_ARR);
 
             if (flag == Flag.NORMAL)
@@ -613,10 +588,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable short[] readShortArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(SHORT_ARR);
 
             if (flag == Flag.NORMAL)
@@ -631,10 +606,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable int[] readIntArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(INT_ARR);
 
             if (flag == Flag.NORMAL)
@@ -649,10 +624,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable long[] readLongArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(LONG_ARR);
 
             if (flag == Flag.NORMAL)
@@ -667,10 +642,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable float[] readFloatArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(FLOAT_ARR);
 
             if (flag == Flag.NORMAL)
@@ -685,10 +660,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable double[] readDoubleArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(DOUBLE_ARR);
 
             if (flag == Flag.NORMAL)
@@ -703,10 +678,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable char[] readCharArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(CHAR_ARR);
 
             if (flag == Flag.NORMAL)
@@ -721,10 +696,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable boolean[] readBooleanArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(BOOLEAN_ARR);
 
             if (flag == Flag.NORMAL)
@@ -739,10 +714,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable BigDecimal[] readDecimalArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(DECIMAL_ARR);
 
             if (flag == Flag.NORMAL)
@@ -757,10 +732,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable String[] readStringArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(STRING_ARR);
 
             if (flag == Flag.NORMAL)
@@ -775,10 +750,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable UUID[] readUuidArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(UUID_ARR);
 
             if (flag == Flag.NORMAL)
@@ -793,10 +768,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Date[] readDateArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(DATE_ARR);
 
             if (flag == Flag.NORMAL)
@@ -811,10 +786,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Timestamp[] readTimestampArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(TIMESTAMP_ARR);
 
             if (flag == Flag.NORMAL)
@@ -829,10 +804,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Object[] readObjectArray(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(OBJ_ARR);
 
             if (flag == Flag.NORMAL)
@@ -848,11 +823,11 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param fieldId Field ID.
      * @param cls Collection class.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable <T> Collection<T> readCollection(int fieldId, @Nullable Class<? extends Collection> cls)
         throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(COL);
 
             if (flag == Flag.NORMAL)
@@ -868,11 +843,11 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param fieldId Field ID.
      * @param cls Map class.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Map<?, ?> readMap(int fieldId, @Nullable Class<? extends Map> cls)
         throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(MAP);
 
             if (flag == Flag.NORMAL)
@@ -887,10 +862,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException On case of error.
+     * @throws BinaryObjectException On case of error.
      */
     @Nullable Map.Entry<?, ?> readMapEntry(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(MAP_ENTRY);
 
             if (flag == Flag.NORMAL)
@@ -905,10 +880,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Portable object.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable BinaryObject readPortableObject(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(PORTABLE_OBJ) == Flag.NULL)
                 return null;
 
@@ -922,10 +897,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param fieldId Field ID.
      * @param cls Class.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Enum<?> readEnum(int fieldId, @Nullable Class<?> cls) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(ENUM) == Flag.NULL)
                 return null;
 
@@ -947,10 +922,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param fieldId Field ID.
      * @param cls Class.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Object[] readEnumArray(int fieldId, @Nullable Class<?> cls) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             Flag flag = checkFlag(ENUM_ARR);
 
             if (flag == Flag.NORMAL) {
@@ -971,10 +946,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param fieldId Field ID.
      * @return Field class.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable Class<?> readClass(int fieldId) throws BinaryObjectException {
-        if (hasField(fieldId)) {
+        if (findFieldById(fieldId)) {
             if (checkFlag(CLASS) == Flag.NULL)
                 return null;
 
@@ -1044,7 +1019,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /** {@inheritDoc} */
     @Override public int readInt(String fieldName) throws BinaryObjectException {
-        if (fieldOffset(fieldName) != 0) {
+        if (findFieldByName(fieldName)) {
             if (checkFlag(INT) == Flag.NULL)
                 return 0;
 
@@ -1054,11 +1029,36 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             return 0;
     }
 
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Integer readInt(int fieldId) throws BinaryObjectException {
+        if (findFieldById(fieldId)) {
+            if (checkFlag(INT) == Flag.NULL)
+                return null;
+
+            return in.readInt();
+        }
+        else
+            return null;
+    }
+    
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    int readIntPrimitive(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) && checkFlag(INT) == Flag.NORMAL ? in.readInt() : 0;
+    }
+
     /** {@inheritDoc} */
     @Override public int readInt() throws BinaryObjectException {
         return in.readInt();
     }
-
+    
     /** {@inheritDoc} */
     @Override public long readLong(String fieldName) throws BinaryObjectException {
         Long val = readLong(fieldId(fieldName));
@@ -1134,7 +1134,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /** {@inheritDoc} */
     @Nullable @Override public String readString(String fieldName) throws BinaryObjectException {
-        if (fieldOffset(fieldName) != 0) {
+        if (findFieldByName(fieldName)) {
             if (checkFlag(STRING) == Flag.NULL)
                 return null;
 
@@ -1482,7 +1482,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      *
      * @param expFlag Expected value.
      * @return Flag.
-     * @throws org.apache.ignite.binary.BinaryObjectException If flag is neither null, nor expected.
+     * @throws BinaryObjectException If flag is neither null, nor expected.
      */
     private Flag checkFlag(byte expFlag) {
         byte flag = in.readByte();
@@ -1506,15 +1506,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return {@code True} if field is set.
      */
     public boolean hasField(String fieldName) {
-        return hasField(fieldId(fieldName));
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return {@code True} if field is set.
-     */
-    private boolean hasField(int fieldId) {
-        return fieldOffset(fieldId) != 0;
+        return findFieldById(fieldId(fieldName));
     }
 
     /** {@inheritDoc} */
@@ -1526,7 +1518,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @return Unmarshalled value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable private Object unmarshal(boolean detach) throws BinaryObjectException {
         int start = in.position();
@@ -1765,7 +1757,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @return Object.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @Nullable private Object doReadObject() throws BinaryObjectException {
         BinaryReaderExImpl reader = new BinaryReaderExImpl(ctx, in, ldr, rCtx);
@@ -2148,7 +2140,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     private BigDecimal[] doReadDecimalArray() throws BinaryObjectException {
         int hPos = in.position() - 1;
@@ -2177,7 +2169,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     private String[] doReadStringArray() throws BinaryObjectException {
         int hPos = in.position() - 1;
@@ -2206,7 +2198,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     private UUID[] doReadUuidArray() throws BinaryObjectException {
         int hPos = in.position() - 1;
@@ -2235,7 +2227,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     private Date[] doReadDateArray() throws BinaryObjectException {
         int hPos = in.position() - 1;
@@ -2264,7 +2256,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     private Timestamp[] doReadTimestampArray() throws BinaryObjectException {
         int hPos = in.position() - 1;
@@ -2294,7 +2286,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param deep Deep flag.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     private Object[] doReadObjectArray(boolean deep) throws BinaryObjectException {
         int hPos = in.position() - 1;
@@ -2317,7 +2309,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param deep Deep flag.
      * @param cls Collection class.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @SuppressWarnings("unchecked")
     private Collection<?> doReadCollection(boolean deep, @Nullable Class<? extends Collection> cls)
@@ -2405,7 +2397,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param deep Deep flag.
      * @param cls Map class.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     @SuppressWarnings("unchecked")
     private Map<?, ?> doReadMap(boolean deep, @Nullable Class<? extends Map> cls)
@@ -2482,7 +2474,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /**
      * @param deep Deep flag.
      * @return Value.
-     * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
+     * @throws BinaryObjectException In case of error.
      */
     private Map.Entry<?, ?> doReadMapEntry(boolean deep) throws BinaryObjectException {
         int hPos = in.position() - 1;
@@ -2669,14 +2661,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /**
+     * Try finding the field by name.
+     *
      * @param name Field name.
      * @return Offset.
      */
-    private int fieldOffset(String name) {
+    private boolean findFieldByName(String name) {
         assert hdrLen != 0;
 
         if (footerLen == 0)
-            return 0;
+            return false;
 
         if (userType) {
             int order;
@@ -2705,11 +2699,11 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                         // Field name is not know for this order. Need to calculate ID and repeat speculation.
                         assert confirm == PortableSchema.Confirmation.CLARIFY;
 
-                        int requestedId = fieldId(name);
+                        int id = fieldId(name);
                         int realId = schema.fieldId(expOrder);
 
-                        if (requestedId == realId) {
-                            // IDs matched, can register
+                        if (id == realId) {
+                            // IDs matched, cache field name inside schema.
                             schema.clarifyFieldName(expOrder, name);
 
                             order = expOrder;
@@ -2718,7 +2712,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                             // No match, stop further speculations.
                             matching = false;
 
-                            order = schema.order(requestedId);
+                            order = schema.order(id);
                         }
 
                         break;
@@ -2727,21 +2721,24 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             else
                 order = schema.order(fieldId(name));
 
-            return userFieldPosition(order);
+            return trySetUserFieldPosition(order);
         }
         else
-            return systemFieldPosition(fieldId(name));
+            return trySetSystemFieldPosition(fieldId(name));
     }
 
     /**
+     * Try finding the field by ID. Used for types with stable schema (Serializable) to avoid
+     * (string -> ID) calculations.
+     *
      * @param id Field ID.
-     * @return Field offset.
+     * @return Offset.
      */
-    private int fieldOffset(int id) {
+    private boolean findFieldById(int id) {
         assert hdrLen != 0;
 
         if (footerLen == 0)
-            return 0;
+            return false;
 
         if (userType) {
             int order;
@@ -2764,10 +2761,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             else
                 order = schema.order(id);
 
-            return userFieldPosition(order);
+            return trySetUserFieldPosition(order);
         }
         else
-            return systemFieldPosition(id);
+            return trySetSystemFieldPosition(id);
     }
 
     /**
@@ -2776,7 +2773,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param order Order.
      * @return Position.
      */
-    private int userFieldPosition(int order) {
+    private boolean trySetUserFieldPosition(int order) {
         if (order != PortableSchema.ORDER_NOT_FOUND) {
             int offsetPos = footerStart + order * (fieldIdLen + fieldOffsetLen) + fieldIdLen;
 
@@ -2784,10 +2781,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
             in.position(pos);
 
-            return pos;
+            return true;
         }
         else
-            return 0;
+            return false;
     }
 
     /**
@@ -2796,16 +2793,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @param id Field ID.
      * @return Position.
      */
-    private int systemFieldPosition(int id) {
+    private boolean trySetSystemFieldPosition(int id) {
         // System types are never written with compact footers because they do not have metadata.
-        assert footerLen == PortableUtils.FIELD_ID_LEN;
+        assert fieldIdLen == PortableUtils.FIELD_ID_LEN;
 
         int searchPos = footerStart;
         int searchTail = searchPos + footerLen;
 
         while (true) {
             if (searchPos >= searchTail)
-                return 0;
+                return false;
 
             int id0 = in.readIntPositioned(searchPos);
 
@@ -2815,7 +2812,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
                 in.position(pos);
 
-                return pos;
+                return true;
             }
 
             searchPos += PortableUtils.FIELD_ID_LEN + fieldOffsetLen;
