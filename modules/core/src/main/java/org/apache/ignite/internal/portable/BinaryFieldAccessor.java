@@ -290,7 +290,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            int val = reader.readIntPrimitive(id);
+            int val = reader.readInt(id);
 
             UNSAFE.putInt(obj, offset, val);
         }
@@ -623,7 +623,7 @@ public abstract class BinaryFieldAccessor {
                     break;
 
                 case INT:
-                    val = reader.readInt(id);
+                    val = reader.readIntNullable(id);
 
                     break;
 

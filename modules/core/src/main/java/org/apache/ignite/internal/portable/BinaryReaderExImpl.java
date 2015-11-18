@@ -1019,14 +1019,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /** {@inheritDoc} */
     @Override public int readInt(String fieldName) throws BinaryObjectException {
-        if (findFieldByName(fieldName)) {
-            if (checkFlag(INT) == Flag.NULL)
-                return 0;
+        return findFieldByName(fieldName) && checkFlagPrimitive(INT) == Flag.NORMAL ? in.readInt() : 0;
+    }
 
-            return in.readInt();
-        }
-        else
-            return 0;
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    public int readInt(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) && checkFlagPrimitive(INT) == Flag.NORMAL ? in.readInt() : 0;
     }
 
     /**
@@ -1034,26 +1036,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      * @throws BinaryObjectException In case of error.
      */
-    @Nullable Integer readInt(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            if (checkFlag(INT) == Flag.NULL)
-                return null;
-
-            return in.readInt();
-        }
-        else
-            return null;
+    @Nullable Integer readIntNullable(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) && checkFlagPrimitive(INT) == Flag.NORMAL ? in.readInt() : null;
     }
     
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException If failed.
-     */
-    int readIntPrimitive(int fieldId) throws BinaryObjectException {
-        return findFieldById(fieldId) && checkFlag(INT) == Flag.NORMAL ? in.readInt() : 0;
-    }
-
     /** {@inheritDoc} */
     @Override public int readInt() throws BinaryObjectException {
         return in.readInt();
@@ -1478,27 +1464,47 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /**
-     * Ensure that type flag is either null or contains expected value.
+     * Ensure that type flag is either null, handle or contains expected value.
      *
      * @param expFlag Expected value.
-     * @return Flag.
-     * @throws BinaryObjectException If flag is neither null, nor expected.
+     * @return Flag mode.
+     * @throws BinaryObjectException If flag is neither null, nor handle or expected.
      */
     private Flag checkFlag(byte expFlag) {
         byte flag = in.readByte();
 
-        if (flag == NULL)
+        if (flag == expFlag)
+            return Flag.NORMAL;
+        else if (flag == NULL)
             return Flag.NULL;
         else if (flag == HANDLE)
             return Flag.HANDLE;
-        else if (flag != expFlag) {
-            int pos = in.position() - 1;
 
-            throw new BinaryObjectException("Unexpected flag value [pos=" + pos + ", expected=" + expFlag +
-                ", actual=" + flag + ']');
-        }
+        int pos = in.position() - 1;
 
-        return Flag.NORMAL;
+        throw new BinaryObjectException("Unexpected flag value [pos=" + pos + ", expected=" + expFlag +
+            ", actual=" + flag + ']');
+    }
+
+    /**
+     * Ensure that type flag is either null or contains expected value.
+     *
+     * @param expFlag Expected value.
+     * @return Flag mode.
+     * @throws BinaryObjectException If flag is neither null, nor expected.
+     */
+    private Flag checkFlagPrimitive(byte expFlag) {
+        byte flag = in.readByte();
+
+        if (flag == expFlag)
+            return Flag.NORMAL;
+        else if (flag == NULL)
+            return Flag.NULL;
+
+        int pos = in.position() - 1;
+
+        throw new BinaryObjectException("Unexpected flag value [pos=" + pos + ", expected=" + expFlag +
+            ", actual=" + flag + ']');
     }
 
     /**
