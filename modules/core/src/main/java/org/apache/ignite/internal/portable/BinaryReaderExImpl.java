@@ -1044,9 +1044,14 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /** {@inheritDoc} */
     @Override public int readInt(String fieldName) throws BinaryObjectException {
-        Integer val = readInt(fieldId(fieldName));
+        if (fieldOffset(fieldName) != 0) {
+            if (checkFlag(INT) == Flag.NULL)
+                return 0;
 
-        return val != null ? val : 0;
+            return in.readInt();
+        }
+        else
+            return 0;
     }
 
     /** {@inheritDoc} */
@@ -1129,7 +1134,14 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /** {@inheritDoc} */
     @Nullable @Override public String readString(String fieldName) throws BinaryObjectException {
-        return readString(fieldId(fieldName));
+        if (fieldOffset(fieldName) != 0) {
+            if (checkFlag(STRING) == Flag.NULL)
+                return null;
+
+            return doReadString();
+        }
+        else
+            return null;
     }
 
     /** {@inheritDoc} */
@@ -2657,6 +2669,71 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /**
+     * @param name Field name.
+     * @return Offset.
+     */
+    private int fieldOffset(String name) {
+        assert hdrLen != 0;
+
+        if (footerLen == 0)
+            return 0;
+
+        if (userType) {
+            int order;
+
+            if (matching) {
+                int expOrder = matchingOrder++;
+
+                PortableSchema.Confirmation confirm = schema.confirmOrder(expOrder, name);
+
+                switch (confirm) {
+                    case CONFIRMED:
+                        // The best case: got order without ID calculation and (ID -> order) lookup.
+                        order = expOrder;
+
+                        break;
+
+                    case REJECTED:
+                        // Rejected, no more speculations are possible. Fallback to the slowest scenario.
+                        matching = false;
+
+                        order = schema.order(fieldId(name));
+
+                        break;
+
+                    default:
+                        // Field name is not know for this order. Need to calculate ID and repeat speculation.
+                        assert confirm == PortableSchema.Confirmation.CLARIFY;
+
+                        int requestedId = fieldId(name);
+                        int realId = schema.fieldId(expOrder);
+
+                        if (requestedId == realId) {
+                            // IDs matched, can register
+                            schema.clarifyFieldName(expOrder, name);
+
+                            order = expOrder;
+                        }
+                        else {
+                            // No match, stop further speculations.
+                            matching = false;
+
+                            order = schema.order(requestedId);
+                        }
+
+                        break;
+                }
+            }
+            else
+                order = schema.order(fieldId(name));
+
+            return userFieldPosition(order);
+        }
+        else
+            return systemFieldPosition(fieldId(name));
+    }
+
+    /**
      * @param id Field ID.
      * @return Field offset.
      */
@@ -2687,42 +2764,61 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             else
                 order = schema.order(id);
 
-            if (order != PortableSchema.ORDER_NOT_FOUND) {
-                int offsetPos = footerStart + order * (fieldIdLen + fieldOffsetLen) + fieldIdLen;
+            return userFieldPosition(order);
+        }
+        else
+            return systemFieldPosition(id);
+    }
 
-                int pos = start + PortableUtils.fieldOffsetRelative(in, offsetPos, fieldOffsetLen);
+    /**
+     * Set position for the given user field order and return it.
+     *
+     * @param order Order.
+     * @return Position.
+     */
+    private int userFieldPosition(int order) {
+        if (order != PortableSchema.ORDER_NOT_FOUND) {
+            int offsetPos = footerStart + order * (fieldIdLen + fieldOffsetLen) + fieldIdLen;
+
+            int pos = start + PortableUtils.fieldOffsetRelative(in, offsetPos, fieldOffsetLen);
+
+            in.position(pos);
+
+            return pos;
+        }
+        else
+            return 0;
+    }
+
+    /**
+     * Set position for the given system field ID and return it.
+     *
+     * @param id Field ID.
+     * @return Position.
+     */
+    private int systemFieldPosition(int id) {
+        // System types are never written with compact footers because they do not have metadata.
+        assert footerLen == PortableUtils.FIELD_ID_LEN;
+
+        int searchPos = footerStart;
+        int searchTail = searchPos + footerLen;
+
+        while (true) {
+            if (searchPos >= searchTail)
+                return 0;
+
+            int id0 = in.readIntPositioned(searchPos);
+
+            if (id0 == id) {
+                int pos = start + PortableUtils.fieldOffsetRelative(in, searchPos + PortableUtils.FIELD_ID_LEN,
+                    fieldOffsetLen);
 
                 in.position(pos);
 
                 return pos;
             }
-            else
-                return 0;
-        }
-        else {
-            // System types are never written with compact footers because they do not have metadata.
-            assert footerLen == PortableUtils.FIELD_ID_LEN;
 
-            int searchPos = footerStart;
-            int searchTail = searchPos + footerLen;
-
-            while (true) {
-                if (searchPos >= searchTail)
-                    return 0;
-
-                int id0 = in.readIntPositioned(searchPos);
-
-                if (id0 == id) {
-                    int pos = start + PortableUtils.fieldOffsetRelative(in, searchPos + PortableUtils.FIELD_ID_LEN,
-                        fieldOffsetLen);
-
-                    in.position(pos);
-
-                    return pos;
-                }
-
-                searchPos += PortableUtils.FIELD_ID_LEN + fieldOffsetLen;
-            }
+            searchPos += PortableUtils.FIELD_ID_LEN + fieldOffsetLen;
         }
     }
 

@@ -44,8 +44,14 @@ public class PortableSchema implements Externalizable {
     /** Empty cell. */
     private static final int MAP_EMPTY = 0;
 
+    /** Schema ID. */
+    private int schemaId;
+
     /** IDs depending on order. */
     private int[] ids;
+
+    /** Interned names of associated fields. */
+    private String[] names;
 
     /** ID-to-order data. */
     private int[] idToOrderData;
@@ -76,9 +82,6 @@ public class PortableSchema implements Externalizable {
 
     /** ID 4. */
     private int id7;
-
-    /** Schema ID. */
-    private int schemaId;
 
     /**
      * {@link Externalizable} support.
@@ -118,6 +121,8 @@ public class PortableSchema implements Externalizable {
 
             initializeMap(ids);
         }
+
+        names = new String[fieldIds.size()];
     }
 
     /**
@@ -125,6 +130,44 @@ public class PortableSchema implements Externalizable {
      */
     public int schemaId() {
         return schemaId;
+    }
+
+    /**
+     * Try speculatively confirming order for the given field name.
+     *
+     * @param expOrder Expected order.
+     * @param expName Expected name.
+     * @return Field ID.
+     */
+    @SuppressWarnings("StringEquality")
+    public Confirmation confirmOrder(int expOrder, String expName) {
+        assert expName != null;
+
+        if (expOrder < names.length) {
+            String name = names[expOrder];
+
+            // Note that we use only reference equality assuming that field names are interned literals.
+            if (name == expName)
+                return Confirmation.CONFIRMED;
+
+            if (name == null)
+                return Confirmation.CLARIFY;
+        }
+
+        return Confirmation.REJECTED;
+    }
+
+    /**
+     * Add field name.
+     *
+     * @param order Order.
+     * @param name Name.
+     */
+    public void clarifyFieldName(int order, String name) {
+        assert name != null;
+        assert order < names.length;
+
+        names[order] = name.intern();
     }
 
     /**
@@ -167,6 +210,7 @@ public class PortableSchema implements Externalizable {
             }
         }
         else
+            // TODO: Fix possible out of bounds problem.
             return ids[order];
     }
 
@@ -274,14 +318,41 @@ public class PortableSchema implements Externalizable {
         schemaId = in.readInt();
 
         if (in.readBoolean()) {
+            int size = 0;
+
             id0 = in.readInt();
+            if (id0 != 0)
+                size++;
+
             id1 = in.readInt();
+            if (id1 != 0)
+                size++;
+
             id2 = in.readInt();
+            if (id2 != 0)
+                size++;
+
             id3 = in.readInt();
+            if (id3 != 0)
+                size++;
+
             id4 = in.readInt();
+            if (id4 != 0)
+                size++;
+
             id5 = in.readInt();
+            if (id5 != 0)
+                size++;
+
             id6 = in.readInt();
+            if (id6 != 0)
+                size++;
+
             id7 = in.readInt();
+            if (id7 != 0)
+                size++;
+
+            names = new String[size];
         }
         else {
             int size = in.readInt();
@@ -292,6 +363,8 @@ public class PortableSchema implements Externalizable {
                 ids[i] = in.readInt();
 
             initializeMap(ids);
+
+            names = new String[size];
         }
     }
 
@@ -461,6 +534,20 @@ public class PortableSchema implements Externalizable {
         public PortableSchema build() {
             return new PortableSchema(schemaId, fields);
         }
+    }
+
+    /**
+     * Order confirmation result.
+     */
+    public enum Confirmation {
+        /** Confirmed. */
+        CONFIRMED,
+
+        /** Denied. */
+        REJECTED,
+
+        /** Field name clarification is needed. */
+        CLARIFY
     }
 
     /**
