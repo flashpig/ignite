@@ -190,6 +190,8 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
      */
     @SuppressWarnings("unchecked")
     private void map(AffinityTopologyVersion topVer) {
+        this.topVer = topVer;
+
         ClusterNode node = mapKeyToNode(topVer);
 
         if (node == null) {
@@ -435,9 +437,8 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
             }
         }
         else {
-            if (skipVals) {
+            if (skipVals)
                 setSkipValueResult(res.containsValue(), null);
-            }
             else
                 setResult((CacheObject)res0, null);
         }
