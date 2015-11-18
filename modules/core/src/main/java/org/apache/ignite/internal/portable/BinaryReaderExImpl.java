@@ -305,33 +305,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Object readObject(int fieldId) throws BinaryObjectException {
-        return findFieldById(fieldId) ? doReadObject() : null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Object[] readObjectArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(OBJ_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadObjectArray(true);
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
      * @param cls Collection class.
      * @return Value.
      * @throws BinaryObjectException In case of error.
@@ -1190,7 +1163,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Nullable @Override public <T> T readObject(String fieldName) throws BinaryObjectException {
-        return (T)readObject(fieldId(fieldName));
+        return findFieldByName(fieldName) ? (T)doReadObject() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Object readObject(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? doReadObject() : null;
     }
 
     /** {@inheritDoc} */
@@ -1205,15 +1187,30 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /** {@inheritDoc} */
     @Nullable @Override public Object[] readObjectArray(String fieldName) throws BinaryObjectException {
-        return readObjectArray(fieldId(fieldName));
+        return findFieldByName(fieldName) ? this.readObjectArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Object[] readObjectArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readObjectArray() : null;
     }
 
     /** {@inheritDoc} */
     @Nullable @Override public Object[] readObjectArray() throws BinaryObjectException {
-        if (checkFlag(OBJ_ARR) == Flag.NULL)
-            return null;
+        switch (checkFlag(OBJ_ARR)) {
+            case NORMAL:
+                return doReadObjectArray(true);
 
-        return doReadObjectArray(true);
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
     }
 
     /** {@inheritDoc} */
