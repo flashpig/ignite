@@ -248,18 +248,6 @@ public abstract class PortableAbstractOutputStream extends PortableAbstractStrea
     }
 
     /** {@inheritDoc} */
-    @Override public int unsafeStart(int cap) {
-        unsafeEnsure(cap);
-
-        return pos;
-    }
-
-    /** {@inheritDoc} */
-    @Override public void unsafeStop(int pos) {
-        position(pos);
-    }
-
-    /** {@inheritDoc} */
     @Override public void unsafeEnsure(int cap) {
         ensureCapacity(pos + cap);
     }
@@ -270,28 +258,13 @@ public abstract class PortableAbstractOutputStream extends PortableAbstractStrea
     }
 
     /** {@inheritDoc} */
-    @Override public void unsafeWriteBoolean(int pos, boolean val) {
-        unsafeWriteByte(pos, val ? BYTE_ONE : BYTE_ZERO);
-    }
-
-    /** {@inheritDoc} */
     @Override public void unsafeWriteFloat(float val) {
         unsafeWriteInt(Float.floatToIntBits(val));
     }
 
     /** {@inheritDoc} */
-    @Override public void unsafeWriteFloat(int pos, float val) {
-        unsafeWriteInt(pos, Float.floatToIntBits(val));
-    }
-
-    /** {@inheritDoc} */
     @Override public void unsafeWriteDouble(double val) {
         unsafeWriteLong(Double.doubleToLongBits(val));
-    }
-
-    /** {@inheritDoc} */
-    @Override public void unsafeWriteDouble(int pos, double val) {
-        unsafeWriteLong(pos, Double.doubleToLongBits(val));
     }
 
     /**

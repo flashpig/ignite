@@ -180,11 +180,6 @@ public class PlatformBigEndianOutputStreamImpl extends PlatformOutputStreamImpl 
     }
 
     /** {@inheritDoc} */
-    @Override public void unsafeWriteChar(int pos, char val) {
-        UNSAFE.putChar(data + pos, Character.reverseBytes(val));
-    }
-
-    /** {@inheritDoc} */
     @Override public void unsafeWriteInt(int val) {
         super.unsafeWriteInt(Integer.reverseBytes(val));
     }
@@ -197,10 +192,5 @@ public class PlatformBigEndianOutputStreamImpl extends PlatformOutputStreamImpl 
     /** {@inheritDoc} */
     @Override public void unsafeWriteLong(long val) {
         super.unsafeWriteLong(Long.reverseBytes(val));
-    }
-
-    /** {@inheritDoc} */
-    @Override public void unsafeWriteLong(int pos, long val) {
-        UNSAFE.putLong(data + pos, val, Long.reverseBytes(val));
     }
 }
