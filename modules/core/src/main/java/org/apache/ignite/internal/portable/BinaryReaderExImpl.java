@@ -397,150 +397,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      * @throws BinaryObjectException In case of error.
      */
-    @Nullable byte[] readByteArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(BYTE_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadByteArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable short[] readShortArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(SHORT_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadShortArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable int[] readIntArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(INT_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadIntArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable long[] readLongArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(LONG_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadLongArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable float[] readFloatArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(FLOAT_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadFloatArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable double[] readDoubleArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(DOUBLE_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadDoubleArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable char[] readCharArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(CHAR_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadCharArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable boolean[] readBooleanArray(int fieldId) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(BOOLEAN_ARR);
-
-            if (flag == Flag.NORMAL)
-                return doReadBooleanArray();
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
     @Nullable BigDecimal[] readDecimalArray(int fieldId) throws BinaryObjectException {
         if (findFieldById(fieldId)) {
             Flag flag = checkFlag(DECIMAL_ARR);
@@ -847,6 +703,34 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /** {@inheritDoc} */
+    @Nullable @Override public byte[] readByteArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readByteArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable byte[] readByteArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readByteArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public byte[] readByteArray() throws BinaryObjectException {
+        switch (checkFlag(BYTE_ARR)) {
+            case NORMAL:
+                return doReadByteArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
+    }
+
+    /** {@inheritDoc} */
     @Override public boolean readBoolean(String fieldName) throws BinaryObjectException {
         return findFieldByName(fieldName) && checkFlagPrimitive(BOOLEAN) == Flag.NORMAL && in.readBoolean();
     }
@@ -872,6 +756,34 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** {@inheritDoc} */
     @Override public boolean readBoolean() throws BinaryObjectException {
         return in.readBoolean();
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public boolean[] readBooleanArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readBooleanArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable boolean[] readBooleanArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readBooleanArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public boolean[] readBooleanArray() throws BinaryObjectException {
+        switch (checkFlag(BOOLEAN_ARR)) {
+            case NORMAL:
+                return doReadBooleanArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
     }
 
     /** {@inheritDoc} */
@@ -903,6 +815,34 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /** {@inheritDoc} */
+    @Nullable @Override public short[] readShortArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readShortArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable short[] readShortArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readShortArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public short[] readShortArray() throws BinaryObjectException {
+        switch (checkFlag(SHORT_ARR)) {
+            case NORMAL:
+                return doReadShortArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
+    }
+
+    /** {@inheritDoc} */
     @Override public char readChar(String fieldName) throws BinaryObjectException {
         return findFieldByName(fieldName) && checkFlagPrimitive(CHAR) == Flag.NORMAL ? in.readChar() : 0;
     }
@@ -928,6 +868,34 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** {@inheritDoc} */
     @Override public char readChar() throws BinaryObjectException {
         return in.readChar();
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public char[] readCharArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readCharArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable char[] readCharArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readCharArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public char[] readCharArray() throws BinaryObjectException {
+        switch (checkFlag(CHAR_ARR)) {
+            case NORMAL:
+                return doReadCharArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
     }
 
     /** {@inheritDoc} */
@@ -957,7 +925,35 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     @Override public int readInt() throws BinaryObjectException {
         return in.readInt();
     }
-    
+
+    /** {@inheritDoc} */
+    @Nullable @Override public int[] readIntArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readIntArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable int[] readIntArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readIntArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public int[] readIntArray() throws BinaryObjectException {
+        switch (checkFlag(INT_ARR)) {
+            case NORMAL:
+                return doReadIntArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
+    }
+
     /** {@inheritDoc} */
     @Override public long readLong(String fieldName) throws BinaryObjectException {
         return findFieldByName(fieldName) && checkFlagPrimitive(LONG) == Flag.NORMAL ? in.readLong() : 0;
@@ -984,6 +980,34 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** {@inheritDoc} */
     @Override public long readLong() throws BinaryObjectException {
         return in.readLong();
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public long[] readLongArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readLongArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable long[] readLongArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readLongArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public long[] readLongArray() throws BinaryObjectException {
+        switch (checkFlag(LONG_ARR)) {
+            case NORMAL:
+                return doReadLongArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
     }
 
     /** {@inheritDoc} */
@@ -1015,6 +1039,34 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /** {@inheritDoc} */
+    @Nullable @Override public float[] readFloatArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readFloatArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable float[] readFloatArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readFloatArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public float[] readFloatArray() throws BinaryObjectException {
+        switch (checkFlag(FLOAT_ARR)) {
+            case NORMAL:
+                return doReadFloatArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
+    }
+
+    /** {@inheritDoc} */
     @Override public double readDouble(String fieldName) throws BinaryObjectException {
         return findFieldByName(fieldName) && checkFlagPrimitive(DOUBLE) == Flag.NORMAL ? in.readDouble() : 0;
     }
@@ -1040,6 +1092,34 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** {@inheritDoc} */
     @Override public double readDouble() throws BinaryObjectException {
         return in.readDouble();
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public double[] readDoubleArray(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? this.readDoubleArray() : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable double[] readDoubleArray(int fieldId) throws BinaryObjectException {
+        return findFieldById(fieldId) ? this.readDoubleArray() : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public double[] readDoubleArray() throws BinaryObjectException {
+        switch (checkFlag(DOUBLE_ARR)) {
+            case NORMAL:
+                return doReadDoubleArray();
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
     }
 
     /** {@inheritDoc} */
@@ -1128,110 +1208,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     /** {@inheritDoc} */
     @Nullable @Override public Object readObjectDetached() throws BinaryObjectException {
         return unmarshal(true);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public byte[] readByteArray(String fieldName) throws BinaryObjectException {
-        return readByteArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public byte[] readByteArray() throws BinaryObjectException {
-        if (checkFlag(BYTE_ARR) == Flag.NULL)
-            return null;
-
-        return doReadByteArray();
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public short[] readShortArray(String fieldName) throws BinaryObjectException {
-        return readShortArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public short[] readShortArray() throws BinaryObjectException {
-        if (checkFlag(SHORT_ARR) == Flag.NULL)
-            return null;
-
-        return doReadShortArray();
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public int[] readIntArray(String fieldName) throws BinaryObjectException {
-        return readIntArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public int[] readIntArray() throws BinaryObjectException {
-        if (checkFlag(INT_ARR) == Flag.NULL)
-            return null;
-
-        return doReadIntArray();
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public long[] readLongArray(String fieldName) throws BinaryObjectException {
-        return readLongArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public long[] readLongArray() throws BinaryObjectException {
-        if (checkFlag(LONG_ARR) == Flag.NULL)
-            return null;
-
-        return doReadLongArray();
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public float[] readFloatArray(String fieldName) throws BinaryObjectException {
-        return readFloatArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public float[] readFloatArray() throws BinaryObjectException {
-        if (checkFlag(FLOAT_ARR) == Flag.NULL)
-            return null;
-
-        return doReadFloatArray();
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public double[] readDoubleArray(String fieldName) throws BinaryObjectException {
-        return readDoubleArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public double[] readDoubleArray() throws BinaryObjectException {
-        if (checkFlag(DOUBLE_ARR) == Flag.NULL)
-            return null;
-
-        return doReadDoubleArray();
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public char[] readCharArray(String fieldName) throws BinaryObjectException {
-        return readCharArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public char[] readCharArray() throws BinaryObjectException {
-        if (checkFlag(CHAR_ARR) == Flag.NULL)
-            return null;
-
-        return doReadCharArray();
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public boolean[] readBooleanArray(String fieldName) throws BinaryObjectException {
-        return readBooleanArray(fieldId(fieldName));
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public boolean[] readBooleanArray() throws BinaryObjectException {
-        if (checkFlag(BOOLEAN_ARR) == Flag.NULL)
-            return null;
-
-        return doReadBooleanArray();
     }
 
     /** {@inheritDoc} */
@@ -2867,13 +2843,13 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * Flag.
      */
     private static enum Flag {
-        /** Null. */
-        NULL,
+        /** Regular. */
+        NORMAL,
 
         /** Handle. */
         HANDLE,
 
-        /** Regular. */
-        NORMAL
+        /** Null. */
+        NULL
     }
 }
