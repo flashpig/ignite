@@ -464,13 +464,6 @@ public final class BinaryObjectImpl extends BinaryObjectEx implements Externaliz
     }
 
     /** {@inheritDoc} */
-    @Override public BinaryField fieldDescriptor(String fieldName) throws BinaryObjectException {
-        A.notNull(fieldName, "fieldName");
-
-        return ctx.createField(typeId(), fieldName);
-    }
-
-    /** {@inheritDoc} */
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         out.writeObject(ctx);
 
