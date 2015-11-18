@@ -381,7 +381,7 @@ public class GridNearSingleGetRequest extends GridCacheMessage implements GridCa
 
     /** {@inheritDoc} */
     @Override public byte directType() {
-        return 115;
+        return 116;
     }
 
     /** {@inheritDoc} */
