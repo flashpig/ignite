@@ -170,7 +170,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            byte val = reader.readBytePrimitive(id);
+            byte val = reader.readByte(id);
 
             UNSAFE.putByte(obj, offset, val);
         }
@@ -200,7 +200,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            boolean val = reader.readBooleanPrimitive(id);
+            boolean val = reader.readBoolean(id);
 
             UNSAFE.putBoolean(obj, offset, val);
         }
@@ -230,7 +230,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            short val = reader.readShortPrimitive(id);
+            short val = reader.readShort(id);
 
             UNSAFE.putShort(obj, offset, val);
         }
@@ -260,7 +260,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            char val = reader.readCharPrimitive(id);
+            char val = reader.readChar(id);
 
             UNSAFE.putChar(obj, offset, val);
         }
@@ -320,7 +320,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            long val = reader.readLongPrimitive(id);
+            long val = reader.readLong(id);
 
             UNSAFE.putLong(obj, offset, val);
         }
@@ -350,7 +350,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            float val = reader.readFloatPrimitive(id);
+            float val = reader.readFloat(id);
 
             UNSAFE.putFloat(obj, offset, val);
         }
@@ -380,7 +380,7 @@ public abstract class BinaryFieldAccessor {
 
         /** {@inheritDoc} */
         @Override public void read(Object obj, BinaryReaderExImpl reader) throws BinaryObjectException {
-            double val = reader.readDoublePrimitive(id);
+            double val = reader.readDouble(id);
 
             UNSAFE.putDouble(obj, offset, val);
         }
@@ -613,12 +613,12 @@ public abstract class BinaryFieldAccessor {
 
             switch (mode) {
                 case BYTE:
-                    val = reader.readByte(id);
+                    val = reader.readByteNullable(id);
 
                     break;
 
                 case SHORT:
-                    val = reader.readShort(id);
+                    val = reader.readShortNullable(id);
 
                     break;
 
@@ -628,27 +628,27 @@ public abstract class BinaryFieldAccessor {
                     break;
 
                 case LONG:
-                    val = reader.readLong(id);
+                    val = reader.readLongNullable(id);
 
                     break;
 
                 case FLOAT:
-                    val = reader.readFloat(id);
+                    val = reader.readFloatNullable(id);
 
                     break;
 
                 case DOUBLE:
-                    val = reader.readDouble(id);
+                    val = reader.readDoubleNullable(id);
 
                     break;
 
                 case CHAR:
-                    val = reader.readChar(id);
+                    val = reader.readCharNullable(id);
 
                     break;
 
                 case BOOLEAN:
-                    val = reader.readBoolean(id);
+                    val = reader.readBooleanNullable(id);
 
                     break;
 
