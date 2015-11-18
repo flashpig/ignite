@@ -211,6 +211,12 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
 
                                     assert map.isEmpty() || map.size() == 1 : map.size();
 
+                                    if (skipVals) {
+                                        Boolean val = map.isEmpty() ? false : (Boolean)F.firstValue(map);
+
+                                        return (V)(val);
+                                    }
+
                                     return (V)map.get(key);
                                 }
                             });
@@ -225,18 +231,18 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
         subjId = ctx.subjectIdPerCall(subjId, opCtx);
 
         GridPartitionedSingleGetFuture fut = new GridPartitionedSingleGetFuture(ctx,
-                ctx.toCacheKeyObject(key),
-                topVer,
-                opCtx == null || !opCtx.skipStore(),
-                forcePrimary,
-                subjId,
-                taskName,
-                deserializePortable,
-                skipVals ? null : expiryPolicy(opCtx != null ? opCtx.expiry() : null),
-                skipVals,
-                canRemap,
-                /*needVer*/false,
-                /*keepCacheObjects*/false);
+            ctx.toCacheKeyObject(key),
+            topVer,
+            opCtx == null || !opCtx.skipStore(),
+            forcePrimary,
+            subjId,
+            taskName,
+            deserializePortable,
+            skipVals ? null : expiryPolicy(opCtx != null ? opCtx.expiry() : null),
+            skipVals,
+            canRemap,
+            /*needVer*/false,
+            /*keepCacheObjects*/false);
 
         fut.init();
 

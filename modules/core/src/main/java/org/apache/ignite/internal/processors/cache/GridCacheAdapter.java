@@ -1497,13 +1497,13 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                 @Override public V applyx(IgniteInternalFuture<Map<K, V>> e) throws IgniteCheckedException {
                     Map<K, V> map = e.get();
 
+                    assert map.isEmpty() || map.size() == 1 : map.size();
+
                     if (skipVals) {
-                        Boolean val = !map.isEmpty();
+                        Boolean val = map.isEmpty() ? false : (Boolean)F.firstValue(map);
 
                         return (V)(val);
                     }
-
-                    assert map.isEmpty() || map.size() == 1 : map.size();
 
                     return map.get(key);
                 }

@@ -275,9 +275,11 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
             add(new GridFinishedFuture<>(locVals));
 
         if (hasRmtNodes) {
-            trackable = true;
+            if (!trackable) {
+                trackable = true;
 
-            cctx.mvcc().addFuture(this, futId);
+                cctx.mvcc().addFuture(this, futId);
+            }
         }
 
         // Create mini futures.
@@ -537,7 +539,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
 
                 if (needVer)
                     versionedResult(map, info.key(), info.value(), info.version());
-                else
+                else {
                     cctx.addResult(map,
                         info.key(),
                         info.value(),
@@ -545,6 +547,7 @@ public class GridPartitionedGetFuture<K, V> extends CacheDistributedGetFutureAda
                         keepCacheObjects,
                         deserializePortable,
                         false);
+                }
             }
 
             return map;
