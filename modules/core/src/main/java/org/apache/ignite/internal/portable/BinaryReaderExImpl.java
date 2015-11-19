@@ -304,26 +304,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @param fieldId Field ID.
-     * @param cls Collection class.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable <T> Collection<T> readCollection(int fieldId, @Nullable Class<? extends Collection> cls)
-        throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(COL);
-
-            if (flag == Flag.NORMAL)
-                return (Collection<T>)doReadCollection(true, cls);
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
      * @param cls Map class.
      * @return Value.
      * @throws BinaryObjectException In case of error.
@@ -1163,62 +1143,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public <T> Collection<T> readCollection(String fieldName) throws BinaryObjectException {
-        return readCollection(fieldId(fieldName), null);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public <T> Collection<T> readCollection() throws BinaryObjectException {
-        if (checkFlag(COL) == Flag.NULL)
-            return null;
-
-        return (Collection<T>)doReadCollection(true, null);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public <T> Collection<T> readCollection(String fieldName,
-        Class<? extends Collection<T>> colCls) throws BinaryObjectException {
-        return readCollection(fieldId(fieldName), colCls);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public <T> Collection<T> readCollection(Class<? extends Collection<T>> colCls)
-        throws BinaryObjectException {
-        if (checkFlag(COL) == Flag.NULL)
-            return null;
-
-        return (Collection<T>)doReadCollection(true, colCls);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public <K, V> Map<K, V> readMap(String fieldName) throws BinaryObjectException {
-        return (Map<K, V>)readMap(fieldId(fieldName), null);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public <K, V> Map<K, V> readMap() throws BinaryObjectException {
-        if (checkFlag(MAP) == Flag.NULL)
-            return null;
-
-        return (Map<K, V>)doReadMap(true, null);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public <K, V> Map<K, V> readMap(String fieldName, Class<? extends Map<K, V>> mapCls)
-        throws BinaryObjectException {
-        return (Map<K, V>)readMap(fieldId(fieldName), mapCls);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public <K, V> Map<K, V> readMap(Class<? extends Map<K, V>> mapCls)
-        throws BinaryObjectException {
-        if (checkFlag(MAP) == Flag.NULL)
-            return null;
-
-        return (Map<K, V>)doReadMap(true, mapCls);
-    }
-
-    /** {@inheritDoc} */
     @Nullable @Override public <T extends Enum<?>> T readEnum(String fieldName) throws BinaryObjectException {
         return findFieldByName(fieldName) ? (T)readEnum0(null) : null;
     }
@@ -1304,6 +1228,88 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             default:
                 return null;
         }
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <T> Collection<T> readCollection(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? (Collection<T>)readCollection0(null) : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <T> Collection<T> readCollection(String fieldName,
+        Class<? extends Collection<T>> colCls) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? readCollection0(colCls) : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @param colCls Collection class.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable <T> Collection<T> readCollection(int fieldId, @Nullable Class<? extends Collection> colCls)
+        throws BinaryObjectException {
+        return findFieldById(fieldId) ? (Collection<T>)readCollection0(colCls) : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <T> Collection<T> readCollection() throws BinaryObjectException {
+        return readCollection0(null);
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <T> Collection<T> readCollection(Class<? extends Collection<T>> colCls)
+        throws BinaryObjectException {
+        return readCollection0(colCls);
+    }
+
+    /**
+     * Internal read collection routine.
+     *
+     * @param cls Collection class.
+     * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    private Collection readCollection0(@Nullable Class<? extends Collection> cls)
+        throws BinaryObjectException {
+        switch (checkFlag(COL)) {
+            case NORMAL:
+                return (Collection)doReadCollection(true, cls);
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <K, V> Map<K, V> readMap(String fieldName) throws BinaryObjectException {
+        return (Map<K, V>)readMap(fieldId(fieldName), null);
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <K, V> Map<K, V> readMap() throws BinaryObjectException {
+        if (checkFlag(MAP) == Flag.NULL)
+            return null;
+
+        return (Map<K, V>)doReadMap(true, null);
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <K, V> Map<K, V> readMap(String fieldName, Class<? extends Map<K, V>> mapCls)
+        throws BinaryObjectException {
+        return (Map<K, V>)readMap(fieldId(fieldName), mapCls);
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <K, V> Map<K, V> readMap(Class<? extends Map<K, V>> mapCls)
+        throws BinaryObjectException {
+        if (checkFlag(MAP) == Flag.NULL)
+            return null;
+
+        return (Map<K, V>)doReadMap(true, mapCls);
     }
 
     /**
