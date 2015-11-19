@@ -85,28 +85,11 @@ public class PortableSchema implements Externalizable {
      * @param fieldIds Field IDs.
      */
     private PortableSchema(int schemaId, List<Integer> fieldIds) {
+        assert fieldIds != null;
+
         this.schemaId = schemaId;
 
-        ids = new int[fieldIds.size()];
-
-        for (int i = 0; i < fieldIds.size(); i++)
-            ids[i] = fieldIds.get(i);
-
-        names = new String[fieldIds.size()];
-
-        if (fieldIds.size() <= 4) {
-            Iterator<Integer> iter = fieldIds.iterator();
-
-            id0 = iter.hasNext() ? iter.next() : 0;
-            id1 = iter.hasNext() ? iter.next() : 0;
-            id2 = iter.hasNext() ? iter.next() : 0;
-            id3 = iter.hasNext() ? iter.next() : 0;
-        }
-        else {
-            id0 = id1 = id2 = id3 = 0;
-
-            initializeMap(ids);
-        }
+        initialize(fieldIds);
     }
 
     /**
@@ -229,76 +212,24 @@ public class PortableSchema implements Externalizable {
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         out.writeInt(schemaId);
 
-        if (idToOrderData == null) {
-            out.writeBoolean(true);
+        out.writeInt(ids.length);
 
-            out.writeInt(id0);
-            out.writeInt(id1);
-            out.writeInt(id2);
-            out.writeInt(id3);
-        }
-        else {
-            out.writeBoolean(false);
-
-            out.writeInt(ids.length);
-
-            for (Integer id : ids)
-                out.writeInt(id);
-        }
+        for (Integer id : ids)
+            out.writeInt(id);
     }
 
     /** {@inheritDoc} */
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         schemaId = in.readInt();
 
-        if (in.readBoolean()) {
-            int size = 0;
+        int idsCnt = in.readInt();
 
-            List<Integer> ids0 = new ArrayList<>();
+        List<Integer> fieldIds = new ArrayList<>(idsCnt);
 
-            id0 = in.readInt();
-            if (id0 != 0) {
-                ids0.add(id0);
-                size++;
-            }
+        for (int i = 0; i < idsCnt; i++)
+            fieldIds.add(in.readInt());
 
-            id1 = in.readInt();
-            if (id1 != 0) {
-                ids0.add(id1);
-                size++;
-            }
-
-            id2 = in.readInt();
-            if (id2 != 0) {
-                ids0.add(id2);
-                size++;
-            }
-
-            id3 = in.readInt();
-            if (id3 != 0) {
-                ids0.add(id3);
-                size++;
-            }
-
-            ids = new int[size];
-
-            for (int i = 0; i < size; i++)
-                ids[i] = ids0.get(i);
-
-            names = new String[size];
-        }
-        else {
-            int size = in.readInt();
-
-            ids = new int[size];
-
-            for (int i = 0; i < size; i++)
-                ids[i] = in.readInt();
-
-            initializeMap(ids);
-
-            names = new String[size];
-        }
+        initialize(fieldIds);
     }
 
     /**
@@ -390,6 +321,34 @@ public class PortableSchema implements Externalizable {
         }
 
         return mask;
+    }
+
+    /**
+     * Initialization routine.
+     *
+     * @param fieldIds Field IDs.
+     */
+    private void initialize(List<Integer> fieldIds) {
+        ids = new int[fieldIds.size()];
+
+        for (int i = 0; i < fieldIds.size(); i++)
+            ids[i] = fieldIds.get(i);
+
+        names = new String[fieldIds.size()];
+
+        if (fieldIds.size() <= 4) {
+            Iterator<Integer> iter = fieldIds.iterator();
+
+            id0 = iter.hasNext() ? iter.next() : 0;
+            id1 = iter.hasNext() ? iter.next() : 0;
+            id2 = iter.hasNext() ? iter.next() : 0;
+            id3 = iter.hasNext() ? iter.next() : 0;
+        }
+        else {
+            id0 = id1 = id2 = id3 = 0;
+
+            initializeMap(ids);
+        }
     }
 
     /**
