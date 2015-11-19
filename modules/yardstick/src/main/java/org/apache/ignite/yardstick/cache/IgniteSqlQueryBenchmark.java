@@ -65,8 +65,8 @@ public class IgniteSqlQueryBenchmark extends IgniteCacheAbstractBenchmark<Intege
             Person p = (Person)entry.getValue();
 
             if (p.getSalary() < salary || p.getSalary() > maxSalary) {
-//                throw new Exception("Invalid person retrieved [min=" + salary + ", max=" + maxSalary +
-//                    ", person=" + p + ']');
+                throw new Exception("Invalid person retrieved [min=" + salary + ", max=" + maxSalary +
+                    ", person=" + p + ']');
             }
         }
 
