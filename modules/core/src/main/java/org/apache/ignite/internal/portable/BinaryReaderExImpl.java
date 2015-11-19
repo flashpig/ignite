@@ -1347,7 +1347,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         else if (flag == HANDLE)
             return Flag.HANDLE;
 
-        int pos = in.position() - 1;
+        int pos = positionForHandle();
 
         throw new BinaryObjectException("Unexpected flag value [pos=" + pos + ", expected=" + expFlag +
             ", actual=" + flag + ']');
@@ -1368,7 +1368,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         else if (flag == NULL)
             return Flag.NULL;
 
-        int pos = in.position() - 1;
+        int pos = positionForHandle();
 
         throw new BinaryObjectException("Unexpected flag value [pos=" + pos + ", expected=" + expFlag +
             ", actual=" + flag + ']');
@@ -1593,7 +1593,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
         String res = new String(in.array(), strOff, strLen, UTF_8);
 
-        in.position(in.position() + strLen);
+        in.position(strOff + strLen);
 
         return res;
     }
@@ -1886,7 +1886,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      */
     private byte[] doReadByteArray() {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -1901,7 +1901,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      */
     private short[] doReadShortArray() {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -1916,7 +1916,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      */
     private int[] doReadIntArray() {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -1931,7 +1931,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      */
     private long[] doReadLongArray() {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -1946,7 +1946,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      */
     private float[] doReadFloatArray() {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -1961,7 +1961,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      */
     private double[] doReadDoubleArray() {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -1976,7 +1976,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      */
     private char[] doReadCharArray() {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -1991,7 +1991,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Value.
      */
     private boolean[] doReadBooleanArray() {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -2007,7 +2007,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException In case of error.
      */
     private BigDecimal[] doReadDecimalArray() throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -2036,7 +2036,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException In case of error.
      */
     private String[] doReadStringArray() throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -2059,13 +2059,13 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
         return arr;
     }
-
+    
     /**
      * @return Value.
      * @throws BinaryObjectException In case of error.
      */
     private UUID[] doReadUuidArray() throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -2094,7 +2094,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException In case of error.
      */
     private Date[] doReadDateArray() throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -2123,7 +2123,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException In case of error.
      */
     private Timestamp[] doReadTimestampArray() throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int len = in.readInt();
 
@@ -2153,7 +2153,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException In case of error.
      */
     private Object[] doReadObjectArray(boolean deep) throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         Class compType = doReadClass();
 
@@ -2178,7 +2178,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     @SuppressWarnings("unchecked")
     private Collection<?> doReadCollection(boolean deep, @Nullable Class<? extends Collection> cls)
         throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int size = in.readInt();
 
@@ -2266,7 +2266,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     @SuppressWarnings("unchecked")
     private Map<?, ?> doReadMap(boolean deep, @Nullable Class<? extends Map> cls)
         throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         int size = in.readInt();
 
@@ -2341,7 +2341,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException In case of error.
      */
     private Map.Entry<?, ?> doReadMapEntry(boolean deep) throws BinaryObjectException {
-        int hPos = in.position() - 1;
+        int hPos = positionForHandle();
 
         Object val1 = deep ? doReadObject() : unmarshal();
         Object val2 = deep ? doReadObject() : unmarshal();
@@ -2455,6 +2455,15 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         return cls;
     }
 
+    /**
+     * Get position to be used for handle. We assume here that the hdr byte was read, hence subtract -1.  
+     *
+     * @return Position for handle.
+     */
+    int positionForHandle() {
+        return in.position() - 1;
+    }
+    
     /**
      * @param name Field name.
      * @return Field offset.
