@@ -25,7 +25,6 @@ import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.binary.BinaryRawReader;
 import org.apache.ignite.binary.BinaryReader;
 import org.apache.ignite.internal.portable.streams.PortableInputStream;
-import org.apache.ignite.internal.util.GridEnumCache;
 import org.apache.ignite.internal.util.lang.GridMapEntry;
 import org.apache.ignite.internal.util.typedef.internal.SB;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -375,56 +374,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         }
         else
             return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @param cls Class.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Enum<?> readEnum(int fieldId, @Nullable Class<?> cls) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            if (checkFlag(ENUM) == Flag.NULL)
-                return null;
-
-            // Revisit: why have we started writing Class for enums in their serialized form?
-            if (cls == null)
-                cls = doReadClass();
-            else
-                doReadClass();
-
-            Object[] vals = GridEnumCache.get(cls);
-
-            return (Enum<?>)vals[in.readInt()];
-        }
-        else
-            return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
-     * @param cls Class.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Object[] readEnumArray(int fieldId, @Nullable Class<?> cls) throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(ENUM_ARR);
-
-            if (flag == Flag.NORMAL) {
-                if (cls == null)
-                    cls = doReadClass();
-                else
-                    doReadClass();
-
-                return doReadEnumArray(cls);
-            }
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
     }
 
     /**
@@ -1270,35 +1219,91 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public <T extends Enum<?>> T readEnum(String fieldName)
-        throws BinaryObjectException {
-        return (T)readEnum(fieldId(fieldName), null);
+    @Nullable @Override public <T extends Enum<?>> T readEnum(String fieldName) throws BinaryObjectException {
+        return findFieldByName(fieldName) ? (T)readEnum0(null) : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @param cls Class.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Enum<?> readEnum(int fieldId, @Nullable Class<?> cls) throws BinaryObjectException {
+        return findFieldById(fieldId) ? readEnum0(cls) : null;
     }
 
     /** {@inheritDoc} */
     @Nullable @Override public <T extends Enum<?>> T readEnum() throws BinaryObjectException {
-        if (checkFlag(ENUM) == Flag.NULL)
+        return (T)readEnum0(null);
+    }
+
+    /**
+     * Internal routine to read enum for named field.
+     *
+     * @param cls Class.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    private Enum<?> readEnum0(@Nullable Class<?> cls) throws BinaryObjectException {
+        if (checkFlagNoHandles(ENUM) == Flag.NORMAL) {
+            // Read class even if we know it in advance to set correct stream position.
+            Class<?> cls0 = doReadClass();
+
+            if (cls == null)
+                cls = cls0;
+
+            return doReadEnum(cls);
+        }
+        else
             return null;
-
-        Class cls = doReadClass();
-
-        return (T)doReadEnum(cls);
     }
 
     /** {@inheritDoc} */
     @Nullable @Override public <T extends Enum<?>> T[] readEnumArray(String fieldName)
         throws BinaryObjectException {
-        return (T[])readEnumArray(fieldId(fieldName), null);
+        return findFieldByName(fieldName) ? (T[])readEnumArray0(null) : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @param cls Class.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Object[] readEnumArray(int fieldId, @Nullable Class<?> cls) throws BinaryObjectException {
+        return findFieldById(fieldId) ? readEnumArray0(cls) : null;
     }
 
     /** {@inheritDoc} */
     @Nullable @Override public <T extends Enum<?>> T[] readEnumArray() throws BinaryObjectException {
-        if (checkFlag(ENUM_ARR) == Flag.NULL)
-            return null;
+        return (T[])readEnumArray0(null);
+    }
 
-        Class cls = doReadClass();
+    /**
+     * Internal routine to read enum for named field.
+     *
+     * @param cls Class.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    private Object[] readEnumArray0(@Nullable Class<?> cls) throws BinaryObjectException {
+        switch (checkFlag(ENUM_ARR)) {
+            case NORMAL:
+                // Read class even if we know it in advance to set correct stream position.
+                Class<?> cls0 = doReadClass();
 
-        return (T[])doReadEnumArray(cls);
+                if (cls == null)
+                    cls = cls0;
+
+                return doReadEnumArray(cls);
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
     }
 
     /**
@@ -2357,16 +2362,20 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /**
+     * Having target class in place we simply read ordinal and create final representation.
+     *
      * @param cls Enum class.
      * @return Value.
      */
     private Enum<?> doReadEnum(Class<?> cls) throws BinaryObjectException {
+        assert cls != null;
+
         if (!cls.isEnum())
             throw new BinaryObjectException("Class does not represent enum type: " + cls.getName());
 
         int ord = in.readInt();
 
-        return ord >= 0 ? (Enum<?>)GridEnumCache.get(cls)[ord] : null;
+        return BinaryEnumCache.get(cls, ord);
     }
 
     /**
