@@ -49,9 +49,6 @@ public class PortableBuilderReader implements PortablePositionReadable {
     /** */
     private final byte[] arr;
 
-    /** Object start position. */
-    private final int start;
-
     /** */
     private final BinaryReaderExImpl reader;
 
@@ -69,10 +66,10 @@ public class PortableBuilderReader implements PortablePositionReadable {
     PortableBuilderReader(BinaryObjectImpl objImpl) {
         ctx = objImpl.context();
         arr = objImpl.array();
-        start = pos = objImpl.start();
+        pos = objImpl.start();
 
         // TODO: IGNITE-1272 - Is class loader needed here?
-        reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, start), null, new BinaryReaderHandles());
+        reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, pos), null, new BinaryReaderHandles());
 
         objMap = new HashMap<>();
     }
@@ -86,7 +83,7 @@ public class PortableBuilderReader implements PortablePositionReadable {
     PortableBuilderReader(PortableBuilderReader other, int start) {
         this.ctx = other.ctx;
         this.arr = other.arr;
-        this.start = pos = start;
+        this.pos = start;
 
         reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, start), null, other.reader.handles());
 
