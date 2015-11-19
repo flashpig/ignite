@@ -71,18 +71,6 @@ public class PortableSchema implements Externalizable {
     /** ID 4. */
     private int id3;
 
-    /** ID 1. */
-    private int id4;
-
-    /** ID 2. */
-    private int id5;
-
-    /** ID 3. */
-    private int id6;
-
-    /** ID 4. */
-    private int id7;
-
     /**
      * {@link Externalizable} support.
      */
@@ -106,20 +94,16 @@ public class PortableSchema implements Externalizable {
 
         names = new String[fieldIds.size()];
 
-        if (fieldIds.size() <= 8) {
+        if (fieldIds.size() <= 4) {
             Iterator<Integer> iter = fieldIds.iterator();
 
             id0 = iter.hasNext() ? iter.next() : 0;
             id1 = iter.hasNext() ? iter.next() : 0;
             id2 = iter.hasNext() ? iter.next() : 0;
             id3 = iter.hasNext() ? iter.next() : 0;
-            id4 = iter.hasNext() ? iter.next() : 0;
-            id5 = iter.hasNext() ? iter.next() : 0;
-            id6 = iter.hasNext() ? iter.next() : 0;
-            id7 = iter.hasNext() ? iter.next() : 0;
         }
         else {
-            id0 = id1 = id2 = id3 = id4 = id5 = id6 = id7 = 0;
+            id0 = id1 = id2 = id3 = 0;
 
             initializeMap(ids);
         }
@@ -200,18 +184,6 @@ public class PortableSchema implements Externalizable {
             if (id == id3)
                 return 3;
 
-            if (id == id4)
-                return 4;
-
-            if (id == id5)
-                return 5;
-
-            if (id == id6)
-                return 6;
-
-            if (id == id7)
-                return 7;
-
             return ORDER_NOT_FOUND;
         }
         else {
@@ -264,10 +236,6 @@ public class PortableSchema implements Externalizable {
             out.writeInt(id1);
             out.writeInt(id2);
             out.writeInt(id3);
-            out.writeInt(id4);
-            out.writeInt(id5);
-            out.writeInt(id6);
-            out.writeInt(id7);
         }
         else {
             out.writeBoolean(false);
@@ -309,30 +277,6 @@ public class PortableSchema implements Externalizable {
             id3 = in.readInt();
             if (id3 != 0) {
                 ids0.add(id3);
-                size++;
-            }
-
-            id4 = in.readInt();
-            if (id4 != 0) {
-                ids0.add(id4);
-                size++;
-            }
-
-            id5 = in.readInt();
-            if (id5 != 0) {
-                ids0.add(id5);
-                size++;
-            }
-
-            id6 = in.readInt();
-            if (id6 != 0) {
-                ids0.add(id6);
-                size++;
-            }
-
-            id7 = in.readInt();
-            if (id7 != 0) {
-                ids0.add(id7);
                 size++;
             }
 

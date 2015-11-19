@@ -259,6 +259,13 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     }
 
     /**
+     * @return Handles.
+     */
+    public BinaryReaderHandles handles() {
+        return rCtx;
+    }
+
+    /**
      * @return Descriptor.
      */
     PortableClassDescriptor descriptor() {

@@ -44,30 +44,53 @@ import static org.apache.ignite.internal.portable.GridPortableMarshaller.STRING;
  */
 public class PortableBuilderReader implements PortablePositionReadable {
     /** */
-    private final Map<Integer, BinaryObjectBuilderImpl> objMap = new HashMap<>();
+    private final PortableContext ctx;
 
     /** */
-    private final PortableContext ctx;
+    private final byte[] arr;
+
+    /** Object start position. */
+    private final int start;
 
     /** */
     private final BinaryReaderExImpl reader;
 
     /** */
-    private byte[] arr;
+    private final Map<Integer, BinaryObjectBuilderImpl> objMap;
 
     /** */
     private int pos;
 
-    /**
+    /*
+     * Constructor.
+     *
      * @param objImpl Portable object
      */
     PortableBuilderReader(BinaryObjectImpl objImpl) {
         ctx = objImpl.context();
         arr = objImpl.array();
-        pos = objImpl.start();
+        start = pos = objImpl.start();
 
         // TODO: IGNITE-1272 - Is class loader needed here?
-        reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, pos), null, new BinaryReaderHandles());
+        reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, start), null, new BinaryReaderHandles());
+
+        objMap = new HashMap<>();
+    }
+
+    /**
+     * Copying constructor.
+     *
+     * @param other Other reader.
+     * @param start Start position.
+     */
+    PortableBuilderReader(PortableBuilderReader other, int start) {
+        this.ctx = other.ctx;
+        this.arr = other.arr;
+        this.start = pos = start;
+
+        reader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, start), null, other.reader.handles());
+
+        this.objMap = other.objMap;
     }
 
     /**
@@ -87,20 +110,10 @@ public class PortableBuilderReader implements PortablePositionReadable {
     /**
      * Get schema of the object, starting at the given position.
      *
-     * @param start Start position.
      * @return Object's schema.
      */
-    public PortableSchema schema(int start) {
-        // We can use current reader in case start is equal to initially recorded position.
-        BinaryReaderExImpl targetReader;
-
-        if (start == pos)
-            targetReader = reader;
-        else
-            targetReader = new BinaryReaderExImpl(ctx, PortableHeapInputStream.create(arr, start), null,
-                new BinaryReaderHandles());
-
-        return targetReader.getOrCreateSchema();
+    public PortableSchema schema() {
+        return reader.getOrCreateSchema();
     }
 
     /**
@@ -371,7 +384,7 @@ public class PortableBuilderReader implements PortablePositionReadable {
                 BinaryObjectBuilderImpl res = objMap.get(objStart);
 
                 if (res == null) {
-                    res = new BinaryObjectBuilderImpl(this, objStart);
+                    res = new BinaryObjectBuilderImpl(new PortableBuilderReader(this, objStart), objStart);
 
                     objMap.put(objStart, res);
                 }
@@ -383,7 +396,7 @@ public class PortableBuilderReader implements PortablePositionReadable {
                 BinaryObjectBuilderImpl res = objMap.get(pos);
 
                 if (res == null) {
-                    res = new BinaryObjectBuilderImpl(this, pos);
+                    res = new BinaryObjectBuilderImpl(new PortableBuilderReader(this, pos), pos);
 
                     objMap.put(pos, res);
                 }
@@ -496,7 +509,7 @@ public class PortableBuilderReader implements PortablePositionReadable {
                 BinaryObjectBuilderImpl res = objMap.get(objStart);
 
                 if (res == null) {
-                    res = new BinaryObjectBuilderImpl(this, objStart);
+                    res = new BinaryObjectBuilderImpl(new PortableBuilderReader(this, objStart), objStart);
 
                     objMap.put(objStart, res);
                 }
@@ -510,7 +523,7 @@ public class PortableBuilderReader implements PortablePositionReadable {
                 BinaryObjectBuilderImpl res = objMap.get(pos);
 
                 if (res == null) {
-                    res = new BinaryObjectBuilderImpl(this, pos);
+                    res = new BinaryObjectBuilderImpl(new PortableBuilderReader(this, pos), pos);
 
                     objMap.put(pos, res);
                 }

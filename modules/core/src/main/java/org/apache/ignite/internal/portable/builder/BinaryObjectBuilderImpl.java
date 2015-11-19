@@ -208,7 +208,7 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
             Set<Integer> remainsFlds = null;
 
             if (reader != null) {
-                PortableSchema schema = reader.schema(start);
+                PortableSchema schema = reader.schema();
 
                 Map<Integer, Object> assignedFldsById;
 
@@ -442,7 +442,7 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
             int fieldIdLen = PortableUtils.fieldIdLength(flags);
             int fieldOffsetLen = PortableUtils.fieldOffsetLength(flags);
 
-            PortableSchema schema = reader.schema(start);
+            PortableSchema schema = reader.schema();
 
             Map<Integer, Object> readCache = new HashMap<>();
 
