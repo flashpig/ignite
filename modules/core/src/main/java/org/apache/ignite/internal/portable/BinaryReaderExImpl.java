@@ -304,26 +304,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /**
      * @param fieldId Field ID.
-     * @param cls Map class.
-     * @return Value.
-     * @throws BinaryObjectException In case of error.
-     */
-    @Nullable Map<?, ?> readMap(int fieldId, @Nullable Class<? extends Map> cls)
-        throws BinaryObjectException {
-        if (findFieldById(fieldId)) {
-            Flag flag = checkFlag(MAP);
-
-            if (flag == Flag.NORMAL)
-                return doReadMap(true, cls);
-            else if (flag == Flag.HANDLE)
-                return readHandleField();
-        }
-
-        return null;
-    }
-
-    /**
-     * @param fieldId Field ID.
      * @return Value.
      * @throws BinaryObjectException On case of error.
      */
@@ -1286,30 +1266,54 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /** {@inheritDoc} */
     @Nullable @Override public <K, V> Map<K, V> readMap(String fieldName) throws BinaryObjectException {
-        return (Map<K, V>)readMap(fieldId(fieldName), null);
-    }
-
-    /** {@inheritDoc} */
-    @Nullable @Override public <K, V> Map<K, V> readMap() throws BinaryObjectException {
-        if (checkFlag(MAP) == Flag.NULL)
-            return null;
-
-        return (Map<K, V>)doReadMap(true, null);
+        return findFieldByName(fieldName) ? (Map<K, V>)readMap0(null) : null;
     }
 
     /** {@inheritDoc} */
     @Nullable @Override public <K, V> Map<K, V> readMap(String fieldName, Class<? extends Map<K, V>> mapCls)
         throws BinaryObjectException {
-        return (Map<K, V>)readMap(fieldId(fieldName), mapCls);
+        return findFieldByName(fieldName) ? readMap0(mapCls) : null;
+    }
+
+    /**
+     * @param fieldId Field ID.
+     * @param mapCls Map class.
+     * @return Value.
+     * @throws BinaryObjectException In case of error.
+     */
+    @Nullable Map<?, ?> readMap(int fieldId, @Nullable Class<? extends Map> mapCls) throws BinaryObjectException {
+        return findFieldById(fieldId) ? readMap0(mapCls) : null;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public <K, V> Map<K, V> readMap() throws BinaryObjectException {
+        return readMap0(null);
     }
 
     /** {@inheritDoc} */
     @Nullable @Override public <K, V> Map<K, V> readMap(Class<? extends Map<K, V>> mapCls)
         throws BinaryObjectException {
-        if (checkFlag(MAP) == Flag.NULL)
-            return null;
+        return readMap0(mapCls);
+    }
 
-        return (Map<K, V>)doReadMap(true, mapCls);
+    /**
+     * Internal read map routine.
+     *
+     * @param cls Map class.
+     * @return Value.
+     * @throws BinaryObjectException If failed.
+     */
+    private Map readMap0(@Nullable Class<? extends Map> cls) throws BinaryObjectException {
+        switch (checkFlag(MAP)) {
+            case NORMAL:
+                return (Map)doReadMap(true, cls);
+
+            case HANDLE:
+                return readHandleField();
+
+            default:
+                return null;
+        }
     }
 
     /**
