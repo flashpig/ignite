@@ -1651,8 +1651,12 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                     while (true) {
                         GridCacheEntryEx entry = needEntry ? entryEx(key) : peekEx(key);
 
-                        if (entry == null)
+                        if (entry == null) {
+                            if (!skipVals && ctx.config().isStatisticsEnabled())
+                                ctx.cache().metrics0().onRead(false);
+
                             break;
+                        }
 
                         try {
                             T2<CacheObject, GridCacheVersion> res = entry.innerGetVersioned(null,
