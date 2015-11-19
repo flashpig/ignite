@@ -53,7 +53,6 @@ public class GridCacheRabalancingDelayedPartitionMapExchangeSelfTest extends Gri
     /** */
     private volatile boolean record = false;
 
-
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
         IgniteConfiguration iCfg = super.getConfiguration(gridName);
@@ -79,11 +78,11 @@ public class GridCacheRabalancingDelayedPartitionMapExchangeSelfTest extends Gri
 
             if (msg0 instanceof GridDhtPartitionsFullMessage && record &&
                 ((GridDhtPartitionsFullMessage)msg0).exchangeId() == null) {
-                    rs.putIfAbsent(node.id(), new Runnable() {
-                        @Override public void run() {
-                            DelayableCommunicationSpi.super.sendMessage(node, msg, ackClosure);
-                        }
-                    });
+                rs.putIfAbsent(node.id(), new Runnable() {
+                    @Override public void run() {
+                        DelayableCommunicationSpi.super.sendMessage(node, msg, ackClosure);
+                    }
+                });
             }
             else
                 try {
@@ -127,6 +126,10 @@ public class GridCacheRabalancingDelayedPartitionMapExchangeSelfTest extends Gri
             awaitPartitionMapExchange(true);
         }
 
+        startGrid(4);
+
+        awaitPartitionMapExchange(true);
+
         assert rs.isEmpty();
 
         record = true;
@@ -147,24 +150,22 @@ public class GridCacheRabalancingDelayedPartitionMapExchangeSelfTest extends Gri
 
         U.sleep(10000); // Enough time to process delayed GridDhtPartitionsFullMessages.
 
-        stopGrid(3); // Forces exchange at all nodes.
+        stopGrid(3); // Forces exchange at all nodes and cause assertion failure in case obsolete partition map accepted.
 
         awaitPartitionMapExchange();
 
-        long topVer1 = grid(1).context().cache().internalCache(CACHE).context().affinity().affinityTopologyVersion()
-            .topologyVersion();
-        long topVer2 = grid(2).context().cache().internalCache(CACHE).context().affinity().affinityTopologyVersion()
-            .topologyVersion();
+        long topVer0 = grid(0).context().cache().context().exchange().readyAffinityVersion().topologyVersion();
+        long topVer1 = grid(1).context().cache().context().exchange().readyAffinityVersion().topologyVersion();
+        long topVer2 = grid(2).context().cache().context().exchange().readyAffinityVersion().topologyVersion();
 
-        stopGrid(0); // Should force exchange.
+        stopGrid(4); // Should force exchange in case exchange manager alive.
 
         awaitPartitionMapExchange();
 
         // Will fail in case exchange-workers are dead.
-        assert grid(1).context().cache().internalCache(CACHE).context().affinity().affinityTopologyVersion()
-            .topologyVersion() > topVer1;
-        assert grid(2).context().cache().internalCache(CACHE).context().affinity().affinityTopologyVersion()
-            .topologyVersion() > topVer2;
+        assert grid(0).context().cache().context().exchange().readyAffinityVersion().topologyVersion() > topVer0;
+        assert grid(1).context().cache().context().exchange().readyAffinityVersion().topologyVersion() > topVer1;
+        assert grid(2).context().cache().context().exchange().readyAffinityVersion().topologyVersion() > topVer2;
     }
 
     /** {@inheritDoc} */
