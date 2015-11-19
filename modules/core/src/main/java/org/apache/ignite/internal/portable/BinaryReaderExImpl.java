@@ -286,6 +286,9 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException In case of error.
      */
     public Object unmarshal(int offset) throws BinaryObjectException {
+        // Random reads prevent any further speculations.
+        matching = false;
+
         in.position(offset);
 
         return in.position() >= 0 ? unmarshal() : null;
@@ -383,12 +386,16 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     private <T> T readHandleField() {
         int handle = (in.position() - 1) - in.readInt();
 
+        int retPos = in.position();
+
         Object obj = rCtx.get(handle);
 
         if (obj == null) {
             in.position(handle);
 
             obj = doReadObject();
+
+            in.position(retPos);
         }
 
         return (T)obj;
