@@ -99,6 +99,13 @@ public class PortableSchema implements Externalizable {
     private PortableSchema(int schemaId, List<Integer> fieldIds) {
         this.schemaId = schemaId;
 
+        ids = new int[fieldIds.size()];
+
+        for (int i = 0; i < fieldIds.size(); i++)
+            ids[i] = fieldIds.get(i);
+
+        names = new String[fieldIds.size()];
+
         if (fieldIds.size() <= 8) {
             Iterator<Integer> iter = fieldIds.iterator();
 
@@ -114,15 +121,8 @@ public class PortableSchema implements Externalizable {
         else {
             id0 = id1 = id2 = id3 = id4 = id5 = id6 = id7 = 0;
 
-            ids = new int[fieldIds.size()];
-
-            for (int i = 0; i < fieldIds.size(); i++)
-                ids[i] = fieldIds.get(i);
-
             initializeMap(ids);
         }
-
-        names = new String[fieldIds.size()];
     }
 
     /**
@@ -177,41 +177,7 @@ public class PortableSchema implements Externalizable {
      * @return Field ID.
      */
     public int fieldId(int order) {
-        if (idToOrderData == null) {
-            switch (order) {
-                case 0:
-                    return id0;
-
-                case 1:
-                    return id1;
-
-                case 2:
-                    return id2;
-
-                case 3:
-                    return id3;
-
-                case 4:
-                    return id4;
-
-                case 5:
-                    return id5;
-
-                case 6:
-                    return id6;
-
-                case 7:
-                    return id7;
-
-                default:
-                    assert false : "Should not reach here.";
-
-                    return 0;
-            }
-        }
-        else
-            // TODO: Fix possible out of bounds problem.
-            return ids[order];
+        return order < ids.length ? ids[order] : 0;
     }
 
     /**
@@ -320,37 +286,60 @@ public class PortableSchema implements Externalizable {
         if (in.readBoolean()) {
             int size = 0;
 
+            List<Integer> ids0 = new ArrayList<>();
+
             id0 = in.readInt();
-            if (id0 != 0)
+            if (id0 != 0) {
+                ids0.add(id0);
                 size++;
+            }
 
             id1 = in.readInt();
-            if (id1 != 0)
+            if (id1 != 0) {
+                ids0.add(id1);
                 size++;
+            }
 
             id2 = in.readInt();
-            if (id2 != 0)
+            if (id2 != 0) {
+                ids0.add(id2);
                 size++;
+            }
 
             id3 = in.readInt();
-            if (id3 != 0)
+            if (id3 != 0) {
+                ids0.add(id3);
                 size++;
+            }
 
             id4 = in.readInt();
-            if (id4 != 0)
+            if (id4 != 0) {
+                ids0.add(id4);
                 size++;
+            }
 
             id5 = in.readInt();
-            if (id5 != 0)
+            if (id5 != 0) {
+                ids0.add(id5);
                 size++;
+            }
 
             id6 = in.readInt();
-            if (id6 != 0)
+            if (id6 != 0) {
+                ids0.add(id6);
                 size++;
+            }
 
             id7 = in.readInt();
-            if (id7 != 0)
+            if (id7 != 0) {
+                ids0.add(id7);
                 size++;
+            }
+
+            ids = new int[size];
+
+            for (int i = 0; i < size; i++)
+                ids[i] = ids0.get(i);
 
             names = new String[size];
         }
