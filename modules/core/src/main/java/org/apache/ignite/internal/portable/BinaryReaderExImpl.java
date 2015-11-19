@@ -1664,16 +1664,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 break;
 
             case OBJ:
-                PortableUtils.checkProtocolVersion(in.readByte());
-
-                boolean userType = PortableUtils.isUserType(this.readShort());
-
-                // Skip typeId and hash code.
-                in.position(in.position() + 8);
-
                 PortableClassDescriptor desc = ctx.descriptorForTypeId(userType, typeId, ldr);
-
-                int len = in.readInt();
 
                 in.position(start + hdrLen);
 
@@ -1682,7 +1673,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
                 obj = desc.read(this);
 
-                in.position(start + len);
+                in.position(footerStart + footerLen);
 
                 break;
 
