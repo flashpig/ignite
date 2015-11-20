@@ -17,15 +17,10 @@
 
 package org.apache.ignite.yardstick.cache;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,15 +29,13 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.apache.ignite.cache.query.SqlQuery;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.internal.util.GridUnsafe;
-import org.apache.ignite.lang.IgniteRunnable;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 import org.apache.ignite.yardstick.cache.model.Person;
-import sun.misc.Unsafe;
 
 import static org.apache.ignite.cache.CacheAtomicityMode.ATOMIC;
 import static org.apache.ignite.cache.CacheMode.PARTITIONED;
@@ -105,6 +98,14 @@ public class IgniteTempSqlBenchmark {
         }
 
         System.out.println("Finished populating query data in " + ((System.nanoTime() - start) / 1_000_000) + " ms.");
+
+        System.out.println("Plan : \n" + cache.query(
+            new SqlFieldsQuery("explain select _val from Person where salary >= ? and salary <= ?")
+                .setArgs(Integer.MIN_VALUE, Integer.MAX_VALUE)).getAll());
+
+        System.out.println("Size : \n" + cache.query(
+            new SqlFieldsQuery("select _val from Person where salary >= ? and salary <= ?")
+                .setArgs(1000, 2000)).getAll().size());
 
         for (int i = 0; i < QRY_THREADS; i++) {
             Thread thread = new Thread() {

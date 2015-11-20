@@ -40,6 +40,7 @@ import org.h2.table.IndexColumn;
 import org.h2.table.TableFilter;
 import org.h2.value.Value;
 import org.jetbrains.annotations.Nullable;
+import org.jsr166.LongAdder8;
 
 /**
  * Base class for snapshotable tree indexes.
@@ -51,6 +52,9 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
     /** */
     // private final ThreadLocal<ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row>> snapshot = new ThreadLocal<>();
+
+    /** */
+    private final LongAdder8 size = new LongAdder8();
 
     /**
      * Constructor with index initialization.
@@ -211,7 +215,7 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
     /** {@inheritDoc} */
     @Override public long getRowCountApproximation() {
-        return tree.size();
+        return size.longValue(); // tree.size();
     }
 
     /** {@inheritDoc} */
@@ -372,12 +376,22 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
     /** {@inheritDoc} */
     @Override public GridH2Row put(GridH2Row row) {
-        return tree.put(row, row);
+        GridH2Row old = tree.put(row, row);
+
+        if (old == null)
+            size.increment();
+
+        return old;
     }
 
     /** {@inheritDoc} */
     @Override public GridH2Row remove(SearchRow row) {
-        return tree.remove(comparable(row, 0));
+        GridH2Row old = tree.remove(comparable(row, 0));
+
+        if (old != null)
+            size.decrement();
+
+        return old;
     }
 
     /**
