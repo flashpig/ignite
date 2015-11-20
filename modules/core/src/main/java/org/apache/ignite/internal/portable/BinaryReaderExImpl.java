@@ -395,13 +395,13 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Field.
      */
     private <T> T readHandleField() {
-        int handle = (in.position() - 1) - in.readInt();
-
-        int retPos = in.position();
+        int handle = positionForHandle() - in.readInt();
 
         Object obj = rCtx.get(handle);
 
         if (obj == null) {
+            int retPos = in.position();
+
             in.position(handle);
 
             obj = doReadObject();
@@ -1592,11 +1592,13 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             return new String(doReadByteArray(), UTF_8);
 
         int strLen = in.readInt();
-        int strOff = in.position();
 
-        String res = new String(in.array(), strOff, strLen, UTF_8);
+        int pos = in.position();
 
-        in.position(strOff + strLen);
+        // String will copy necessary array part for us.
+        String res = new String(in.array(), pos, strLen, UTF_8);
+
+        in.position(pos + strLen);
 
         return res;
     }
