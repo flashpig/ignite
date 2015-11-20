@@ -215,6 +215,41 @@ public final class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Objec
     }
 
     /**
+     * @param cctx Context.
+     * @param keys Keys.
+     * @param topVer Topology version.
+     * @return {@code True} if need request keys.
+     */
+    public static boolean needForceKeys(GridCacheContext cctx,
+        Iterable<KeyCacheObject> keys,
+        AffinityTopologyVersion topVer) {
+        GridDhtPartitionTopology top = cctx.dht().topology();
+
+        for (KeyCacheObject key : keys) {
+            GridCacheEntryEx e = cctx.dht().peekEx(key);
+
+            try {
+                if (e != null && !e.isNewLocked())
+                    continue;
+            }
+            catch (GridCacheEntryRemovedException ignore) {
+                // No-op.
+            }
+
+            int part = cctx.affinity().partition(key);
+
+            List<ClusterNode> owners = top.owners(part, topVer);
+
+            if (owners.isEmpty() || (owners.contains(cctx.localNode()) && cctx.rebalanceEnabled()))
+                continue;
+            else
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Initializes this future.
      */
     public void init() {

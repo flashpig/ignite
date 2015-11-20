@@ -143,6 +143,14 @@ public interface GridCachePreloader {
     public IgniteInternalFuture<Object> request(Collection<KeyCacheObject> keys, AffinityTopologyVersion topVer);
 
     /**
+     * @param keys Keys.
+     * @param topVer Topology.
+     * @return Future.
+     */
+    @Nullable public IgniteInternalFuture<?> requestEx(Collection<KeyCacheObject> keys,
+        AffinityTopologyVersion topVer, boolean waitTop);
+
+    /**
      * Force preload process.
      */
     public void forcePreload();

@@ -692,6 +692,42 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
         }
     }
 
+    /** {@inheritDoc} */
+    @Nullable @Override public IgniteInternalFuture<?> requestEx(Collection<KeyCacheObject> keys,
+        AffinityTopologyVersion topVer, boolean waitTop) {
+        IgniteInternalFuture<?> topReadyFut = waitTop ? cctx.affinity().affinityReadyFuturex(topVer) : null;
+
+        if (startFut.isDone() && (topReadyFut == null || topReadyFut.isDone())) {
+            if (!GridDhtForceKeysFuture.needForceKeys(cctx, keys, topVer))
+                return null;
+
+            GridDhtForceKeysFuture<?, ?> fut = new GridDhtForceKeysFuture<>(cctx, topVer, keys, this);
+
+            fut.init();
+
+            return fut;
+        }
+        else {
+            final GridDhtForceKeysFuture<?, ?> fut = new GridDhtForceKeysFuture<>(cctx, topVer, keys, this);
+
+            GridCompoundFuture<Object, Object> compound = new GridCompoundFuture<>();
+
+            compound.add(startFut);
+
+            if (topReadyFut != null)
+                compound.add((IgniteInternalFuture<Object>)topReadyFut);
+            compound.markInitialized();
+
+            compound.listen(new CI1<IgniteInternalFuture<?>>() {
+                @Override public void apply(IgniteInternalFuture<?> syncFut) {
+                    fut.init();
+                }
+            });
+
+            return fut;
+        }
+    }
+
     /**
      * @param keys Keys to request.
      * @return Future for request.

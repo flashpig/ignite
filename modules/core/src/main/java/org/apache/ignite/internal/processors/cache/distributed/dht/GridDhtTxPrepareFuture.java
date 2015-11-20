@@ -905,28 +905,34 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
      * @param keysMap Keys to request.
      * @return Keys request future.
      */
-    private IgniteInternalFuture<Object> forceRebalanceKeys(Map<Integer, Collection<KeyCacheObject>> keysMap) {
+    @Nullable private IgniteInternalFuture<?> forceRebalanceKeys(Map<Integer, Collection<KeyCacheObject>> keysMap) {
         if (F.isEmpty(keysMap))
             return null;
 
-        GridCompoundFuture<Object, Object> compFut = null;
-        IgniteInternalFuture<Object> lastForceFut = null;
+        GridCompoundFuture compFut = null;
+        IgniteInternalFuture lastForceFut = null;
 
         for (Map.Entry<Integer, Collection<KeyCacheObject>> entry : keysMap.entrySet()) {
-            if (lastForceFut != null && compFut == null) {
-                compFut = new GridCompoundFuture();
-
-                compFut.add(lastForceFut);
-            }
-
             int cacheId = entry.getKey();
 
             Collection<KeyCacheObject> keys = entry.getValue();
 
-            lastForceFut = cctx.cacheContext(cacheId).preloader().request(keys, tx.topologyVersion());
+            IgniteInternalFuture fut0 = cctx.cacheContext(cacheId).preloader().requestEx(keys,
+                tx.topologyVersion(),
+                false);
 
-            if (compFut != null)
-                compFut.add(lastForceFut);
+            if (fut0 != null) {
+                if (compFut != null)
+                    compFut.add(fut0);
+                else if (lastForceFut == null)
+                    lastForceFut = fut0;
+                else {
+                    compFut = new GridCompoundFuture();
+
+                    compFut.add(lastForceFut);
+                    compFut.add(fut0);
+                }
+            }
         }
 
         if (compFut != null) {
@@ -934,11 +940,8 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
 
             return compFut;
         }
-        else {
-            assert lastForceFut != null;
-
+        else
             return lastForceFut;
-        }
     }
 
     /**

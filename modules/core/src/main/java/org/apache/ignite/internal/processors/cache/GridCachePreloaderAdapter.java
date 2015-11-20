@@ -144,6 +144,12 @@ public class GridCachePreloaderAdapter implements GridCachePreloader {
     }
 
     /** {@inheritDoc} */
+    @Nullable @Override public IgniteInternalFuture<?> requestEx(Collection<KeyCacheObject> keys,
+        AffinityTopologyVersion topVer, boolean waitTop) {
+        return null;
+    }
+
+    /** {@inheritDoc} */
     @Override public void onInitialExchangeComplete(@Nullable Throwable err) {
         // No-op.
     }
