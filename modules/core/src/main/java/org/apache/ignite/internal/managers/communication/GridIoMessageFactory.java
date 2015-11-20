@@ -709,16 +709,6 @@ public class GridIoMessageFactory implements MessageFactory {
 
                 break;
 
-            case 116:
-                msg = new GridNearSingleGetRequest();
-
-                break;
-
-            case 117:
-                msg = new GridNearSingleGetResponse();
-
-                break;
-
             case 118:
                 msg = new CacheContinuousQueryBatchAck();
 

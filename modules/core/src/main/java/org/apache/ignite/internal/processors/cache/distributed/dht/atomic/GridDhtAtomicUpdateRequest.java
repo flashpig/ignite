@@ -615,13 +615,6 @@ public class GridDhtAtomicUpdateRequest extends GridCacheMessage implements Grid
     }
 
     /**
-     * @return {@code True} if on response flag changed.
-     */
-    public boolean onResponse() {
-        return !onRes && (onRes = true);
-    }
-
-    /**
      * @return Optional arguments for entry processor.
      */
     @Nullable public Object[] invokeArguments() {
