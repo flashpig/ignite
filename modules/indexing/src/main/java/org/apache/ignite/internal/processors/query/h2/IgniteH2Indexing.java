@@ -79,7 +79,6 @@ import org.apache.ignite.internal.processors.query.GridQueryFieldsResult;
 import org.apache.ignite.internal.processors.query.GridQueryFieldsResultAdapter;
 import org.apache.ignite.internal.processors.query.GridQueryIndexDescriptor;
 import org.apache.ignite.internal.processors.query.GridQueryIndexing;
-import org.apache.ignite.internal.processors.query.GridQueryProcessor;
 import org.apache.ignite.internal.processors.query.GridQueryTypeDescriptor;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2IndexBase;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2KeyValueRowOffheap;
@@ -174,7 +173,7 @@ import static org.h2.result.SortOrder.DESCENDING;
 public class IgniteH2Indexing implements GridQueryIndexing {
     /** Default DB options. */
     private static final String DB_OPTIONS = ";LOCK_MODE=3;MULTI_THREADED=1;DB_CLOSE_ON_EXIT=FALSE" +
-        ";DEFAULT_LOCK_TIMEOUT=10000;FUNCTIONS_IN_SCHEMA=true;OPTIMIZE_REUSE_RESULTS=0;QUERY_CACHE_SIZE=100;" +
+        ";DEFAULT_LOCK_TIMEOUT=10000;FUNCTIONS_IN_SCHEMA=true;OPTIMIZE_REUSE_RESULTS=0;QUERY_CACHE_SIZE=0;" +
         "RECOMPILE_ALWAYS=1;MAX_OPERATION_MEMORY=0";
 
     /** Field name for key. */
@@ -2111,9 +2110,6 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         /** */
         private final boolean preferSwapVal;
 
-        /** */
-        private final GridQueryProcessor.Property[] properties;
-
         /**
          * @param type Type descriptor.
          * @param schema Schema.
@@ -2144,11 +2140,6 @@ public class IgniteH2Indexing implements GridQueryIndexing {
             valType = DataType.getTypeFromClass(type.valueClass());
 
             preferSwapVal = schema.ccfg.getMemoryMode() == CacheMemoryMode.OFFHEAP_TIERED;
-
-            properties = new GridQueryProcessor.Property[fields.length];
-
-            for (int i = 0; i < fields.length; i++)
-                properties[i] = type.property(fields[i]);
         }
 
         /** {@inheritDoc} */
@@ -2302,8 +2293,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         /** {@inheritDoc} */
         @Override public Object columnValue(Object key, Object val, int col) {
             try {
-                return properties[col].value(key, val);
-                //return type.value(fields[col], key, val);
+                return type.value(fields[col], key, val);
             }
             catch (IgniteCheckedException e) {
                 throw DbException.convert(e);

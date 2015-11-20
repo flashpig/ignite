@@ -60,7 +60,6 @@ import org.apache.ignite.internal.processors.cache.query.CacheQueryFuture;
 import org.apache.ignite.internal.processors.cache.query.CacheQueryType;
 import org.apache.ignite.internal.processors.cache.query.GridCacheTwoStepQuery;
 import org.apache.ignite.internal.util.GridSpinBusyLock;
-import org.apache.ignite.internal.util.GridUnsafe;
 import org.apache.ignite.internal.util.future.GridCompoundFuture;
 import org.apache.ignite.internal.util.future.GridFinishedFuture;
 import org.apache.ignite.internal.util.lang.GridCloseableIterator;
@@ -79,7 +78,6 @@ import org.apache.ignite.lang.IgniteFuture;
 import org.apache.ignite.spi.indexing.IndexingQueryFilter;
 import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
-import sun.misc.Unsafe;
 
 import static org.apache.ignite.events.EventType.EVT_CACHE_QUERY_EXECUTED;
 import static org.apache.ignite.internal.IgniteComponentType.INDEXING;
@@ -1541,7 +1539,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
     /**
      *
      */
-    public abstract static class Property {
+    private abstract static class Property {
         /**
          * Gets this property value from the given object.
          *
@@ -1563,12 +1561,6 @@ public class GridQueryProcessor extends GridProcessorAdapter {
         public abstract Class<?> type();
     }
 
-    enum FieldType {
-        INT,
-        DOUBLE,
-        OBJ
-    }
-
     /**
      * Description of type property.
      */
@@ -1588,12 +1580,6 @@ public class GridQueryProcessor extends GridProcessorAdapter {
         /** */
         private boolean key;
 
-        private static Unsafe unsafe = GridUnsafe.unsafe();
-
-        private long off;
-
-        private FieldType type;
-
         /**
          * Constructor.
          *
@@ -1609,21 +1595,6 @@ public class GridQueryProcessor extends GridProcessorAdapter {
             ((AccessibleObject) member).setAccessible(true);
 
             field = member instanceof Field;
-
-            if (field) {
-                Field field0 = (Field) member;
-
-                Class<?> t = field0.getType();
-
-                if (t.equals(int.class))
-                    type = FieldType.INT;
-                else if (t.equals(double.class))
-                    type = FieldType.DOUBLE;
-                else
-                    type = FieldType.OBJ;
-
-                off = unsafe.objectFieldOffset(field0);
-            }
         }
 
         /** {@inheritDoc} */
@@ -1638,18 +1609,9 @@ public class GridQueryProcessor extends GridProcessorAdapter {
 
             try {
                 if (field) {
-                    switch (type) {
-                        case INT:
-                            return unsafe.getInt(x, off);
-                        case DOUBLE:
-                            return unsafe.getDouble(x, off);
-                        case OBJ:
-                            return unsafe.getObject(x, off);
-                    }
-                    return null;
-//                    Field field = (Field)member;
-//
-//                    return field.get(x);
+                    Field field = (Field)member;
+
+                    return field.get(x);
                 }
                 else {
                     Method mtd = (Method)member;
@@ -1843,11 +1805,6 @@ public class GridQueryProcessor extends GridProcessorAdapter {
         /** {@inheritDoc} */
         @Override public Map<String, Class<?>> fields() {
             return fields;
-        }
-
-        @Override
-        public Property property(String name) {
-            return props.get(name);
         }
 
         /** {@inheritDoc} */

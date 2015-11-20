@@ -38,8 +38,6 @@ public interface GridQueryTypeDescriptor {
      */
     public Map<String, Class<?>> fields();
 
-    public GridQueryProcessor.Property property(String name);
-
     /**
      * Gets field value for given key and value.
      *
