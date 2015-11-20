@@ -201,6 +201,7 @@ public class IgniteTempSqlBenchmark {
         System.out.println("Warmup finished");
 
         long total = 0;
+        long total2 = 0;
         long cnt = 0;
 
         long endTime = System.currentTimeMillis() + 90_000;
@@ -218,12 +219,13 @@ public class IgniteTempSqlBenchmark {
             long ops2 = (long)((p2 - p1) / 5f);
 
             total += ops;
+            total2 += ops2;
             cnt++;
 
             System.out.println("Queries: " + ops + " Puts: " + ops2);
         }
 
-        System.out.println("Result: " + total / (float)cnt);
+        System.out.println("Result: " + total / (float)cnt + " " + total2 / (float)cnt);
 
         //ignite.compute().run(new Exit());
 
