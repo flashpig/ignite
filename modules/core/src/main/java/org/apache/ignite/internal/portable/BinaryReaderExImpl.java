@@ -1405,41 +1405,49 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             case HANDLE: {
                 int handlePos = start - in.readInt();
 
-                BinaryObject obj = rCtx.get(handlePos);
+                Object obj = rCtx.get(handlePos);
 
-                if (obj != null)
-                    return obj;
+                if (obj == null) {
+                    int retPos = in.position();
 
-                in.position(handlePos);
+                    streamPosition(handlePos);
 
-                return unmarshal();
+                    obj = unmarshal();
+
+                    streamPosition(retPos);
+                }
+
+                return obj;
             }
 
-            case OBJ:
+            case OBJ: {
                 PortableUtils.checkProtocolVersion(in.readByte());
+
+                int len = PortableUtils.length(in, start);
 
                 BinaryObjectEx po;
 
                 if (detach) {
-                    in.position(start + GridPortableMarshaller.TOTAL_LEN_POS);
-
-                    int len = in.readInt();
-
-                    in.position(start);
+                    // In detach mode we simply copy object's content.
+                    streamPosition(start);
 
                     po = new BinaryObjectImpl(ctx, in.readByteArray(len), 0);
                 }
-                else
-                    po = in.offheapPointer() > 0
-                        ? new BinaryObjectOffheapImpl(ctx, in.offheapPointer(), start,
-                        in.remaining() + in.position())
-                        : new BinaryObjectImpl(ctx, in.array(), start);
+                else {
+                    // TODO: Rework offheaps.
+                    if (in.offheapPointer() == 0)
+                        po = new BinaryObjectImpl(ctx, in.array(), start);
+                    else
+                        po = new BinaryObjectOffheapImpl(ctx, in.offheapPointer(), start,
+                            in.remaining() + in.position());
+
+                    streamPosition(start + po.length());
+                }
 
                 rCtx.put(start, po);
 
-                in.position(start + po.length());
-
                 return po;
+            }
 
             case BYTE:
                 return in.readByte();
@@ -1544,20 +1552,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 return doReadClass();
 
             case OPTM_MARSH:
-                int len = in.readInt();
-
-                ByteArrayInputStream input = new ByteArrayInputStream(in.array(), in.position(), len);
-
-                Object obj;
-
-                try {
-                    obj = ctx.optimizedMarsh().unmarshal(input, null);
-                }
-                catch (IgniteCheckedException e) {
-                    throw new BinaryObjectException("Failed to unmarshal object with optmMarsh marshaller", e);
-                }
-
-                return obj;
+                return doReadOptimized();
 
             default:
                 throw new BinaryObjectException("Invalid flag value: " + flag);
@@ -1863,18 +1858,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 break;
 
             case OPTM_MARSH:
-                int dataLen = in.readInt();
-
-                ByteArrayInputStream input = new ByteArrayInputStream(in.array(), in.position(), dataLen);
-
-                try {
-                    obj = ctx.optimizedMarsh().unmarshal(input, null);
-                }
-                catch (IgniteCheckedException e) {
-                    throw new BinaryObjectException("Failed to unmarshal object with optimized marshaller", e);
-                }
-
-                streamPosition(in.position() + dataLen);
+                obj = doReadOptimized();
 
                 break;
 
@@ -1883,6 +1867,27 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         }
 
         return obj;
+    }
+
+    /**
+     * Read object serialized using optimized marshaller.
+     *
+     * @return Result.
+     */
+    private Object doReadOptimized() {
+        int len = in.readInt();
+
+        ByteArrayInputStream input = new ByteArrayInputStream(in.array(), in.position(), len);
+
+        try {
+            return ctx.optimizedMarsh().unmarshal(input, null);
+        }
+        catch (IgniteCheckedException e) {
+            throw new BinaryObjectException("Failed to unmarshal object with optimized marshaller", e);
+        }
+        finally {
+            streamPosition(in.position() + len);
+        }
     }
 
     /**
