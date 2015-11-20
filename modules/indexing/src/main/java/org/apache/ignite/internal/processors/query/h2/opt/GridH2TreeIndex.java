@@ -22,12 +22,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableMap;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.ignite.internal.util.GridEmptyIterator;
-import org.apache.ignite.internal.util.offheap.unsafe.GridOffHeapSnapTreeMap;
 import org.apache.ignite.internal.util.offheap.unsafe.GridUnsafeGuard;
-import org.apache.ignite.internal.util.snaptree.SnapTreeMap;
 import org.apache.ignite.internal.util.typedef.internal.SB;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.spi.indexing.IndexingQueryFilter;
@@ -81,7 +79,19 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
         final GridH2RowDescriptor desc = tbl.rowDescriptor();
 
-        tree = new ConcurrentSkipListMap<>(this);
+        tree = new ConcurrentSkipListMap<>(
+            new Comparator<GridSearchRowPointer>() {
+                @Override public int compare(GridSearchRowPointer o1, GridSearchRowPointer o2) {
+                    if (o1 instanceof ComparableRow)
+                        return ((ComparableRow)o1).compareTo(o2);
+
+                    if (o2 instanceof ComparableRow)
+                        return -((ComparableRow)o2).compareTo(o1);
+
+                    return compareRows(o1, o2);
+                }
+            }
+        );
 //        tree = desc == null || desc.memory() == null ? new SnapTreeMap<GridSearchRowPointer, GridH2Row>(this) {
 //            @Override protected void afterNodeUpdate_nl(Node<GridSearchRowPointer, GridH2Row> node, Object val) {
 //                if (val != null)
@@ -374,7 +384,7 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
      * Comparable row with bias. Will be used for queries to have correct bounds (in case of multicolumn index
      * and query on few first columns we will multiple equal entries in tree).
      */
-    private class ComparableRow implements GridSearchRowPointer, Comparable<SearchRow> {
+    private final class ComparableRow implements GridSearchRowPointer, Comparable<SearchRow> {
         /** */
         private final SearchRow row;
 
