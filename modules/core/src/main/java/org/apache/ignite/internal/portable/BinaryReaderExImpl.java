@@ -266,7 +266,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             schema = null;
         }
 
-        in.position(start);
+        streamPosition(start);
     }
 
     /**
@@ -297,10 +297,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @throws BinaryObjectException In case of error.
      */
     public Object unmarshal(int offset) throws BinaryObjectException {
-        // Random reads prevent any further speculations.
-        matching = false;
-
-        in.position(offset);
+        streamPositionRandom(offset);
 
         return in.position() >= 0 ? unmarshal() : null;
     }
@@ -395,18 +392,18 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
      * @return Field.
      */
     private <T> T readHandleField() {
-        int handle = positionForHandle() - in.readInt();
+        int handlePos = positionForHandle() - in.readInt();
 
-        Object obj = rCtx.get(handle);
+        Object obj = rCtx.get(handlePos);
 
         if (obj == null) {
             int retPos = in.position();
 
-            in.position(handle);
+            streamPosition(handlePos);
 
             obj = doReadObject();
 
-            in.position(retPos);
+            streamPosition(retPos);
         }
 
         return (T)obj;
@@ -1387,7 +1384,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
     /** {@inheritDoc} */
     @Override public BinaryRawReader rawReader() {
-        in.position(rawOff);
+        streamPositionRandom(rawOff);
 
         return this;
     }
@@ -1405,17 +1402,18 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             case NULL:
                 return null;
 
-            case HANDLE:
-                int handle = start - in.readInt();
+            case HANDLE: {
+                int handlePos = start - in.readInt();
 
-                BinaryObject handledPo = rCtx.get(handle);
+                BinaryObject obj = rCtx.get(handlePos);
 
-                if (handledPo != null)
-                    return handledPo;
+                if (obj != null)
+                    return obj;
 
-                in.position(handle);
+                in.position(handlePos);
 
                 return unmarshal();
+            }
 
             case OBJ:
                 PortableUtils.checkProtocolVersion(in.readByte());
@@ -1598,7 +1596,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
         // String will copy necessary array part for us.
         String res = new String(in.array(), pos, strLen, UTF_8);
 
-        in.position(pos + strLen);
+        streamPosition(pos + strLen);
 
         return res;
     }
@@ -1659,18 +1657,18 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 break;
 
             case HANDLE:
-                int handle = start - in.readInt();
+                int handlePos = start - in.readInt();
 
-                obj = rCtx.get(handle);
+                obj = rCtx.get(handlePos);
 
                 if (obj == null) {
                     int retPos = in.position();
 
-                    in.position(handle);
+                    streamPosition(handlePos);
 
                     obj = doReadObject();
 
-                    in.position(retPos);
+                    streamPosition(retPos);
                 }
 
                 break;
@@ -1678,14 +1676,14 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
             case OBJ:
                 PortableClassDescriptor desc = ctx.descriptorForTypeId(userType, typeId, ldr);
 
-                in.position(start + hdrLen);
+                streamPosition(start + hdrLen);
 
                 if (desc == null)
                     throw new BinaryInvalidTypeException("Unknown type ID: " + typeId);
 
                 obj = desc.read(this);
 
-                in.position(footerStart + footerLen);
+                streamPosition(footerStart + footerLen);
 
                 break;
 
@@ -1876,7 +1874,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                     throw new BinaryObjectException("Failed to unmarshal object with optimized marshaller", e);
                 }
 
-                in.position(in.position() + dataLen);
+                streamPosition(in.position() + dataLen);
 
                 break;
 
@@ -2299,7 +2297,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
             int pos = in.position();
 
-            in.position(in.position() + len);
+            streamPosition(in.position() + len);
 
             int start = in.readInt();
 
@@ -2593,7 +2591,8 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
             int pos = start + PortableUtils.fieldOffsetRelative(in, offsetPos, fieldOffsetLen);
 
-            in.position(pos);
+            // TODO: Convert to unsafe mode.
+            streamPosition(pos);
 
             return true;
         }
@@ -2624,13 +2623,34 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 int pos = start + PortableUtils.fieldOffsetRelative(in, searchPos + PortableUtils.FIELD_ID_LEN,
                     fieldOffsetLen);
 
-                in.position(pos);
+                // TODO: Convert to unsafe mode.
+                streamPosition(pos);
 
                 return true;
             }
 
             searchPos += PortableUtils.FIELD_ID_LEN + fieldOffsetLen;
         }
+    }
+
+    /**
+     * Set stream position.
+     *
+     * @param pos Position.
+     */
+    private void streamPosition(int pos) {
+        in.position(pos);
+    }
+
+    /**
+     * Set stream position as a part of some random read. Further speculations will be disabled after this call.
+     *
+     * @param pos Position.
+     */
+    private void streamPositionRandom(int pos) {
+        streamPosition(pos);
+
+        matching = false;
     }
 
     /** {@inheritDoc} */
@@ -2699,7 +2719,7 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
     @Override public int skipBytes(int n) throws IOException {
         int toSkip = Math.min(in.remaining(), n);
 
-        in.position(in.position() + toSkip);
+        streamPositionRandom(in.position() + toSkip);
 
         return toSkip;
     }
