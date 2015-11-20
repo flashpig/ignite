@@ -200,7 +200,7 @@ public interface GridDhtPartitionTopology {
      * @return Local partition map if there were evictions or {@code null} otherwise.
      */
     public GridDhtPartitionMap2 update(@Nullable GridDhtPartitionExchangeId exchId,
-        GridDhtPartitionFullMap2 partMap,
+        GridDhtPartitionFullMap partMap,
         @Nullable Map<Integer, Long> cntrMap);
 
     /**
