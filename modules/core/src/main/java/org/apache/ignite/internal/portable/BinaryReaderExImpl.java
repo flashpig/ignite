@@ -1434,7 +1434,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                     po = new BinaryObjectImpl(ctx, in.readByteArray(len), 0);
                 }
                 else {
-                    // TODO: Rework offheaps.
                     if (in.offheapPointer() == 0)
                         po = new BinaryObjectImpl(ctx, in.array(), start);
                     else
@@ -2500,9 +2499,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 switch (confirm) {
                     case CONFIRMED:
                         // The best case: got order without ID calculation and (ID -> order) lookup.
-                        order = expOrder;
+                        if (expOrder == 0)
+                            streamPosition(start + hdrLen);
 
-                        break;
+                        return true;
 
                     case REJECTED:
                         // Rejected, no more speculations are possible. Fallback to the slowest scenario.
@@ -2596,7 +2596,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
             int pos = start + PortableUtils.fieldOffsetRelative(in, offsetPos, fieldOffsetLen);
 
-            // TODO: Convert to unsafe mode.
             streamPosition(pos);
 
             return true;
@@ -2628,7 +2627,6 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                 int pos = start + PortableUtils.fieldOffsetRelative(in, searchPos + PortableUtils.FIELD_ID_LEN,
                     fieldOffsetLen);
 
-                // TODO: Convert to unsafe mode.
                 streamPosition(pos);
 
                 return true;
