@@ -2523,7 +2523,10 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
                             // IDs matched, cache field name inside schema.
                             schema.clarifyFieldName(expOrder, name);
 
-                            order = expOrder;
+                            if (expOrder == 0)
+                                streamPosition(start + hdrLen);
+
+                            return true;
                         }
                         else {
                             // No match, stop further speculations.
@@ -2566,8 +2569,12 @@ public class BinaryReaderExImpl implements BinaryReader, BinaryRawReaderEx, Obje
 
                 int realId = schema.fieldId(expOrder);
 
-                if (realId == id)
-                    order = expOrder;
+                if (realId == id) {
+                    if (expOrder == 0)
+                        streamPosition(start + hdrLen);
+
+                    return true;
+                }
                 else {
                     // Mismatch detected, no need for further speculations.
                     matching = false;
