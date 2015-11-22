@@ -874,6 +874,7 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
      * @param skipStore Skip store flag.
      * @return Lock future.
      */
+    @SuppressWarnings("unchecked")
     IgniteInternalFuture<Exception> lockAllAsync(
         final GridCacheContext<?, ?> cacheCtx,
         @Nullable final GridNearTxLocal tx,
@@ -891,13 +892,17 @@ public class GridDhtColocatedCache<K, V> extends GridDhtTransactionalCacheAdapte
     ) {
         assert keys != null;
 
-        IgniteInternalFuture<Object> keyFut = ctx.dht().dhtPreloader().request(keys, topVer);
+        IgniteInternalFuture<Object> keyFut = (IgniteInternalFuture)ctx.dht().dhtPreloader().request(
+            keys,
+            topVer,
+            true);
 
         // Prevent embedded future creation if possible.
-        if (keyFut.isDone()) {
+        if (keyFut == null || keyFut.isDone()) {
             try {
                 // Check for exception.
-                keyFut.get();
+                if (keyFut != null)
+                    keyFut.get();
 
                 return lockAllAsync0(cacheCtx,
                     tx,

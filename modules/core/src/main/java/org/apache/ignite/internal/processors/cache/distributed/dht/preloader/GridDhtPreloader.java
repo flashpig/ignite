@@ -693,7 +693,7 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public IgniteInternalFuture<?> requestEx(Collection<KeyCacheObject> keys,
+    @Nullable @Override public IgniteInternalFuture<?> request(Collection<KeyCacheObject> keys,
         AffinityTopologyVersion topVer, boolean waitTop) {
         IgniteInternalFuture<?> topReadyFut = waitTop ? cctx.affinity().affinityReadyFuturex(topVer) : null;
 
@@ -726,49 +726,6 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
 
             return fut;
         }
-    }
-
-    /**
-     * @param keys Keys to request.
-     * @return Future for request.
-     */
-    @SuppressWarnings( {"unchecked", "RedundantCast"})
-    @Override public GridDhtFuture<Object> request(Collection<KeyCacheObject> keys, AffinityTopologyVersion topVer) {
-        final GridDhtForceKeysFuture<?, ?> fut = new GridDhtForceKeysFuture<>(cctx, topVer, keys, this);
-
-        IgniteInternalFuture<?> topReadyFut = cctx.affinity().affinityReadyFuturex(topVer);
-
-        if (startFut.isDone() && topReadyFut == null)
-            fut.init();
-        else {
-            if (topReadyFut == null)
-                startFut.listen(new CI1<IgniteInternalFuture<?>>() {
-                    @Override public void apply(IgniteInternalFuture<?> syncFut) {
-                        cctx.kernalContext().closure().runLocalSafe(
-                            new GridPlainRunnable() {
-                                @Override public void run() {
-                                    fut.init();
-                                }
-                            });
-                    }
-                });
-            else {
-                GridCompoundFuture<Object, Object> compound = new GridCompoundFuture<>();
-
-                compound.add((IgniteInternalFuture<Object>)startFut);
-                compound.add((IgniteInternalFuture<Object>)topReadyFut);
-
-                compound.markInitialized();
-
-                compound.listen(new CI1<IgniteInternalFuture<?>>() {
-                    @Override public void apply(IgniteInternalFuture<?> syncFut) {
-                        fut.init();
-                    }
-                });
-            }
-        }
-
-        return (GridDhtFuture)fut;
     }
 
     /** {@inheritDoc} */

@@ -208,43 +208,51 @@ public final class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Col
      * @param keys Keys.
      */
     private void map(final LinkedHashMap<KeyCacheObject, Boolean> keys) {
-        GridDhtFuture<Object> fut = cctx.dht().dhtPreloader().request(keys.keySet(), topVer);
+        GridDhtFuture<Object> fut = (GridDhtFuture)cctx.dht().dhtPreloader().request(keys.keySet(), topVer, true);
 
-        if (!F.isEmpty(fut.invalidPartitions()))
-            retries.addAll(fut.invalidPartitions());
+        if (fut != null) {
+            if (!F.isEmpty(fut.invalidPartitions()))
+                retries.addAll(fut.invalidPartitions());
 
-        add(new GridEmbeddedFuture<>(
-            new IgniteBiClosure<Object, Exception, Collection<GridCacheEntryInfo>>() {
-                @Override public Collection<GridCacheEntryInfo> apply(Object o, Exception e) {
-                    if (e != null) { // Check error first.
-                        if (log.isDebugEnabled())
-                            log.debug("Failed to request keys from preloader [keys=" + keys + ", err=" + e + ']');
+            add(new GridEmbeddedFuture<>(
+                new IgniteBiClosure<Object, Exception, Collection<GridCacheEntryInfo>>() {
+                    @Override public Collection<GridCacheEntryInfo> apply(Object o, Exception e) {
+                        if (e != null) { // Check error first.
+                            if (log.isDebugEnabled())
+                                log.debug("Failed to request keys from preloader [keys=" + keys + ", err=" + e + ']');
 
-                        onDone(e);
-                    }
-
-                    LinkedHashMap<KeyCacheObject, Boolean> mappedKeys = U.newLinkedHashMap(keys.size());
-
-                    // Assign keys to primary nodes.
-                    for (Map.Entry<KeyCacheObject, Boolean> key : keys.entrySet()) {
-                        int part = cctx.affinity().partition(key.getKey());
-
-                        if (!retries.contains(part)) {
-                            if (!map(key.getKey(), parts))
-                                retries.add(part);
-                            else
-                                mappedKeys.put(key.getKey(), key.getValue());
+                            onDone(e);
                         }
+
+                        map0(keys);
+
+                        // Finish this one.
+                        return Collections.emptyList();
                     }
+                },
+                fut));
+        }
+        else
+            map0(keys);
+    }
 
-                    // Add new future.
-                    add(getAsync(mappedKeys));
+    private void map0(LinkedHashMap<KeyCacheObject, Boolean> keys) {
+        LinkedHashMap<KeyCacheObject, Boolean> mappedKeys = U.newLinkedHashMap(keys.size());
 
-                    // Finish this one.
-                    return Collections.emptyList();
-                }
-            },
-            fut));
+        // Assign keys to primary nodes.
+        for (Map.Entry<KeyCacheObject, Boolean> key : keys.entrySet()) {
+            int part = cctx.affinity().partition(key.getKey());
+
+            if (!retries.contains(part)) {
+                if (!map(key.getKey(), parts))
+                    retries.add(part);
+                else
+                    mappedKeys.put(key.getKey(), key.getValue());
+            }
+        }
+
+        // Add new future.
+        add(getAsync(mappedKeys));
     }
 
     /**

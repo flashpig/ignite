@@ -374,14 +374,14 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
      * @param req Request.
      */
     protected final void processDhtLockRequest(final UUID nodeId, final GridDhtLockRequest req) {
-        IgniteInternalFuture<Object> keyFut = F.isEmpty(req.keys()) ? null :
-            ctx.dht().dhtPreloader().request(req.keys(), req.topologyVersion());
+        IgniteInternalFuture<?> keyFut = F.isEmpty(req.keys()) ? null :
+            ctx.dht().dhtPreloader().request(req.keys(), req.topologyVersion(), false);
 
         if (keyFut == null || keyFut.isDone())
             processDhtLockRequest0(nodeId, req);
         else {
-            keyFut.listen(new CI1<IgniteInternalFuture<Object>>() {
-                @Override public void apply(IgniteInternalFuture<Object> t) {
+            keyFut.listen(new CI1<IgniteInternalFuture<?>>() {
+                @Override public void apply(IgniteInternalFuture<?> t) {
                     processDhtLockRequest0(nodeId, req);
                 }
             });

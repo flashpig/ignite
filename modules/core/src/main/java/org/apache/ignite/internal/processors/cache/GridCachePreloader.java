@@ -134,20 +134,11 @@ public interface GridCachePreloader {
     public IgniteInternalFuture<Boolean> rebalanceFuture();
 
     /**
-     * Requests that preloader sends the request for the key.
-     *
-     * @param keys Keys to request.
-     * @param topVer Topology version, {@code -1} if not required.
-     * @return Future to complete when all keys are preloaded.
-     */
-    public IgniteInternalFuture<Object> request(Collection<KeyCacheObject> keys, AffinityTopologyVersion topVer);
-
-    /**
      * @param keys Keys.
      * @param topVer Topology.
      * @return Future.
      */
-    @Nullable public IgniteInternalFuture<?> requestEx(Collection<KeyCacheObject> keys,
+    @Nullable public IgniteInternalFuture<?> request(Collection<KeyCacheObject> keys,
         AffinityTopologyVersion topVer, boolean waitTop);
 
     /**

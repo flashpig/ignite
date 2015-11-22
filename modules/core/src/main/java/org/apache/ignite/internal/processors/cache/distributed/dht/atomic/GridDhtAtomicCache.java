@@ -1160,7 +1160,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
         final GridNearAtomicUpdateRequest req,
         final CI2<GridNearAtomicUpdateRequest, GridNearAtomicUpdateResponse> completionCb
     ) {
-        IgniteInternalFuture<?> forceFut = preldr.requestEx(req.keys(), req.topologyVersion(), false);
+        IgniteInternalFuture<?> forceFut = preldr.request(req.keys(), req.topologyVersion(), false);
 
         if (forceFut == null || forceFut.isDone())
             updateAllAsyncInternal0(nodeId, req, completionCb);

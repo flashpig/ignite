@@ -917,7 +917,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
 
             Collection<KeyCacheObject> keys = entry.getValue();
 
-            IgniteInternalFuture fut0 = cctx.cacheContext(cacheId).preloader().requestEx(keys,
+            IgniteInternalFuture fut0 = cctx.cacheContext(cacheId).preloader().request(keys,
                 tx.topologyVersion(),
                 false);
 
