@@ -247,7 +247,7 @@ public final class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Col
         for (Map.Entry<KeyCacheObject, Boolean> key : keys.entrySet()) {
             int part = cctx.affinity().partition(key.getKey());
 
-            if (!retries.contains(part)) {
+            if (retries == null || !retries.contains(part)) {
                 if (!map(key.getKey(), parts)) {
                     if (retries == null)
                         retries = new HashSet<>();
