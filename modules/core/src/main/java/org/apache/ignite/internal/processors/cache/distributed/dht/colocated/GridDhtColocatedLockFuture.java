@@ -66,7 +66,6 @@ import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
-import org.apache.ignite.lang.IgniteClosure;
 import org.apache.ignite.lang.IgniteUuid;
 import org.apache.ignite.transactions.TransactionIsolation;
 import org.jetbrains.annotations.Nullable;
@@ -144,6 +143,9 @@ public final class GridDhtColocatedLockFuture extends GridCompoundIdentityFuture
     /** Skip store flag. */
     private final boolean skipStore;
 
+    /** Keep binary. */
+    private final boolean keepBinary;
+
     /**
      * @param cctx Registry.
      * @param keys Keys to lock.
@@ -164,7 +166,8 @@ public final class GridDhtColocatedLockFuture extends GridCompoundIdentityFuture
         long timeout,
         long accessTtl,
         CacheEntryPredicate[] filter,
-        boolean skipStore) {
+        boolean skipStore,
+        boolean keepBinary) {
         super(cctx.kernalContext(), CU.boolReducer());
 
         assert keys != null;
@@ -178,6 +181,7 @@ public final class GridDhtColocatedLockFuture extends GridCompoundIdentityFuture
         this.accessTtl = accessTtl;
         this.filter = filter;
         this.skipStore = skipStore;
+        this.keepBinary = keepBinary;
 
         ignoreInterrupts(true);
 
@@ -870,6 +874,7 @@ public final class GridDhtColocatedLockFuture extends GridCompoundIdentityFuture
                                         inTx() ? tx.taskNameHash() : 0,
                                         read ? accessTtl : -1L,
                                         skipStore,
+                                        keepBinary,
                                         clientFirst,
                                         cctx.deploymentEnabled());
 
@@ -1040,7 +1045,8 @@ public final class GridDhtColocatedLockFuture extends GridCompoundIdentityFuture
             timeout,
             accessTtl,
             filter,
-            skipStore);
+            skipStore,
+            keepBinary);
 
         // Add new future.
         add(new GridEmbeddedFuture<>(
@@ -1450,7 +1456,8 @@ public final class GridDhtColocatedLockFuture extends GridCompoundIdentityFuture
                                 false,
                                 CU.subjectId(tx, cctx.shared()),
                                 null,
-                                tx == null ? null : tx.resolveTaskName());
+                                tx == null ? null : tx.resolveTaskName(),
+                                keepBinary);
                         }
 
                         i++;
