@@ -74,8 +74,8 @@ public class IgniteTempSqlBenchmark {
 
         final Ignite ignite = Ignition.start(cfg);
 
-        final int QRY_THREADS = 1;
-        final int PUT_THREADS = 0;
+        final int QRY_THREADS = 10;
+        final int PUT_THREADS = 10;
 
         final AtomicLong qryCntr = new AtomicLong();
         final AtomicLong putCntr = new AtomicLong();
@@ -185,8 +185,6 @@ public class IgniteTempSqlBenchmark {
 
                         putCntr.incrementAndGet();
                     }
-
-
                 }
             };
 
