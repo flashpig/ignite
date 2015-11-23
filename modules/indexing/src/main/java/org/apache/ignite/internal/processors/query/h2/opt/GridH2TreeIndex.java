@@ -25,7 +25,9 @@ import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.ignite.internal.util.GridEmptyIterator;
+import org.apache.ignite.internal.util.offheap.unsafe.GridOffHeapSnapTreeMap;
 import org.apache.ignite.internal.util.offheap.unsafe.GridUnsafeGuard;
+import org.apache.ignite.internal.util.snaptree.SnapTreeMap;
 import org.apache.ignite.internal.util.typedef.internal.SB;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.spi.indexing.IndexingQueryFilter;
@@ -51,10 +53,13 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
     protected final ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> tree;
 
     /** */
-    // private final ThreadLocal<ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row>> snapshot = new ThreadLocal<>();
+    private final ThreadLocal<ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row>> snapshot = new ThreadLocal<>();
 
     /** */
     private final LongAdder8 size = new LongAdder8();
+
+    /** */
+    private final boolean snapshotEnabled;
 
     /**
      * Constructor with index initialization.
@@ -83,53 +88,49 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
         final GridH2RowDescriptor desc = tbl.rowDescriptor();
 
-        tree = new ConcurrentSkipListMap<>(
-            new Comparator<GridSearchRowPointer>() {
-                @Override public int compare(GridSearchRowPointer o1, GridSearchRowPointer o2) {
-                    if (o1 instanceof ComparableRow)
-                        return ((ComparableRow)o1).compareTo(o2);
+        if (desc == null || desc.memory() == null) {
+            snapshotEnabled = false;
 
-                    if (o2 instanceof ComparableRow)
-                        return -((ComparableRow)o2).compareTo(o1);
+            tree = new ConcurrentSkipListMap<>(
+                new Comparator<GridSearchRowPointer>() {
+                    @Override public int compare(GridSearchRowPointer o1, GridSearchRowPointer o2) {
+                        if (o1 instanceof ComparableRow)
+                            return ((ComparableRow)o1).compareTo(o2);
 
-                    return compareRows(o1, o2);
+                        if (o2 instanceof ComparableRow)
+                            return -((ComparableRow)o2).compareTo(o1);
+
+                        return compareRows(o1, o2);
+                    }
                 }
-            }
-        );
-//        tree = desc == null || desc.memory() == null ? new SnapTreeMap<GridSearchRowPointer, GridH2Row>(this) {
-//            @Override protected void afterNodeUpdate_nl(Node<GridSearchRowPointer, GridH2Row> node, Object val) {
-//                if (val != null)
-//                    node.key = (GridSearchRowPointer)val;
-//            }
-//
-//            @Override protected Comparable<? super GridSearchRowPointer> comparable(Object key) {
-//                if (key instanceof ComparableRow)
-//                    return (Comparable<? super SearchRow>)key;
-//
-//                return super.comparable(key);
-//            }
-//        } : new GridOffHeapSnapTreeMap<GridSearchRowPointer, GridH2Row>(desc, desc, desc.memory(), desc.guard(), this) {
-//            @Override protected void afterNodeUpdate_nl(long node, GridH2Row val) {
-//                final long oldKey = keyPtr(node);
-//
-//                if (val != null) {
-//                    key(node, val);
-//
-//                    guard.finalizeLater(new Runnable() {
-//                        @Override public void run() {
-//                            desc.createPointer(oldKey).decrementRefCount();
-//                        }
-//                    });
-//                }
-//            }
-//
-//            @Override protected Comparable<? super GridSearchRowPointer> comparable(Object key) {
-//                if (key instanceof ComparableRow)
-//                    return (Comparable<? super SearchRow>)key;
-//
-//                return super.comparable(key);
-//            }
-//        };
+            );
+        }
+        else {
+            snapshotEnabled = true;
+
+            tree = new GridOffHeapSnapTreeMap<GridSearchRowPointer, GridH2Row>(desc, desc, desc.memory(), desc.guard(), this) {
+                @Override protected void afterNodeUpdate_nl(long node, GridH2Row val) {
+                    final long oldKey = keyPtr(node);
+
+                    if (val != null) {
+                        key(node, val);
+
+                        guard.finalizeLater(new Runnable() {
+                            @Override public void run() {
+                                desc.createPointer(oldKey).decrementRefCount();
+                            }
+                        });
+                    }
+                }
+
+                @Override protected Comparable<? super GridSearchRowPointer> comparable(Object key) {
+                    if (key instanceof ComparableRow)
+                        return (Comparable<? super SearchRow>)key;
+
+                    return super.comparable(key);
+                }
+            };
+        }
     }
 
     /**
@@ -148,13 +149,17 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
      */
     @SuppressWarnings("unchecked")
     @Override public Object takeSnapshot(@Nullable Object s) {
-//        assert snapshot.get() == null;
-//
-//        if (s == null)
-//            s = tree instanceof SnapTreeMap ? ((SnapTreeMap)tree).clone() :
-//                ((GridOffHeapSnapTreeMap)tree).clone();
-//
-//        snapshot.set((ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row>)s);
+        if (snapshotEnabled) {
+            assert snapshot.get() == null;
+
+            if (s == null)
+                s = tree instanceof SnapTreeMap ? ((SnapTreeMap)tree).clone() :
+                    ((GridOffHeapSnapTreeMap)tree).clone();
+
+            snapshot.set((ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row>)s);
+
+            return s;
+        }
 
         return null;
     }
@@ -163,30 +168,35 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
      * Releases snapshot for current thread.
      */
     @Override public void releaseSnapshot() {
-//        ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> s = snapshot.get();
-//
-//        snapshot.remove();
-//
-//        if (s instanceof Closeable)
-//            U.closeQuiet((Closeable)s);
+        if (snapshotEnabled) {
+            ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> s = snapshot.get();
+
+            snapshot.remove();
+
+            if (s instanceof Closeable)
+                U.closeQuiet((Closeable)s);
+        }
     }
 
     /**
      * @return Snapshot for current thread if there is one.
      */
     private ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> treeForRead() {
+        if (snapshotEnabled) {
+            ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> res = snapshot.get();
+
+            if (res == null)
+                res = tree;
+
+            return res;
+        }
+
         return tree;
-//        ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> res = snapshot.get();
-//
-//        if (res == null)
-//            res = tree;
-//
-//        return res;
     }
 
     /** {@inheritDoc} */
     @Override public void close(Session ses) {
-        //assert snapshot.get() == null;
+        assert snapshot.get() == null;
 
         if (tree instanceof Closeable)
             U.closeQuiet((Closeable)tree);
@@ -215,7 +225,7 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
     /** {@inheritDoc} */
     @Override public long getRowCountApproximation() {
-        return size.longValue(); // tree.size();
+        return size.longValue();
     }
 
     /** {@inheritDoc} */
