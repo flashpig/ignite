@@ -79,6 +79,7 @@ import org.apache.ignite.internal.processors.query.GridQueryFieldsResult;
 import org.apache.ignite.internal.processors.query.GridQueryFieldsResultAdapter;
 import org.apache.ignite.internal.processors.query.GridQueryIndexDescriptor;
 import org.apache.ignite.internal.processors.query.GridQueryIndexing;
+import org.apache.ignite.internal.processors.query.GridQueryProperty;
 import org.apache.ignite.internal.processors.query.GridQueryTypeDescriptor;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2IndexBase;
 import org.apache.ignite.internal.processors.query.h2.opt.GridH2KeyValueRowOffheap;
@@ -2091,6 +2092,9 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         /** */
         private final boolean preferSwapVal;
 
+        /** */
+        private final GridQueryProperty[] props;
+
         /**
          * @param type Type descriptor.
          * @param schema Schema.
@@ -2119,6 +2123,16 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
             keyType = DataType.getTypeFromClass(type.keyClass());
             valType = DataType.getTypeFromClass(type.valueClass());
+
+            props = new GridQueryProperty[fields.length];
+
+            for (int i = 0; i < fields.length; i++) {
+                GridQueryProperty p = type.property(fields[i]);
+
+                assert p != null : fields[i];
+
+                props[i] = p;
+            }
 
             preferSwapVal = schema.ccfg.getMemoryMode() == CacheMemoryMode.OFFHEAP_TIERED;
         }
@@ -2274,7 +2288,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         /** {@inheritDoc} */
         @Override public Object columnValue(Object key, Object val, int col) {
             try {
-                return type.value(fields[col], key, val);
+                return props[col].value(key, val);
             }
             catch (IgniteCheckedException e) {
                 throw DbException.convert(e);
