@@ -594,7 +594,8 @@ public class GridReduceQueryExecutor {
 
                     GridCacheSqlQuery rdc = qry.reduceQuery();
 
-                    res = h2.executeSqlQueryWithTimer(space, r.conn, rdc.query(), F.asList(rdc.parameters()), true);
+                    // Statement caching is prohibited here because we can't guarantee correct merge index reuse.
+                    res = h2.executeSqlQueryWithTimer(space, r.conn, rdc.query(), F.asList(rdc.parameters()), false);
                 }
 
                 for (GridMergeTable tbl : r.tbls) {

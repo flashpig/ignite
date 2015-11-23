@@ -99,6 +99,7 @@ import org.apache.ignite.internal.util.lang.GridCloseableIterator;
 import org.apache.ignite.internal.util.offheap.unsafe.GridUnsafeGuard;
 import org.apache.ignite.internal.util.offheap.unsafe.GridUnsafeMemory;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.internal.LT;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.SB;
@@ -276,6 +277,11 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         };
 
     /**
+     * TODO add some kind of eviction like LRU
+     */
+    private final ConcurrentMap<T2<String, String>, TwoStepCachedQuery> twoStepCache = new ConcurrentHashMap8<>();
+
+    /**
      * @param space Space.
      * @return Connection.
      */
@@ -301,11 +307,15 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
             PreparedStatement stmt = cache.get(sql);
 
-            if (stmt != null)
+            if (stmt != null && !stmt.isClosed()) {
+                assert stmt.getConnection() == c;
+
                 return stmt;
+            }
 
             stmt = c.prepareStatement(sql);
 
+            // TODO close the statement on evict from cache
             cache.put(sql, stmt);
 
             return stmt;
@@ -965,38 +975,47 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
     /** {@inheritDoc} */
     @Override public QueryCursor<List<?>> queryTwoStep(GridCacheContext<?,?> cctx, SqlFieldsQuery qry) {
-        String space = cctx.name();
-        String sqlQry = qry.getSql();
+        final String space = cctx.name();
+        final String sqlQry = qry.getSql();
 
         Connection c = connectionForSpace(space);
-
-        PreparedStatement stmt;
-
-        try {
-            stmt = prepareStatement(c, sqlQry, true);
-        }
-        catch (SQLException e) {
-            throw new CacheException("Failed to parse query: " + sqlQry, e);
-        }
-
-        try {
-            bindParameters(stmt, F.asList(qry.getArgs()));
-        }
-        catch (IgniteCheckedException e) {
-            throw new CacheException("Failed to bind parameters: [qry=" + sqlQry + ", params=" +
-                Arrays.deepToString(qry.getArgs()) + "]", e);
-        }
 
         GridCacheTwoStepQuery twoStepQry;
         List<GridQueryFieldMetadata> meta;
 
-        try {
-            twoStepQry = GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt, qry.getArgs(), qry.isCollocated());
+        final T2<String, String> cachedQryKey = new T2<>(space, sqlQry);
+        TwoStepCachedQuery cachedQry = twoStepCache.get(cachedQryKey);
 
-            meta = meta(stmt.getMetaData());
+        if (cachedQry != null) {
+            twoStepQry = cachedQry.twoStepQuery.copy(qry.getArgs());
+            meta = cachedQry.meta;
         }
-        catch (SQLException e) {
-            throw new CacheException(e);
+        else {
+            PreparedStatement stmt;
+
+            try {
+                stmt = prepareStatement(c, sqlQry, true);
+            }
+            catch (SQLException e) {
+                throw new CacheException("Failed to parse query: " + sqlQry, e);
+            }
+
+            try {
+                bindParameters(stmt, F.asList(qry.getArgs()));
+            }
+            catch (IgniteCheckedException e) {
+                throw new CacheException("Failed to bind parameters: [qry=" + sqlQry + ", params=" +
+                    Arrays.deepToString(qry.getArgs()) + "]", e);
+            }
+
+            try {
+                twoStepQry = GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt, qry.getArgs(), qry.isCollocated());
+
+                meta = meta(stmt.getMetaData());
+            }
+            catch (SQLException e) {
+                throw new CacheException(e);
+            }
         }
 
         if (log.isDebugEnabled())
@@ -1008,7 +1027,22 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
         cursor.fieldsMeta(meta);
 
+        if (cachedQry == null && !twoStepQry.explain()) {
+            cachedQry = new TwoStepCachedQuery();
+            cachedQry.meta = meta;
+            cachedQry.twoStepQuery = twoStepQry.copy(null);
+            twoStepCache.putIfAbsent(cachedQryKey, cachedQry);
+        }
+
         return cursor;
+    }
+
+    /**
+     * Cached two-step query.
+     */
+    private static final class TwoStepCachedQuery {
+        List<GridQueryFieldMetadata> meta;
+        GridCacheTwoStepQuery twoStepQuery;
     }
 
     /**

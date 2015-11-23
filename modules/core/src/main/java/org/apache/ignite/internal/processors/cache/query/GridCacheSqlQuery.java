@@ -55,6 +55,16 @@ public class GridCacheSqlQuery implements Message {
     /** */
     @GridToStringInclude
     @GridDirectTransient
+    private int[] paramIdxs;
+
+    /** */
+    @GridToStringInclude
+    @GridDirectTransient
+    private int paramsSize;
+
+    /** */
+    @GridToStringInclude
+    @GridDirectTransient
     private LinkedHashMap<String, ?> cols;
 
     /** Field kept for backward compatibility. */
@@ -77,6 +87,14 @@ public class GridCacheSqlQuery implements Message {
         this.qry = qry;
 
         this.params = F.isEmpty(params) ? EMPTY_PARAMS : params;
+        paramsSize = this.params.length;
+    }
+
+    /**
+     * @param paramIdxs Parameter indexes.
+     */
+    public void parameterIndexes(int[] paramIdxs) {
+        this.paramIdxs = paramIdxs;
     }
 
     /**
@@ -221,5 +239,29 @@ public class GridCacheSqlQuery implements Message {
     /** {@inheritDoc} */
     @Override public byte fieldsCount() {
         return 3;
+    }
+
+    /**
+     * @param args Arguments.
+     * @return Copy.
+     */
+    public GridCacheSqlQuery copy(Object[] args) {
+        GridCacheSqlQuery copy = new GridCacheSqlQuery();
+
+        copy.qry = qry;
+        copy.cols = cols;
+        copy.paramIdxs = paramIdxs;
+        copy.paramsSize = paramsSize;
+
+        if (F.isEmpty(args))
+            copy.params = EMPTY_PARAMS;
+        else {
+            copy.params = new Object[paramsSize];
+
+            for (int paramIdx : paramIdxs)
+                copy.params[paramIdx] = args[paramIdx];
+        }
+
+        return copy;
     }
 }
