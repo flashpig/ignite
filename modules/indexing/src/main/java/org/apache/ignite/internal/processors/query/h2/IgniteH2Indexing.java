@@ -124,6 +124,7 @@ import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.Table;
 import org.h2.tools.Server;
+import org.h2.util.SmallLRUCache;
 import org.h2.util.Utils;
 import org.h2.value.DataType;
 import org.h2.value.Value;
@@ -266,6 +267,14 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     /** */
     private volatile GridKernalContext ctx;
 
+    /** */
+    private final ThreadLocal<SmallLRUCache<String, PreparedStatement>> stmtCache =
+        new ThreadLocal<SmallLRUCache<String, PreparedStatement>>() {
+            @Override protected SmallLRUCache<String, PreparedStatement> initialValue() {
+                return SmallLRUCache.newInstance(256);
+            }
+        };
+
     /**
      * @param space Space.
      * @return Connection.
@@ -277,6 +286,32 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         catch (IgniteCheckedException e) {
             throw new IgniteException(e);
         }
+    }
+
+    /**
+     * @param c Connection.
+     * @param sql SQL.
+     * @param useStmtCache If {@code true} uses statement cache.
+     * @return Prepared statement.
+     * @throws SQLException If failed.
+     */
+    private PreparedStatement prepareStatement(Connection c, String sql, boolean useStmtCache) throws SQLException {
+        if (useStmtCache) {
+            SmallLRUCache<String, PreparedStatement> cache = stmtCache.get();
+
+            PreparedStatement stmt = cache.get(sql);
+
+            if (stmt != null)
+                return stmt;
+
+            stmt = c.prepareStatement(sql);
+
+            cache.put(sql, stmt);
+
+            return stmt;
+        }
+        else
+            return c.prepareStatement(sql);
     }
 
     /**
@@ -648,7 +683,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         try {
             Connection conn = connectionForThread(schema(spaceName));
 
-            ResultSet rs = executeSqlQueryWithTimer(spaceName, conn, qry, params);
+            ResultSet rs = executeSqlQueryWithTimer(spaceName, conn, qry, params, true);
 
             List<GridQueryFieldMetadata> meta = null;
 
@@ -710,15 +745,16 @@ public class IgniteH2Indexing implements GridQueryIndexing {
      * @param conn Connection,.
      * @param sql Sql query.
      * @param params Parameters.
+     * @param useStmtCache If {@code true} uses statement cache.
      * @return Result.
      * @throws IgniteCheckedException If failed.
      */
-    private ResultSet executeSqlQuery(Connection conn, String sql, Collection<Object> params)
+    private ResultSet executeSqlQuery(Connection conn, String sql, Collection<Object> params, boolean useStmtCache)
         throws IgniteCheckedException {
         PreparedStatement stmt;
 
         try {
-            stmt = conn.prepareStatement(sql);
+            stmt = prepareStatement(conn, sql, useStmtCache);
         }
         catch (SQLException e) {
             throw new IgniteCheckedException("Failed to parse SQL query: " + sql, e);
@@ -747,18 +783,23 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     /**
      * Executes sql query and prints warning if query is too slow..
      *
+     * @param space Space name.
      * @param conn Connection,.
      * @param sql Sql query.
      * @param params Parameters.
+     * @param useStmtCache If {@code true} uses statement cache.
      * @return Result.
      * @throws IgniteCheckedException If failed.
      */
-    public ResultSet executeSqlQueryWithTimer(String space, Connection conn, String sql,
-        @Nullable Collection<Object> params) throws IgniteCheckedException {
+    public ResultSet executeSqlQueryWithTimer(String space,
+        Connection conn,
+        String sql,
+        @Nullable Collection<Object> params,
+        boolean useStmtCache) throws IgniteCheckedException {
         long start = U.currentTimeMillis();
 
         try {
-            ResultSet rs = executeSqlQuery(conn, sql, params);
+            ResultSet rs = executeSqlQuery(conn, sql, params, useStmtCache);
 
             long time = U.currentTimeMillis() - start;
 
@@ -767,7 +808,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
             if (time > longQryExecTimeout) {
                 String msg = "Query execution is too long (" + time + " ms): " + sql;
 
-                ResultSet plan = executeSqlQuery(conn, "EXPLAIN " + sql, params);
+                ResultSet plan = executeSqlQuery(conn, "EXPLAIN " + sql, params, false);
 
                 plan.next();
 
@@ -803,7 +844,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
         String sql = generateQuery(qry, tbl);
 
-        return executeSqlQueryWithTimer(space, conn, sql, params);
+        return executeSqlQueryWithTimer(space, conn, sql, params, true);
     }
 
     /**
@@ -932,7 +973,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         PreparedStatement stmt;
 
         try {
-            stmt = c.prepareStatement(sqlQry);
+            stmt = prepareStatement(c, sqlQry, true);
         }
         catch (SQLException e) {
             throw new CacheException("Failed to parse query: " + sqlQry, e);
@@ -956,9 +997,6 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         }
         catch (SQLException e) {
             throw new CacheException(e);
-        }
-        finally {
-            U.close(stmt, log);
         }
 
         if (log.isDebugEnabled())
@@ -1889,7 +1927,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
          * @throws IgniteCheckedException If failed.
          */
         protected FieldsIterator(ResultSet data) throws IgniteCheckedException {
-            super(data);
+            super(data, false);
         }
 
         /** {@inheritDoc} */
@@ -1914,7 +1952,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
          * @throws IgniteCheckedException If failed.
          */
         protected KeyValIterator(ResultSet data) throws IgniteCheckedException {
-            super(data);
+            super(data, false);
         }
 
         /** {@inheritDoc} */
