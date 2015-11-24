@@ -262,7 +262,7 @@ public class GridSqlQuerySplitter {
         GridCacheSqlQuery rdc = new GridCacheSqlQuery(rdcQry.getSQL(),
             findParams(rdcQry, params, new ArrayList<>(), paramIdxs).toArray());
 
-        rdc.skipMergeTable(rdcSimpleQry);
+        rdc.skipMergeTable(rdcSimpleQry && paramIdxs.size() == 0);
 
         rdc.parameterIndexes(toIntArray(paramIdxs));
 
