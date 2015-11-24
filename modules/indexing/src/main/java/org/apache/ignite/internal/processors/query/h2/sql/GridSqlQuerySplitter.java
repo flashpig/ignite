@@ -173,15 +173,37 @@ public class GridSqlQuerySplitter {
         for (GridSqlElement exp : mapExps) // Add all map expressions as visible.
             mapQry.addColumn(exp, true);
 
-        for (GridSqlElement rdcExp : rdcExps) // Add corresponding visible reduce columns.
+        boolean rdcSimpleQry = true;
+
+        for (GridSqlElement rdcExp : rdcExps) { // Add corresponding visible reduce columns.
             rdcQry.addColumn(rdcExp, true);
+
+            if (rdcSimpleQry) {
+                if (rdcExp instanceof GridSqlColumn || rdcExp instanceof GridSqlConst)
+                    continue;
+
+                if (rdcExp instanceof GridSqlAlias) {
+                    if (rdcExp.size() == 1) {
+                        GridSqlElement child = rdcExp.child();
+
+                        if (child instanceof GridSqlColumn || child instanceof GridSqlConst)
+                            continue;
+                    }
+                }
+
+                rdcSimpleQry = false;
+            }
+        }
 
         for (int i = rdcExps.length; i < mapExps.size(); i++)  // Add all extra map columns as invisible reduce columns.
             rdcQry.addColumn(column(((GridSqlAlias)mapExps.get(i)).alias()), false);
 
         // -- GROUP BY
-        if (mapQry.groupColumns() != null && !collocated)
+        if (mapQry.groupColumns() != null && !collocated) {
             rdcQry.groupColumns(mapQry.groupColumns());
+
+            rdcSimpleQry = false;
+        }
 
         // -- HAVING
         if (mapQry.havingColumn() >= 0 && !collocated) {
@@ -189,6 +211,8 @@ public class GridSqlQuerySplitter {
             rdcQry.whereAnd(column(columnName(mapQry.havingColumn())));
 
             mapQry.havingColumn(-1);
+
+            rdcSimpleQry = false;
         }
 
         // -- ORDER BY
@@ -199,6 +223,8 @@ public class GridSqlQuerySplitter {
             if (aggregateFound) // Ordering over aggregates does not make sense.
                 mapQry.clearSort(); // Otherwise map sort will be used by offset-limit.
             // TODO IGNITE-1141 - Check if sorting is done over aggregated expression, otherwise we can sort and use offset-limit.
+
+            rdcSimpleQry = false;
         }
 
         // -- LIMIT
@@ -207,6 +233,8 @@ public class GridSqlQuerySplitter {
 
             if (aggregateFound)
                 mapQry.limit(null);
+
+            rdcSimpleQry = false;
         }
 
         // -- OFFSET
@@ -217,18 +245,24 @@ public class GridSqlQuerySplitter {
                 mapQry.limit(op(GridSqlOperationType.PLUS, mapQry.offset(), mapQry.limit()));
 
             mapQry.offset(null);
+
+            rdcSimpleQry = false;
         }
 
         // -- DISTINCT
         if (mapQry.distinct()) {
             mapQry.distinct(!aggregateFound && mapQry.groupColumns() == null && mapQry.havingColumn() < 0);
             rdcQry.distinct(true);
+
+            rdcSimpleQry = false;
         }
 
         IntArray paramIdxs = new IntArray(params.length);
 
         GridCacheSqlQuery rdc = new GridCacheSqlQuery(rdcQry.getSQL(),
             findParams(rdcQry, params, new ArrayList<>(), paramIdxs).toArray());
+
+        rdc.skipMergeTable(rdcSimpleQry);
 
         rdc.parameterIndexes(toIntArray(paramIdxs));
 
