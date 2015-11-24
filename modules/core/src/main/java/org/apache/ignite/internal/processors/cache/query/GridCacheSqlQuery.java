@@ -246,22 +246,22 @@ public class GridCacheSqlQuery implements Message {
      * @return Copy.
      */
     public GridCacheSqlQuery copy(Object[] args) {
-        GridCacheSqlQuery copy = new GridCacheSqlQuery();
+        GridCacheSqlQuery cp = new GridCacheSqlQuery();
 
-        copy.qry = qry;
-        copy.cols = cols;
-        copy.paramIdxs = paramIdxs;
-        copy.paramsSize = paramsSize;
+        cp.qry = qry;
+        cp.cols = cols;
+        cp.paramIdxs = paramIdxs;
+        cp.paramsSize = paramsSize;
 
         if (F.isEmpty(args))
-            copy.params = EMPTY_PARAMS;
+            cp.params = EMPTY_PARAMS;
         else {
-            copy.params = new Object[paramsSize];
+            cp.params = new Object[paramsSize];
 
             for (int paramIdx : paramIdxs)
-                copy.params[paramIdx] = args[paramIdx];
+                cp.params[paramIdx] = args[paramIdx];
         }
 
-        return copy;
+        return cp;
     }
 }

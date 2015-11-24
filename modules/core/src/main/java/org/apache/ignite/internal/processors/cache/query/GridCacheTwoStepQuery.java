@@ -132,12 +132,12 @@ public class GridCacheTwoStepQuery {
     public GridCacheTwoStepQuery copy(Object[] args) {
         assert !explain;
 
-        GridCacheTwoStepQuery copy = new GridCacheTwoStepQuery(spaces, rdc.copy(args));
-        copy.pageSize = pageSize;
+        GridCacheTwoStepQuery cp = new GridCacheTwoStepQuery(spaces, rdc.copy(args));
+        cp.pageSize = pageSize;
         for (int i = 0; i < mapQrys.size(); i++)
-            copy.mapQrys.add(mapQrys.get(i).copy(args));
+            cp.mapQrys.add(mapQrys.get(i).copy(args));
 
-        return copy;
+        return cp;
     }
 
     /** {@inheritDoc} */
