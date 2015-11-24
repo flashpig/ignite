@@ -253,6 +253,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
                 set(c);
 
+                // Reset statement cache when new connection is created.
                 stmtCache.get().clear();
             }
 

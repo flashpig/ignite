@@ -103,10 +103,12 @@ public class GridSqlSelect extends GridSqlQuery {
     }
 
     /**
-     * @return {@code True} if this simple select.
+     * @return {@code True} if this simple SQL query like 'SELECT A, B, C from SOME_TABLE' without any conditions
+     *      and expressions.
      */
     public boolean simpleQuery() {
         boolean simple = !distinct &&
+            from instanceof GridSqlTable &&
             where == null &&
             grpCols == null &&
             havingCol < 0 &&

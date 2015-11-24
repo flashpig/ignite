@@ -48,7 +48,7 @@ public class GridCacheTwoStepQuery {
     private Set<String> spaces;
 
     /** */
-    private boolean skipMergeTbl;
+    private final boolean skipMergeTbl;
 
     /**
      * @param spaces All spaces accessed in query.
@@ -68,14 +68,6 @@ public class GridCacheTwoStepQuery {
      */
     public boolean skipMergeTable() {
         return skipMergeTbl;
-    }
-
-    /**
-     * @param skipMergeTbl {@code True} if reduce query can skip merge table creation and get
-     *      data directly from merge index.
-     */
-    public void skipMergeTable(boolean skipMergeTbl) {
-        this.skipMergeTbl = skipMergeTbl;
     }
 
     /**
