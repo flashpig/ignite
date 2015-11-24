@@ -512,7 +512,7 @@ public class GridReduceQueryExecutor {
 
             int tblIdx = 0;
 
-            final boolean skipMergeTbl = !qry.explain() && qry.reduceQuery().skipMergeTable();
+            final boolean skipMergeTbl = !qry.explain() && qry.skipMergeTable();
 
             for (GridCacheSqlQuery mapQry : qry.mapQueries()) {
                 GridMergeIndex idx;

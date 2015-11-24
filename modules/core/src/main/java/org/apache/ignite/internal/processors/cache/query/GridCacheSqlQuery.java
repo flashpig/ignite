@@ -70,10 +70,6 @@ public class GridCacheSqlQuery implements Message {
     /** Field kept for backward compatibility. */
     private String alias;
 
-    /** */
-    @GridDirectTransient
-    private boolean skipMergeTbl;
-
     /**
      * For {@link Message}.
      */
@@ -246,21 +242,6 @@ public class GridCacheSqlQuery implements Message {
     }
 
     /**
-     * @return {@code True} if reduce query can skip merge table creation and get data directly from merge index.
-     */
-    public boolean skipMergeTable() {
-        return skipMergeTbl;
-    }
-
-    /**
-     * @param skipMergeTbl {@code True} if reduce query can skip merge table creation and get
-     *      data directly from merge index.
-     */
-    public void skipMergeTable(boolean skipMergeTbl) {
-        this.skipMergeTbl = skipMergeTbl;
-    }
-
-    /**
      * @param args Arguments.
      * @return Copy.
      */
@@ -271,7 +252,6 @@ public class GridCacheSqlQuery implements Message {
         cp.cols = cols;
         cp.paramIdxs = paramIdxs;
         cp.paramsSize = paramsSize;
-        cp.skipMergeTbl = skipMergeTbl;
 
         if (F.isEmpty(args))
             cp.params = EMPTY_PARAMS;

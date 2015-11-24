@@ -103,6 +103,41 @@ public class GridSqlSelect extends GridSqlQuery {
     }
 
     /**
+     * @return {@code True} if this simple select.
+     */
+    public boolean simpleQuery() {
+        boolean simple = !distinct &&
+            where == null &&
+            grpCols == null &&
+            havingCol < 0 &&
+            sort.isEmpty() &&
+            limit == null &&
+            offset == null;
+
+        if (simple) {
+            for (GridSqlElement expression : columns(true)) {
+                if (expression instanceof GridSqlColumn)
+                    continue;
+
+                if (expression instanceof GridSqlAlias) {
+                    if (expression.size() == 1) {
+                        GridSqlElement child = expression.child();
+
+                        if (child instanceof GridSqlColumn)
+                            continue;
+                    }
+                }
+
+                simple = false;
+
+                break;
+            }
+        }
+
+        return simple;
+    }
+
+    /**
      * @param buff Statement builder.
      * @param expression Alias expression.
      */
