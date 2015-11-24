@@ -54,6 +54,7 @@ import org.h2.table.TableFilter;
 import org.h2.value.Value;
 import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
+import org.jsr166.LongAdder8;
 
 import static org.apache.ignite.internal.processors.query.h2.opt.GridH2AbstractKeyValueRow.VAL_COL;
 
@@ -78,6 +79,9 @@ public class GridH2Table extends TableBase {
 
     /** */
     private volatile Object[] actualSnapshot;
+
+    /** */
+    private final LongAdder8 size = new LongAdder8();
 
     /**
      * Creates table.
@@ -379,6 +383,8 @@ public class GridH2Table extends TableBase {
 
                     kvOld.onUnswap(kvOld.getValue(VAL_COL), true);
                 }
+                else if (old == null)
+                    size.increment();
 
                 int len = idxs.size();
 
@@ -414,6 +420,8 @@ public class GridH2Table extends TableBase {
                 }
 
                 if (old != null) {
+                    size.decrement();
+
                     // Remove row from all indexes.
                     // Start from 2 because 0 - Scan (don't need to update), 1 - PK (already updated).
                     for (int i = 2, len = idxs.size(); i < len; i++) {
@@ -579,7 +587,7 @@ public class GridH2Table extends TableBase {
 
     /** {@inheritDoc} */
     @Override public long getRowCountApproximation() {
-        return getUniqueIndex().getRowCountApproximation();
+        return size.longValue();
     }
 
     /** {@inheritDoc} */

@@ -42,7 +42,6 @@ import org.h2.table.IndexColumn;
 import org.h2.table.TableFilter;
 import org.h2.value.Value;
 import org.jetbrains.annotations.Nullable;
-import org.jsr166.LongAdder8;
 
 /**
  * Base class for snapshotable tree indexes.
@@ -54,9 +53,6 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
     /** */
     private final ThreadLocal<ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row>> snapshot = new ThreadLocal<>();
-
-    /** */
-    private final LongAdder8 size = new LongAdder8();
 
     /** */
     private final boolean snapshotEnabled;
@@ -88,22 +84,41 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
         final GridH2RowDescriptor desc = tbl.rowDescriptor();
 
+        final boolean snapshotConfigured = false;
+
         if (desc == null || desc.memory() == null) {
-            snapshotEnabled = false;
+            snapshotEnabled = snapshotConfigured;
 
-            tree = new ConcurrentSkipListMap<>(
-                new Comparator<GridSearchRowPointer>() {
-                    @Override public int compare(GridSearchRowPointer o1, GridSearchRowPointer o2) {
-                        if (o1 instanceof ComparableRow)
-                            return ((ComparableRow)o1).compareTo(o2);
-
-                        if (o2 instanceof ComparableRow)
-                            return -((ComparableRow)o2).compareTo(o1);
-
-                        return compareRows(o1, o2);
+            if (snapshotConfigured) {
+                tree = new SnapTreeMap<GridSearchRowPointer, GridH2Row>(this) {
+                    @Override protected void afterNodeUpdate_nl(Node<GridSearchRowPointer, GridH2Row> node, Object val) {
+                        if (val != null)
+                            node.key = (GridSearchRowPointer)val;
                     }
-                }
-            );
+
+                    @Override protected Comparable<? super GridSearchRowPointer> comparable(Object key) {
+                        if (key instanceof ComparableRow)
+                            return (Comparable<? super SearchRow>)key;
+
+                        return super.comparable(key);
+                    }
+                };
+            }
+            else {
+                tree = new ConcurrentSkipListMap<>(
+                        new Comparator<GridSearchRowPointer>() {
+                            @Override public int compare(GridSearchRowPointer o1, GridSearchRowPointer o2) {
+                                if (o1 instanceof ComparableRow)
+                                    return ((ComparableRow)o1).compareTo(o2);
+
+                                if (o2 instanceof ComparableRow)
+                                    return -((ComparableRow)o2).compareTo(o1);
+
+                                return compareRows(o1, o2);
+                            }
+                        }
+                );
+            }
         }
         else {
             snapshotEnabled = true;
@@ -149,49 +164,48 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
      */
     @SuppressWarnings("unchecked")
     @Override public Object takeSnapshot(@Nullable Object s) {
-        if (snapshotEnabled) {
-            assert snapshot.get() == null;
+        if (!snapshotEnabled)
+            return null;
 
-            if (s == null)
-                s = tree instanceof SnapTreeMap ? ((SnapTreeMap)tree).clone() :
-                    ((GridOffHeapSnapTreeMap)tree).clone();
+        assert snapshot.get() == null;
 
-            snapshot.set((ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row>)s);
+        if (s == null)
+            s = tree instanceof SnapTreeMap ? ((SnapTreeMap)tree).clone() :
+                ((GridOffHeapSnapTreeMap)tree).clone();
 
-            return s;
-        }
+        snapshot.set((ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row>)s);
 
-        return null;
+        return s;
     }
 
     /**
      * Releases snapshot for current thread.
      */
     @Override public void releaseSnapshot() {
-        if (snapshotEnabled) {
-            ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> s = snapshot.get();
+        if (!snapshotEnabled)
+            return;
 
-            snapshot.remove();
+        ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> s = snapshot.get();
 
-            if (s instanceof Closeable)
-                U.closeQuiet((Closeable)s);
-        }
+        snapshot.remove();
+
+        if (s instanceof Closeable)
+            U.closeQuiet((Closeable)s);
     }
 
     /**
      * @return Snapshot for current thread if there is one.
      */
     private ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> treeForRead() {
-        if (snapshotEnabled) {
-            ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> res = snapshot.get();
+        if (!snapshotEnabled)
+            return tree;
 
-            if (res == null)
-                res = tree;
+        ConcurrentNavigableMap<GridSearchRowPointer, GridH2Row> res = snapshot.get();
 
-            return res;
-        }
+        if (res == null)
+            res = tree;
 
-        return tree;
+        return res;
     }
 
     /** {@inheritDoc} */
@@ -225,7 +239,7 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
     /** {@inheritDoc} */
     @Override public long getRowCountApproximation() {
-        return size.longValue();
+        return table.getRowCountApproximation();
     }
 
     /** {@inheritDoc} */
@@ -386,22 +400,12 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
     /** {@inheritDoc} */
     @Override public GridH2Row put(GridH2Row row) {
-        GridH2Row old = tree.put(row, row);
-
-        if (old == null)
-            size.increment();
-
-        return old;
+        return tree.put(row, row);
     }
 
     /** {@inheritDoc} */
     @Override public GridH2Row remove(SearchRow row) {
-        GridH2Row old = tree.remove(comparable(row, 0));
-
-        if (old != null)
-            size.decrement();
-
-        return old;
+        return tree.remove(comparable(row, 0));
     }
 
     /**
