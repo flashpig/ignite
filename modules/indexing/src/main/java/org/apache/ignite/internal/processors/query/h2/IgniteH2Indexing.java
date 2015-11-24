@@ -93,6 +93,7 @@ import org.apache.ignite.internal.processors.query.h2.opt.GridLuceneIndex;
 import org.apache.ignite.internal.processors.query.h2.sql.GridSqlQuerySplitter;
 import org.apache.ignite.internal.processors.query.h2.twostep.GridMapQueryExecutor;
 import org.apache.ignite.internal.processors.query.h2.twostep.GridReduceQueryExecutor;
+import org.apache.ignite.internal.util.GridBoundedConcurrentLinkedHashMap;
 import org.apache.ignite.internal.util.GridEmptyCloseableIterator;
 import org.apache.ignite.internal.util.GridSpinBusyLock;
 import org.apache.ignite.internal.util.lang.GridCloseableIterator;
@@ -125,7 +126,6 @@ import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.Table;
 import org.h2.tools.Server;
-import org.h2.util.SmallLRUCache;
 import org.h2.util.Utils;
 import org.h2.value.DataType;
 import org.h2.value.Value;
@@ -177,6 +177,12 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     private static final String DB_OPTIONS = ";LOCK_MODE=3;MULTI_THREADED=1;DB_CLOSE_ON_EXIT=FALSE" +
         ";DEFAULT_LOCK_TIMEOUT=10000;FUNCTIONS_IN_SCHEMA=true;OPTIMIZE_REUSE_RESULTS=0;QUERY_CACHE_SIZE=0;" +
         "RECOMPILE_ALWAYS=1;MAX_OPERATION_MEMORY=0";
+
+    /** */
+    private static final int PREPARED_STMT_CACHE_SIZE = 256;
+
+    /** */
+    private static final int TWO_STEP_QRY_CACHE_SIZE = 256;
 
     /** Field name for key. */
     public static final String KEY_FIELD_NAME = "_key";
@@ -272,14 +278,13 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     private final ThreadLocal<StatementCache<String, PreparedStatement>> stmtCache =
         new ThreadLocal<StatementCache<String, PreparedStatement>>() {
             @Override protected StatementCache<String, PreparedStatement> initialValue() {
-                return new StatementCache(256);
+                return new StatementCache<>(PREPARED_STMT_CACHE_SIZE);
             }
         };
 
-    /**
-     * TODO add some kind of eviction like LRU
-     */
-    private final ConcurrentMap<T2<String, String>, TwoStepCachedQuery> twoStepCache = new ConcurrentHashMap8<>();
+    /** */
+    private final GridBoundedConcurrentLinkedHashMap<T2<String, String>, TwoStepCachedQuery> twoStepCache =
+        new GridBoundedConcurrentLinkedHashMap<>(TWO_STEP_QRY_CACHE_SIZE);
 
     /**
      * @param space Space.
@@ -991,7 +996,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         TwoStepCachedQuery cachedQry = twoStepCache.get(cachedQryKey);
 
         if (cachedQry != null) {
-            twoStepQry = cachedQry.twoStepQuery.copy(qry.getArgs());
+            twoStepQry = cachedQry.twoStepQry.copy(qry.getArgs());
             meta = cachedQry.meta;
         }
         else {
@@ -1032,21 +1037,11 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         cursor.fieldsMeta(meta);
 
         if (cachedQry == null && !twoStepQry.explain()) {
-            cachedQry = new TwoStepCachedQuery();
-            cachedQry.meta = meta;
-            cachedQry.twoStepQuery = twoStepQry.copy(null);
+            cachedQry = new TwoStepCachedQuery(meta, twoStepQry.copy(null));
             twoStepCache.putIfAbsent(cachedQryKey, cachedQry);
         }
 
         return cursor;
-    }
-
-    /**
-     * Cached two-step query.
-     */
-    private static final class TwoStepCachedQuery {
-        List<GridQueryFieldMetadata> meta;
-        GridCacheTwoStepQuery twoStepQuery;
     }
 
     /**
@@ -1615,6 +1610,31 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     /** {@inheritDoc} */
     @Override public void onDisconnected(IgniteFuture<?> reconnectFut) {
         rdcQryExec.onDisconnected(reconnectFut);
+    }
+
+    /**
+     * Cached two-step query.
+     */
+    private static final class TwoStepCachedQuery {
+        /** */
+        final List<GridQueryFieldMetadata> meta;
+
+        /** */
+        final GridCacheTwoStepQuery twoStepQry;
+
+        /**
+         * @param meta Fields metadata.
+         * @param twoStepQry Query.
+         */
+        public TwoStepCachedQuery(List<GridQueryFieldMetadata> meta, GridCacheTwoStepQuery twoStepQry) {
+            this.meta = meta;
+            this.twoStepQry = twoStepQry;
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return S.toString(TwoStepCachedQuery.class, this);
+        }
     }
 
     /**
