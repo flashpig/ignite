@@ -19,6 +19,7 @@ package org.apache.ignite.internal.processors.query.h2.twostep;
 
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -1184,7 +1185,7 @@ public class GridReduceQueryExecutor {
          * @throws IgniteCheckedException If failed.
          */
         protected Iter(ResultSet data) throws IgniteCheckedException {
-            super(data, false);
+            super(data, true);
         }
 
         /** {@inheritDoc} */

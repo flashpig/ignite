@@ -269,10 +269,10 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     private volatile GridKernalContext ctx;
 
     /** */
-    private final ThreadLocal<SmallLRUCache<String, PreparedStatement>> stmtCache =
-        new ThreadLocal<SmallLRUCache<String, PreparedStatement>>() {
-            @Override protected SmallLRUCache<String, PreparedStatement> initialValue() {
-                return SmallLRUCache.newInstance(256);
+    private final ThreadLocal<StatementCache<String, PreparedStatement>> stmtCache =
+        new ThreadLocal<StatementCache<String, PreparedStatement>>() {
+            @Override protected StatementCache<String, PreparedStatement> initialValue() {
+                return new StatementCache(256);
             }
         };
 
@@ -303,7 +303,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
      */
     private PreparedStatement prepareStatement(Connection c, String sql, boolean useStmtCache) throws SQLException {
         if (useStmtCache) {
-            SmallLRUCache<String, PreparedStatement> cache = stmtCache.get();
+            StatementCache<String, PreparedStatement> cache = stmtCache.get();
 
             PreparedStatement stmt = cache.get(sql);
 
@@ -315,8 +315,12 @@ public class IgniteH2Indexing implements GridQueryIndexing {
 
             stmt = c.prepareStatement(sql);
 
-            // TODO close the statement on evict from cache
             cache.put(sql, stmt);
+
+            PreparedStatement rmvd = cache.getAndClearRemoved();
+
+            if (rmvd != null)
+                U.closeQuiet(rmvd);
 
             return stmt;
         }
@@ -2369,6 +2373,53 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         /** {@inheritDoc} */
         @Override public boolean preferSwapValue() {
             return preferSwapVal;
+        }
+    }
+
+    /**
+     *
+     */
+    private static class StatementCache<K, V> extends LinkedHashMap<K, V> {
+        /** */
+        private int size;
+
+        /** */
+        private V rmvd;
+
+        /**
+         * @param size Size.
+         */
+        private StatementCache(int size) {
+            super(size, (float)0.75, true);
+
+            this.size = size;
+        }
+
+        /** {@inheritDoc} */
+        @Override protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+            assert rmvd == null;
+
+            boolean rmv = size() > size;
+
+            if (rmv)
+                this.rmvd = eldest.getValue();
+
+            return rmv;
+        }
+
+        /**
+         * @return Removed value.
+         */
+        @Nullable V getAndClearRemoved() {
+            if (rmvd != null) {
+                V ret = rmvd;
+
+                rmvd = null;
+
+                return ret;
+            }
+
+            return null;
         }
     }
 }
