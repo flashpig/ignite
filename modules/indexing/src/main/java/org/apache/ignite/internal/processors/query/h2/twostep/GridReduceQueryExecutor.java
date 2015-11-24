@@ -594,7 +594,8 @@ public class GridReduceQueryExecutor {
 
                     GridCacheSqlQuery rdc = qry.reduceQuery();
 
-                    res = h2.executeSqlQueryWithTimer(space, r.conn, rdc.query(), F.asList(rdc.parameters()));
+                    // Statement caching is prohibited here because we can't guarantee correct merge index reuse.
+                    res = h2.executeSqlQueryWithTimer(space, r.conn, rdc.query(), F.asList(rdc.parameters()), false);
                 }
 
                 for (GridMergeTable tbl : r.tbls) {
@@ -941,7 +942,7 @@ public class GridReduceQueryExecutor {
         List<List<?>> lists = new ArrayList<>();
 
         for (int i = 0, mapQrys = qry.mapQueries().size(); i < mapQrys; i++) {
-            ResultSet rs = h2.executeSqlQueryWithTimer(space, c, "SELECT PLAN FROM " + table(i), null);
+            ResultSet rs = h2.executeSqlQueryWithTimer(space, c, "SELECT PLAN FROM " + table(i), null, false);
 
             lists.add(F.asList(getPlan(rs)));
         }
@@ -956,7 +957,11 @@ public class GridReduceQueryExecutor {
 
         GridCacheSqlQuery rdc = qry.reduceQuery();
 
-        ResultSet rs = h2.executeSqlQueryWithTimer(space, c, "EXPLAIN " + rdc.query(), F.asList(rdc.parameters()));
+        ResultSet rs = h2.executeSqlQueryWithTimer(space,
+            c,
+            "EXPLAIN " + rdc.query(),
+            F.asList(rdc.parameters()),
+            false);
 
         lists.add(F.asList(getPlan(rs)));
 
@@ -1179,7 +1184,7 @@ public class GridReduceQueryExecutor {
          * @throws IgniteCheckedException If failed.
          */
         protected Iter(ResultSet data) throws IgniteCheckedException {
-            super(data);
+            super(data, true);
         }
 
         /** {@inheritDoc} */
