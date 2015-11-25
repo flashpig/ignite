@@ -84,12 +84,10 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
 
         final GridH2RowDescriptor desc = tbl.rowDescriptor();
 
-        final boolean snapshotConfigured = false;
-
         if (desc == null || desc.memory() == null) {
-            snapshotEnabled = snapshotConfigured;
+            snapshotEnabled = desc == null || desc.snapshotableIndex();
 
-            if (snapshotConfigured) {
+            if (snapshotEnabled) {
                 tree = new SnapTreeMap<GridSearchRowPointer, GridH2Row>(this) {
                     @Override protected void afterNodeUpdate_nl(Node<GridSearchRowPointer, GridH2Row> node, Object val) {
                         if (val != null)
