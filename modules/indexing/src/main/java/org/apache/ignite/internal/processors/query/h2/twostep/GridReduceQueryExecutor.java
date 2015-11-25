@@ -605,21 +605,23 @@ public class GridReduceQueryExecutor {
                     if (skipMergeTbl) {
                         List<List<?>> res = new ArrayList<>();
 
-                        for (GridMergeIndex idx : r.idxs) {
-                            Cursor cur = idx.findInStream(null, null);
+                        assert r.idxs.size() == 1 : r.idxs;
 
-                            while (cur.next()) {
-                                Row row = cur.get();
+                        GridMergeIndex idx = r.idxs.get(0);
 
-                                int cols = row.getColumnCount();
+                        Cursor cur = idx.findInStream(null, null);
 
-                                List<Object> resRow  = new ArrayList<>(cols);
+                        while (cur.next()) {
+                            Row row = cur.get();
 
-                                for (int c = 0; c < cols; c++)
-                                    resRow .add(row.getValue(c).getObject());
+                            int cols = row.getColumnCount();
 
-                                res.add(resRow);
-                            }
+                            List<Object> resRow  = new ArrayList<>(cols);
+
+                            for (int c = 0; c < cols; c++)
+                                resRow.add(row.getValue(c).getObject());
+
+                            res.add(resRow);
                         }
 
                         resIter = res.iterator();

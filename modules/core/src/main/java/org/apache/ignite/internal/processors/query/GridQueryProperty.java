@@ -20,7 +20,7 @@ package org.apache.ignite.internal.processors.query;
 import org.apache.ignite.IgniteCheckedException;
 
 /**
- *
+ * Description and access method for query entity field.
  */
 public abstract class GridQueryProperty {
     /**

@@ -118,21 +118,11 @@ public class GridSqlSelect extends GridSqlQuery {
 
         if (simple) {
             for (GridSqlElement expression : columns(true)) {
-                if (expression instanceof GridSqlColumn)
-                    continue;
+                if (expression instanceof GridSqlAlias)
+                    expression = expression.child();
 
-                if (expression instanceof GridSqlAlias) {
-                    if (expression.size() == 1) {
-                        GridSqlElement child = expression.child();
-
-                        if (child instanceof GridSqlColumn)
-                            continue;
-                    }
-                }
-
-                simple = false;
-
-                break;
+                if (!(expression instanceof GridSqlColumn))
+                    return false;
             }
         }
 

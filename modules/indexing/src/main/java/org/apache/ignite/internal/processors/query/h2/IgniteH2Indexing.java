@@ -183,7 +183,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     private static final int PREPARED_STMT_CACHE_SIZE = 256;
 
     /** */
-    private static final int TWO_STEP_QRY_CACHE_SIZE = 256;
+    private static final int TWO_STEP_QRY_CACHE_SIZE = 1024;
 
     /** Field name for key. */
     public static final String KEY_FIELD_NAME = "_key";
@@ -1003,27 +1003,32 @@ public class IgniteH2Indexing implements GridQueryIndexing {
             PreparedStatement stmt;
 
             try {
-                stmt = prepareStatement(c, sqlQry, true);
+                // Do not cache this statement because the whole two step query object will be cached later on.
+                stmt = prepareStatement(c, sqlQry, false);
             }
             catch (SQLException e) {
                 throw new CacheException("Failed to parse query: " + sqlQry, e);
             }
-
             try {
-                bindParameters(stmt, F.asList(qry.getArgs()));
-            }
-            catch (IgniteCheckedException e) {
-                throw new CacheException("Failed to bind parameters: [qry=" + sqlQry + ", params=" +
-                    Arrays.deepToString(qry.getArgs()) + "]", e);
-            }
+                try {
+                    bindParameters(stmt, F.asList(qry.getArgs()));
+                }
+                catch (IgniteCheckedException e) {
+                    throw new CacheException("Failed to bind parameters: [qry=" + sqlQry + ", params=" +
+                        Arrays.deepToString(qry.getArgs()) + "]", e);
+                }
 
-            try {
-                twoStepQry = GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt, qry.getArgs(), qry.isCollocated());
+                try {
+                    twoStepQry = GridSqlQuerySplitter.split((JdbcPreparedStatement)stmt, qry.getArgs(), qry.isCollocated());
 
-                meta = meta(stmt.getMetaData());
+                    meta = meta(stmt.getMetaData());
+                }
+                catch (SQLException e) {
+                    throw new CacheException(e);
+                }
             }
-            catch (SQLException e) {
-                throw new CacheException(e);
+            finally {
+                U.close(stmt, log);
             }
         }
 
@@ -2419,7 +2424,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     }
 
     /**
-     *
+     * Statement cache.
      */
     private static class StatementCache extends LinkedHashMap<String, PreparedStatement> {
         /** */
