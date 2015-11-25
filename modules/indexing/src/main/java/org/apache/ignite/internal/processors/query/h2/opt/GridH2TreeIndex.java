@@ -119,6 +119,8 @@ public class GridH2TreeIndex extends GridH2IndexBase implements Comparator<GridS
             }
         }
         else {
+            assert desc.snapshotableIndex() : desc;
+
             snapshotEnabled = true;
 
             tree = new GridOffHeapSnapTreeMap<GridSearchRowPointer, GridH2Row>(desc, desc, desc.memory(), desc.guard(), this) {
