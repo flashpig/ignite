@@ -2188,6 +2188,9 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         private final boolean preferSwapVal;
 
         /** */
+        private final boolean snapshotableIdx;
+
+        /** */
         private final GridQueryProperty[] props;
 
         /**
@@ -2230,6 +2233,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
             }
 
             preferSwapVal = schema.ccfg.getMemoryMode() == CacheMemoryMode.OFFHEAP_TIERED;
+            snapshotableIdx = schema.ccfg.isSnapshotableIndex();
         }
 
         /** {@inheritDoc} */
@@ -2406,6 +2410,11 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         /** {@inheritDoc} */
         @Override public boolean preferSwapValue() {
             return preferSwapVal;
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean snapshotableIndex() {
+            return snapshotableIdx;
         }
     }
 
