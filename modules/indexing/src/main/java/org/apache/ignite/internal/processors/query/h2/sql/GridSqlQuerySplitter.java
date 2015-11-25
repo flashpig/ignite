@@ -241,7 +241,7 @@ public class GridSqlQuerySplitter {
         map.parameterIndexes(toIntArray(paramIdxs));
 
         // Build resulting two step query.
-        GridCacheTwoStepQuery res = new GridCacheTwoStepQuery(spaces, rdc).addMapQuery(map);
+        GridCacheTwoStepQuery res = new GridCacheTwoStepQuery(spaces, rdc, rdcQry.simpleQuery()).addMapQuery(map);
 
         res.explain(explain);
 

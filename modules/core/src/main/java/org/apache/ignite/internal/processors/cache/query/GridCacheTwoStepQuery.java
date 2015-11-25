@@ -47,16 +47,27 @@ public class GridCacheTwoStepQuery {
     /** */
     private Set<String> spaces;
 
+    /** */
+    private final boolean skipMergeTbl;
+
     /**
      * @param spaces All spaces accessed in query.
      * @param rdc Reduce query.
+     * @param skipMergeTbl {@code True} if reduce query can skip merge table creation and
+     *      get data directly from merge index.
      */
-    public GridCacheTwoStepQuery(Set<String> spaces, GridCacheSqlQuery rdc) {
+    public GridCacheTwoStepQuery(Set<String> spaces, GridCacheSqlQuery rdc, boolean skipMergeTbl) {
         assert rdc != null;
 
         this.spaces = spaces;
-
         this.rdc = rdc;
+        this.skipMergeTbl = skipMergeTbl;
+    }
+    /**
+     * @return {@code True} if reduce query can skip merge table creation and get data directly from merge index.
+     */
+    public boolean skipMergeTable() {
+        return skipMergeTbl;
     }
 
     /**
@@ -132,7 +143,7 @@ public class GridCacheTwoStepQuery {
     public GridCacheTwoStepQuery copy(Object[] args) {
         assert !explain;
 
-        GridCacheTwoStepQuery cp = new GridCacheTwoStepQuery(spaces, rdc.copy(args));
+        GridCacheTwoStepQuery cp = new GridCacheTwoStepQuery(spaces, rdc.copy(args), skipMergeTbl);
         cp.pageSize = pageSize;
         for (int i = 0; i < mapQrys.size(); i++)
             cp.mapQrys.add(mapQrys.get(i).copy(args));

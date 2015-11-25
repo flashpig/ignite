@@ -101,7 +101,6 @@ import org.apache.ignite.internal.util.lang.GridCloseableIterator;
 import org.apache.ignite.internal.util.offheap.unsafe.GridUnsafeGuard;
 import org.apache.ignite.internal.util.offheap.unsafe.GridUnsafeMemory;
 import org.apache.ignite.internal.util.typedef.F;
-import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.T3;
 import org.apache.ignite.internal.util.typedef.internal.LT;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -200,6 +199,8 @@ public class IgniteH2Indexing implements GridQueryIndexing {
      */
     static {
         try {
+            System.setProperty("h2.objectCache", "false");
+
             COMMAND_FIELD = JdbcPreparedStatement.class.getDeclaredField("command");
 
             COMMAND_FIELD.setAccessible(true);
@@ -252,6 +253,9 @@ public class IgniteH2Indexing implements GridQueryIndexing {
                 c = initialValue();
 
                 set(c);
+
+                // Reset statement cache when new connection is created.
+                stmtCache.get().clear();
             }
 
             return c;
@@ -277,12 +281,11 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     private volatile GridKernalContext ctx;
 
     /** */
-    private final ThreadLocal<StatementCache<String, PreparedStatement>> stmtCache =
-        new ThreadLocal<StatementCache<String, PreparedStatement>>() {
-            @Override protected StatementCache<String, PreparedStatement> initialValue() {
-                return new StatementCache<>(PREPARED_STMT_CACHE_SIZE);
-            }
-        };
+    private final ThreadLocal<StatementCache> stmtCache = new ThreadLocal<StatementCache>() {
+        @Override protected StatementCache initialValue() {
+            return new StatementCache(PREPARED_STMT_CACHE_SIZE);
+        }
+    };
 
     /** */
     private final GridBoundedConcurrentLinkedHashMap<T3<String, String, Boolean>, TwoStepCachedQuery> twoStepCache =
@@ -310,7 +313,7 @@ public class IgniteH2Indexing implements GridQueryIndexing {
      */
     private PreparedStatement prepareStatement(Connection c, String sql, boolean useStmtCache) throws SQLException {
         if (useStmtCache) {
-            StatementCache<String, PreparedStatement> cache = stmtCache.get();
+            StatementCache cache = stmtCache.get();
 
             PreparedStatement stmt = cache.get(sql);
 
@@ -323,11 +326,6 @@ public class IgniteH2Indexing implements GridQueryIndexing {
             stmt = c.prepareStatement(sql);
 
             cache.put(sql, stmt);
-
-            PreparedStatement rmvd = cache.getAndClearRemoved();
-
-            if (rmvd != null)
-                U.closeQuiet(rmvd);
 
             return stmt;
         }
@@ -2414,12 +2412,9 @@ public class IgniteH2Indexing implements GridQueryIndexing {
     /**
      *
      */
-    private static class StatementCache<K, V> extends LinkedHashMap<K, V> {
+    private static class StatementCache extends LinkedHashMap<String, PreparedStatement> {
         /** */
         private int size;
-
-        /** */
-        private V rmvd;
 
         /**
          * @param size Size.
@@ -2431,30 +2426,16 @@ public class IgniteH2Indexing implements GridQueryIndexing {
         }
 
         /** {@inheritDoc} */
-        @Override protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-            assert rmvd == null;
-
+        @Override protected boolean removeEldestEntry(Map.Entry<String, PreparedStatement> eldest) {
             boolean rmv = size() > size;
 
-            if (rmv)
-                this.rmvd = eldest.getValue();
+            if (rmv) {
+                PreparedStatement stmt = eldest.getValue();
 
-            return rmv;
-        }
-
-        /**
-         * @return Removed value.
-         */
-        @Nullable V getAndClearRemoved() {
-            if (rmvd != null) {
-                V ret = rmvd;
-
-                rmvd = null;
-
-                return ret;
+                U.closeQuiet(stmt);
             }
 
-            return null;
+            return rmv;
         }
     }
 }
