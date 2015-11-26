@@ -47,6 +47,7 @@ import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.C1;
 import org.apache.ignite.internal.util.typedef.CI1;
 import org.apache.ignite.internal.util.typedef.F;
+import org.apache.ignite.internal.util.typedef.P1;
 import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -576,15 +577,18 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
     @Override public String toString() {
         Collection<String> futs = F.viewReadOnly(futures(), new C1<IgniteInternalFuture<?>, String>() {
             @Override public String apply(IgniteInternalFuture<?> f) {
-                return "[node=" + ((MiniFuture)f).node().id() +
-                    ", loc=" + ((MiniFuture)f).node().isLocal() +
-                    ", done=" + f.isDone() + "]";
+                return "[node=" + ((MiniFuture) f).node().id() +
+                        ", loc=" + ((MiniFuture) f).node().isLocal() +
+                        ", done=" + f.isDone() + "]";
+            }
+        }, new P1<IgniteInternalFuture<GridNearTxPrepareResponse>>() {
+            @Override public boolean apply(IgniteInternalFuture<GridNearTxPrepareResponse> fut) {
+                return isMini(fut);
             }
         });
 
         return S.toString(GridNearOptimisticTxPrepareFuture.class, this,
             "innerFuts", futs,
-            "keyLockFut", keyLockFut,
             "tx", tx,
             "super", super.toString());
     }
