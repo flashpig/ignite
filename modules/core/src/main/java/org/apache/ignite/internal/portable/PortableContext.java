@@ -639,7 +639,7 @@ public class PortableContext implements Externalizable {
      * @return Affinity field name or {@code null} if field name was not found.
      */
     private String affinityFieldName(Class cls) {
-        for (; cls != Object.class; cls = cls.getSuperclass()) {
+        for (; cls != Object.class && cls != null; cls = cls.getSuperclass()) {
             for (Field f : cls.getDeclaredFields()) {
                 if (f.getAnnotation(AffinityKeyMapped.class) != null)
                     return f.getName();
