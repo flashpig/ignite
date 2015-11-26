@@ -39,7 +39,7 @@ import java.nio.ByteBuffer;
 /**
  * Binary enum object.
  */
-public class BinaryEnumObjectImpl implements BinaryObject, Externalizable, CacheObject {
+public class BinaryEnumObjectImpl implements BinaryObjectEx, Externalizable, CacheObject {
     /** */
     private static final long serialVersionUID = 0L;
 

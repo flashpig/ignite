@@ -25,7 +25,6 @@ import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.configuration.BinaryConfiguration;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.marshaller.portable.BinaryMarshaller;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
 import java.io.Serializable;
@@ -224,8 +223,8 @@ public class BinaryEnumsSelfTest extends GridCommonAbstractTest {
 
         BinaryObject obj = node1.binary().builder("EnumHolder").setField("val", EnumType.ONE).build();
 
-        assert node1.binary().metadata("EnumHolder") != null;
-        assert node1.binary().metadata("EnumType") != null;
+        assert node1.binary().type("EnumHolder") != null;
+        assert node1.binary().type("EnumType") != null;
 
         cacheBinary1.put(1, obj);
 
@@ -406,8 +405,8 @@ public class BinaryEnumsSelfTest extends GridCommonAbstractTest {
     private void validate(BinaryObject obj, EnumType val) {
         assertTrue(obj.type().isEnum());
 
-        assertEquals(node1.binary().typeId(EnumType.class.getName()), obj.typeId());
-        assertEquals(node2.binary().typeId(EnumType.class.getName()), obj.typeId());
+        assertEquals(node1.binary().typeId(EnumType.class.getName()), obj.type().typeId());
+        assertEquals(node2.binary().typeId(EnumType.class.getName()), obj.type().typeId());
 
         assertEquals(val.ordinal(), obj.enumOrdinal());
     }

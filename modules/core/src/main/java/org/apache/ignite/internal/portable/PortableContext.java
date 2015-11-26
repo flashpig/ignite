@@ -546,7 +546,7 @@ public class PortableContext implements Externalizable {
         Collection<PortableSchema> schemas = desc.schema() != null ? Collections.singleton(desc.schema()) : null;
 
         metaHnd.addMeta(typeId, 
-            new BinaryMetadata(typeId, typeName, desc.fieldsMeta(), addFieldName, schemas, desc.isEnum()).wrap(this));
+            new BinaryMetadata(typeId, typeName, desc.fieldsMeta(), affFieldName, schemas, desc.isEnum()).wrap(this));
 
         // perform put() instead of putIfAbsent() because "registered" flag might have been changed or class loader
         // might have reloaded described class.
