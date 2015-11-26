@@ -413,7 +413,8 @@ namespace Apache.Ignite.Core.Impl.Binary
                     return default(T);
 
                 case BinaryUtils.TypeEnum:
-                    return ReadEnum0<T>(this);
+                    // Never read enums in binary mode when reading a field (we do not support half-binary objects)
+                    return ReadEnum0<T>(this, false);  
 
                 case BinaryUtils.HdrFull:
                     // Unregistered enum written as serializable
@@ -582,7 +583,7 @@ namespace Apache.Ignite.Core.Impl.Binary
                     return true;
 
                 case BinaryUtils.TypeEnum:
-                    res = ReadEnum0<T>(this);
+                    res = ReadEnum0<T>(this, _mode != BinaryMode.Deserialize);
 
                     return true;
             }
@@ -986,13 +987,13 @@ namespace Apache.Ignite.Core.Impl.Binary
         /// <summary>
         /// Reads the enum.
         /// </summary>
-        private static T ReadEnum0<T>(BinaryReader reader)
+        private static T ReadEnum0<T>(BinaryReader reader, bool keepBinary)
         {
             var enumType = reader.ReadInt();
 
             var enumValue = reader.ReadInt();
 
-            if (reader._mode == BinaryMode.Deserialize)
+            if (!keepBinary)
                 return BinaryUtils.GetEnumValue<T>(enumValue, enumType, reader.Marshaller);
 
             return TypeCaster<T>.Cast(new BinaryEnum(enumType, enumValue, reader.Marshaller));
