@@ -85,7 +85,9 @@ public class GridLocalCacheEntry extends GridCacheMapEntry {
         long timeout,
         boolean reenter,
         boolean tx,
-        boolean implicitSingle) throws GridCacheEntryRemovedException {
+        boolean implicitSingle,
+        boolean keepBinary
+    ) throws GridCacheEntryRemovedException {
         GridCacheMvccCandidate prev;
         GridCacheMvccCandidate cand;
         GridCacheMvccCandidate owner;
@@ -142,7 +144,7 @@ public class GridLocalCacheEntry extends GridCacheMapEntry {
             // Event notification.
             if (cctx.events().isRecordable(EVT_CACHE_OBJECT_LOCKED))
                 cctx.events().addEvent(partition(), key, cand.nodeId(), cand, EVT_CACHE_OBJECT_LOCKED, val, hasVal,
-                    val, hasVal, null, null, null);
+                    val, hasVal, null, null, null, keepBinary);
         }
 
         checkOwnerChanged(prev, owner);
@@ -208,7 +210,8 @@ public class GridLocalCacheEntry extends GridCacheMapEntry {
     @Override public boolean tmLock(IgniteInternalTx tx,
         long timeout,
         @Nullable GridCacheVersion serOrder,
-        GridCacheVersion serReadVer)
+        GridCacheVersion serReadVer,
+        boolean keepBinary)
         throws GridCacheEntryRemovedException {
         GridCacheMvccCandidate cand = addLocal(
             tx.threadId(),
@@ -218,7 +221,8 @@ public class GridLocalCacheEntry extends GridCacheMapEntry {
             timeout,
             /*reenter*/false,
             /*tx*/true,
-            tx.implicitSingle()
+            tx.implicitSingle(),
+            keepBinary
         );
 
         if (cand != null) {
@@ -353,7 +357,7 @@ public class GridLocalCacheEntry extends GridCacheMapEntry {
             // Event notification.
             if (cctx.events().isRecordable(EVT_CACHE_OBJECT_UNLOCKED))
                 cctx.events().addEvent(partition(), key, prev.nodeId(), prev, EVT_CACHE_OBJECT_UNLOCKED, val, hasVal,
-                    val, hasVal, null, null, null);
+                    val, hasVal, null, null, null, true);
         }
 
         checkOwnerChanged(prev, owner);
@@ -409,7 +413,7 @@ public class GridLocalCacheEntry extends GridCacheMapEntry {
             // Event notification.
             if (cctx.events().isRecordable(EVT_CACHE_OBJECT_UNLOCKED))
                 cctx.events().addEvent(partition(), key, doomed.nodeId(), doomed, EVT_CACHE_OBJECT_UNLOCKED,
-                    val, hasVal, val, hasVal, null, null, null);
+                    val, hasVal, val, hasVal, null, null, null, true);
         }
 
         checkOwnerChanged(prev, owner);
