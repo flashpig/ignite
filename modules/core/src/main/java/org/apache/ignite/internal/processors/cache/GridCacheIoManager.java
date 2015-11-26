@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
+import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.internal.IgniteInternalFuture;
 import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
@@ -1033,6 +1034,9 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
         }
         catch (IgniteCheckedException e) {
             cacheMsg.onClassError(e);
+        }
+        catch (BinaryObjectException e) {
+            cacheMsg.onClassError(new IgniteCheckedException(e));
         }
         catch (Error e) {
             if (cacheMsg.ignoreClassErrors() && X.hasCause(e, NoClassDefFoundError.class,
