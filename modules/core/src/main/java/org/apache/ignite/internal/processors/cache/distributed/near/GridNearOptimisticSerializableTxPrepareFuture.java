@@ -74,6 +74,10 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
 
     /** */
     @GridToStringExclude
+    private KeyLockFuture keyLockFut;
+
+    /** */
+    @GridToStringExclude
     private ClientRemapFuture remapFut;
 
     /**
