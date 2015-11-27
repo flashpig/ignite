@@ -354,7 +354,9 @@ namespace Apache.Ignite.Core.Tests.Cache
                         entries.Aggregate((acc, val) => string.Format("{0}, {1}", acc, val)));
 
                 var size = cache.GetSize();
-                Assert.AreEqual(0, size, "Cache enumerator returned no entries, but cache size is " + size);
+                Assert.AreEqual(0, size,
+                    "Cache enumerator returned no entries, but cache '{0}' size is {1} in grid [{2}]",
+                    CacheName(), size, i);
             }
 
             Console.WriteLine("Test finished: " + TestContext.CurrentContext.Test.Name);
