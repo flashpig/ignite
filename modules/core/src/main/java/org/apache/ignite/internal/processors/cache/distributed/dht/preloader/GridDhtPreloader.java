@@ -160,9 +160,13 @@ public class GridDhtPreloader extends GridCachePreloaderAdapter {
                 }
 
                 if (!initRebalanceFut.isDone()) {
-                    cctx.closures().runLocalSafe(new Runnable() {
-                        @Override public void run() {
-                            initRebalanceFut.onDone();
+                    initialRebalanceFuture().listen(new CI1<IgniteInternalFuture<?>>() {
+                        @Override public void apply(IgniteInternalFuture<?> fut) {
+                            cctx.closures().runLocalSafe(new Runnable() {
+                                @Override public void run() {
+                                    initRebalanceFut.onDone();
+                                }
+                            });
                         }
                     });
                 }
