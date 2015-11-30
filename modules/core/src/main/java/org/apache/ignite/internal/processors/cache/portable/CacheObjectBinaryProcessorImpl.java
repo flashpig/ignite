@@ -503,7 +503,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
             if (clientNode)
                 return clientMetaDataCache.get(typeId);
             else {
-                BinaryMetadata meta = metaDataCache.localPeek(new PortableMetadataKey(typeId));
+                BinaryMetadata meta = metaDataCache.getTopologySafe(new PortableMetadataKey(typeId));
 
                 return meta != null ? meta.wrap(portableCtx) : null;
             }
