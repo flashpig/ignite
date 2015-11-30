@@ -1744,6 +1744,7 @@ public class GridCacheContext<K, V> implements Externalizable {
      *
      * @param o Object to unwrap.
      * @param keepPortable Keep portable flag.
+     * @param cpy Copy value flag.
      * @return Unwrapped object.
      */
     public Object unwrapPortableIfNeeded(Object o, boolean keepPortable, boolean cpy) {
@@ -1762,6 +1763,8 @@ public class GridCacheContext<K, V> implements Externalizable {
      * @return Cache object.
      */
     @Nullable public CacheObject toCacheObject(@Nullable Object obj) {
+        assert validObjectForCache(obj) : obj;
+
         return cacheObjects().toCacheObject(cacheObjCtx, obj, true);
     }
 
@@ -1770,7 +1773,19 @@ public class GridCacheContext<K, V> implements Externalizable {
      * @return Cache key object.
      */
     public KeyCacheObject toCacheKeyObject(Object obj) {
+        assert validObjectForCache(obj) : obj;
+
         return cacheObjects().toCacheKeyObject(cacheObjCtx, obj, true);
+    }
+
+    /**
+     * @param obj Object.
+     * @return {@code False} if objects is not expected for cache.
+     */
+    private boolean validObjectForCache(Object obj) {
+        return obj == null ||
+            !CU.isUtilityCache(cacheName) ||
+            ctx.marshallerContext().isSystemType(obj.getClass().getName());
     }
 
     /**
