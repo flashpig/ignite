@@ -239,6 +239,9 @@ public class GridCacheContext<K, V> implements Externalizable {
     /** Deployment enabled flag for this specific cache */
     private boolean depEnabled;
 
+    /** */
+    private boolean deferredDelete;
+
     /**
      * Empty constructor required for {@link Externalizable}.
      */
@@ -506,6 +509,9 @@ public class GridCacheContext<K, V> implements Externalizable {
      */
     public void cache(GridCacheAdapter<K, V> cache) {
         this.cache = cache;
+
+        deferredDelete = cache.isDht() || cache.isDhtAtomic() || cache.isColocated() ||
+            (cache.isNear() && cache.configuration().getAtomicityMode() == ATOMIC);
     }
 
     /**
@@ -568,21 +574,7 @@ public class GridCacheContext<K, V> implements Externalizable {
      * @return {@code True} if entries should not be deleted from cache immediately.
      */
     public boolean deferredDelete() {
-        GridCacheAdapter<K, V> cache = this.cache;
-
-        if (cache == null)
-            throw new IllegalStateException("Cache stopped: " + cacheName);
-
-        return deferredDelete(cache);
-    }
-
-    /**
-     * @param cache Cache.
-     * @return {@code True} if entries should not be deleted from cache immediately.
-     */
-    public boolean deferredDelete(GridCacheAdapter<?, ?> cache) {
-        return cache.isDht() || cache.isDhtAtomic() || cache.isColocated() ||
-            (cache.isNear() && cache.configuration().getAtomicityMode() == ATOMIC);
+        return deferredDelete;
     }
 
     /**
