@@ -2306,8 +2306,6 @@ public class TcpCommunicationSpi extends IgniteSpiAdapter
                     GridNioRecoveryDescriptor recoveryDesc = recoveryDescriptor(node);
 
                     if (getSpiContext().node(node.id()) == null) {
-                        recoveryDesc.release();
-
                         U.closeQuiet(ch);
 
                         throw new ClusterTopologyCheckedException("Failed to send message " +
