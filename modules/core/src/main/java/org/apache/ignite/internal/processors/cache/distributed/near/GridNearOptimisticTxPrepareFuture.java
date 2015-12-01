@@ -590,13 +590,9 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
     @Override public String toString() {
         Collection<String> futs = F.viewReadOnly(futures(), new C1<IgniteInternalFuture<?>, String>() {
             @Override public String apply(IgniteInternalFuture<?> f) {
-                return "[node=" + ((MiniFuture) f).node().id() +
-                        ", loc=" + ((MiniFuture) f).node().isLocal() +
-                        ", done=" + f.isDone() + "]";
-            }
-        }, new P1<IgniteInternalFuture<GridNearTxPrepareResponse>>() {
-            @Override public boolean apply(IgniteInternalFuture<GridNearTxPrepareResponse> fut) {
-                return isMini(fut);
+                return "[node=" + ((MiniFuture)f).node().id() +
+                    ", loc=" + ((MiniFuture)f).node().isLocal() +
+                    ", done=" + f.isDone() + "]";
             }
         }, new P1<IgniteInternalFuture<GridNearTxPrepareResponse>>() {
             @Override public boolean apply(IgniteInternalFuture<GridNearTxPrepareResponse> fut) {
