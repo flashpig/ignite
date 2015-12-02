@@ -1349,13 +1349,13 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                             for (GridCacheContext cacheCtx : cctx.cacheContexts()) {
                                 long delay = cacheCtx.config().getRebalanceDelay();
 
-                                GridDhtPreloaderAssignments assigns = null;
-
                                 // Don't delay for dummy reassigns to avoid infinite recursion.
-                                if (delay == 0 || forcePreload)
-                                    assigns = cacheCtx.preloader().assign(exchFut);
+                                if (delay == 0 || forcePreload) {
+                                    GridDhtPreloaderAssignments assigns = cacheCtx.preloader().assign(exchFut);
 
-                                assignsMap.put(cacheCtx.cacheId(), assigns);
+                                    if (assigns != null)
+                                        assignsMap.put(cacheCtx.cacheId(), assigns);
+                                }
                             }
                         }
                     }
@@ -1399,23 +1399,26 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                         waitList.add(cctx.cacheContext(cId).name());
                                 }
 
-                                Callable<Boolean> r = cacheCtx.preloader().addAssignments(
-                                    assignsMap.get(cacheId), forcePreload, waitList, cnt);
+                                GridDhtPreloaderAssignments assignments = assignsMap.get(cacheId);
 
-                                if (r != null) {
-                                    U.log(log, "Cache rebalancing scheduled: [cache=" + cacheCtx.name() +
-                                        ", waitList=" + waitList.toString() + "]");
+                                if (assignments != null) {
+                                    Callable<Boolean> r = cacheCtx.preloader().addAssignments(assignments,
+                                        forcePreload,
+                                        waitList,
+                                        cnt);
 
-                                    if (cacheId == CU.cacheId(GridCacheUtils.MARSH_CACHE_NAME))
-                                        marshR = r;
-                                    else
-                                        orderedRs.add(r);
+                                    if (r != null) {
+                                        U.log(log, "Cache rebalancing scheduled: [cache=" + cacheCtx.name() +
+                                            ", waitList=" + waitList.toString() + "]");
+
+                                        if (cacheId == CU.cacheId(GridCacheUtils.MARSH_CACHE_NAME))
+                                            marshR = r;
+                                        else
+                                            orderedRs.add(r);
+                                    }
                                 }
                             }
                         }
-
-                        if (asyncStartFut != null)
-                            asyncStartFut.get(); // Wait for thread stop.
 
                         rebalanceQ.addAll(orderedRs);
 
@@ -1425,7 +1428,7 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                     "[top=" + exchFut.topologyVersion() + ", evt=" + exchFut.discoveryEvent().name() +
                                     ", node=" + exchFut.discoveryEvent().eventNode().id() + ']');
 
-                                if (marshR != null)
+                                if (marshR != null) {
                                     try {
                                         marshR.call(); //Marshaller cache rebalancing launches in sync way.
                                     }
@@ -1435,6 +1438,10 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
 
                                         continue;
                                     }
+                                }
+
+                                if (asyncStartFut != null)
+                                    asyncStartFut.get(); // Wait for thread stop.
 
                                 final GridFutureAdapter fut = new GridFutureAdapter();
 
@@ -1463,17 +1470,19 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                             fut.onDone();
                                         }
                                     }
-                                }, /*system pool*/ true);
+                                }, /*system pool*/true);
                             }
-                            else
+                            else {
                                 U.log(log, "Skipping rebalancing (obsolete exchange ID) " +
                                     "[top=" + exchFut.topologyVersion() + ", evt=" + exchFut.discoveryEvent().name() +
                                     ", node=" + exchFut.discoveryEvent().eventNode().id() + ']');
+                            }
                         }
-                        else
+                        else {
                             U.log(log, "Skipping rebalancing (nothing scheduled) " +
                                 "[top=" + exchFut.topologyVersion() + ", evt=" + exchFut.discoveryEvent().name() +
                                 ", node=" + exchFut.discoveryEvent().eventNode().id() + ']');
+                        }
                     }
                 }
                 catch (IgniteInterruptedCheckedException e) {
