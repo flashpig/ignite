@@ -294,8 +294,6 @@ public class GridDhtPartitionDemander {
         long delay = cctx.config().getRebalanceDelay();
 
         if (delay == 0 || force) {
-            assert assigns != null;
-
             final RebalanceFuture oldFut = rebalanceFut;
 
             final RebalanceFuture fut = new RebalanceFuture(assigns, cctx, log, oldFut.isInitial(), cnt);
@@ -313,7 +311,7 @@ public class GridDhtPartitionDemander {
             rebalanceFut = fut;
 
             if (assigns.isEmpty()) {
-                fut.doneIfEmpty();
+                fut.doneIfEmpty(assigns.cancelled());
 
                 return null;
             }
@@ -841,9 +839,9 @@ public class GridDhtPartitionDemander {
         }
 
         /**
-         *
+         * @param cancelled Is cancelled.
          */
-        private void doneIfEmpty() {
+        private void doneIfEmpty(boolean cancelled) {
             synchronized (this) {
                 if (isDone())
                     return;
@@ -854,14 +852,14 @@ public class GridDhtPartitionDemander {
                     log.debug("Rebalancing is not required [cache=" + cctx.name() +
                         ", topology=" + topVer + "]");
 
-                checkIsDone();
+                checkIsDone(cancelled);
             }
         }
 
         /**
          * Cancels this future.
          *
-         * @return {@code true}.
+         * @return {@code True}.
          */
         @Override public boolean cancel() {
             synchronized (this) {

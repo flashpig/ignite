@@ -1353,8 +1353,7 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                 if (delay == 0 || forcePreload) {
                                     GridDhtPreloaderAssignments assigns = cacheCtx.preloader().assign(exchFut);
 
-                                    if (assigns != null)
-                                        assignsMap.put(cacheCtx.cacheId(), assigns);
+                                    assignsMap.put(cacheCtx.cacheId(), assigns);
                                 }
                             }
                         }
@@ -1399,26 +1398,25 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                         waitList.add(cctx.cacheContext(cId).name());
                                 }
 
-                                GridDhtPreloaderAssignments assignments = assignsMap.get(cacheId);
+                                Callable<Boolean> r = cacheCtx.preloader().addAssignments(assignsMap.get(cacheId),
+                                    forcePreload,
+                                    waitList,
+                                    cnt);
 
-                                if (assignments != null) {
-                                    Callable<Boolean> r = cacheCtx.preloader().addAssignments(assignments,
-                                        forcePreload,
-                                        waitList,
-                                        cnt);
+                                if (r != null) {
+                                    U.log(log, "Cache rebalancing scheduled: [cache=" + cacheCtx.name() +
+                                        ", waitList=" + waitList.toString() + "]");
 
-                                    if (r != null) {
-                                        U.log(log, "Cache rebalancing scheduled: [cache=" + cacheCtx.name() +
-                                            ", waitList=" + waitList.toString() + "]");
-
-                                        if (cacheId == CU.cacheId(GridCacheUtils.MARSH_CACHE_NAME))
-                                            marshR = r;
-                                        else
-                                            orderedRs.add(r);
-                                    }
+                                    if (cacheId == CU.cacheId(GridCacheUtils.MARSH_CACHE_NAME))
+                                        marshR = r;
+                                    else
+                                        orderedRs.add(r);
                                 }
                             }
                         }
+
+                        if (asyncStartFut != null)
+                            asyncStartFut.get(); // Wait for thread stop.
 
                         rebalanceQ.addAll(orderedRs);
 
@@ -1439,9 +1437,6 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                                         continue;
                                     }
                                 }
-
-                                if (asyncStartFut != null)
-                                    asyncStartFut.get(); // Wait for thread stop.
 
                                 final GridFutureAdapter fut = new GridFutureAdapter();
 
