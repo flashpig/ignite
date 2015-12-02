@@ -35,7 +35,7 @@ public class CollocatedSetItemKey implements SetItemKey {
 
     /** */
     @AffinityKeyMapped
-    private String setName;
+    private int setNameHash;
 
     /**
      * @param setName Set name.
@@ -43,7 +43,7 @@ public class CollocatedSetItemKey implements SetItemKey {
      * @param item Set item.
      */
     public CollocatedSetItemKey(String setName, IgniteUuid setId, Object item) {
-        this.setName = setName;
+        this.setNameHash = setName.hashCode();
         this.setId = setId;
         this.item = item;
     }

@@ -30,7 +30,7 @@ public class CollocatedQueueItemKey implements QueueItemKey {
 
     /** */
     @AffinityKeyMapped
-    private String queueName;
+    private int queueNameHash;
 
     /** */
     private long idx;
@@ -42,7 +42,7 @@ public class CollocatedQueueItemKey implements QueueItemKey {
      */
     public CollocatedQueueItemKey(IgniteUuid queueId, String queueName, long idx) {
         this.queueId = queueId;
-        this.queueName = queueName;
+        this.queueNameHash = queueName.hashCode();
         this.idx = idx;
     }
 

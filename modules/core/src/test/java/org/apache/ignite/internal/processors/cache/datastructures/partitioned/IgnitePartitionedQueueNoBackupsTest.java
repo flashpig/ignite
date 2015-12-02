@@ -36,7 +36,7 @@ import static org.apache.ignite.cache.CacheMode.PARTITIONED;
 /**
  *
  */
-public class IgnitePartitionedQueueCollocationTest extends GridCachePartitionedQueueApiSelfTest {
+public class IgnitePartitionedQueueNoBackupsTest extends GridCachePartitionedQueueApiSelfTest {
     /** {@inheritDoc} */
     @Override protected CacheMode collectionCacheMode() {
         return PARTITIONED;
