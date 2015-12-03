@@ -170,11 +170,8 @@ public abstract class GridCacheAbstractDataStructuresFailoverSelfTest extends Ig
             while (U.currentTimeMillis() < stopTime)
                 assertEquals(10, atomic.get());
         }
-        catch (IgniteException e) {
-            if (X.hasCause(e, ClusterTopologyServerNotFoundException.class))
-                return;
-
-            throw e;
+        catch (IgniteException ignore) {
+            // No-op.
         }
 
         fail();
