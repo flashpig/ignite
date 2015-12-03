@@ -1019,7 +1019,7 @@ public class GridDhtPartitionDemander {
                     preloadEvent(EVT_CACHE_REBALANCE_STOPPED, exchFut.discoveryEvent());
 
                 if (log.isDebugEnabled())
-                    log.debug("Completed rebalance future.");
+                    log.debug("Completed rebalance future: " + this);
 
                 cctx.shared().exchange().scheduleResendPartitions();
 

@@ -1349,12 +1349,13 @@ public class GridCachePartitionExchangeManager<K, V> extends GridCacheSharedMana
                             for (GridCacheContext cacheCtx : cctx.cacheContexts()) {
                                 long delay = cacheCtx.config().getRebalanceDelay();
 
-                                // Don't delay for dummy reassigns to avoid infinite recursion.
-                                if (delay == 0 || forcePreload) {
-                                    GridDhtPreloaderAssignments assigns = cacheCtx.preloader().assign(exchFut);
+                                GridDhtPreloaderAssignments assigns = null;
 
-                                    assignsMap.put(cacheCtx.cacheId(), assigns);
-                                }
+                                // Don't delay for dummy reassigns to avoid infinite recursion.
+                                if (delay == 0 || forcePreload)
+                                    assigns = cacheCtx.preloader().assign(exchFut);
+
+                                assignsMap.put(cacheCtx.cacheId(), assigns);
                             }
                         }
                     }
