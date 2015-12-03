@@ -171,7 +171,7 @@ public abstract class GridCacheAbstractDataStructuresFailoverSelfTest extends Ig
                 assertEquals(10, atomic.get());
         }
         catch (IgniteException ignore) {
-            // No-op.
+            return; // Test that client does not hang.
         }
 
         fail();
