@@ -337,6 +337,13 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
                         cacheCtx.config().isLoadPreviousValue() &&
                         !txEntry.skipStore();
 
+                    boolean evt = retVal || txEntry.op() == TRANSFORM;
+
+                    EntryProcessor entryProc = null;
+
+                    if (evt && txEntry.op() == TRANSFORM)
+                        entryProc = F.first(txEntry.entryProcessors()).get1();
+
                     CacheObject val = cached.innerGet(
                         tx,
                         /*swap*/true,
@@ -344,11 +351,11 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
                         /*fail fast*/false,
                         /*unmarshal*/true,
                         /*metrics*/retVal,
-                        /*event*/retVal,
+                        /*event*/evt,
                         /*tmp*/false,
-                        null,
-                        null,
-                        null,
+                        tx.subjectId(),
+                        entryProc,
+                        tx.resolveTaskName(),
                         null,
                         txEntry.keepBinary());
 
