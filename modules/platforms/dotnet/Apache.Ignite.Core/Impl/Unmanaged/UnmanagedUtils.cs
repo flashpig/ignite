@@ -681,8 +681,6 @@ namespace Apache.Ignite.Core.Impl.Unmanaged
             }
         }
 
-        
-
         internal static int HandlersSize()
         {
             return JNI.HandlersSize();
