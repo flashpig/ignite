@@ -133,10 +133,7 @@ public abstract class IgniteCachePutRetryAbstractSelfTest extends GridCommonAbst
     @Override protected void beforeTestsStarted() throws Exception {
         super.beforeTestsStarted();
 
-        startGrid(3);
-        startGrid(2);
-        startGrid(1);
-        startGrid(0);
+        startGridsMultiThreaded(GRID_CNT);
     }
 
     /** {@inheritDoc} */
