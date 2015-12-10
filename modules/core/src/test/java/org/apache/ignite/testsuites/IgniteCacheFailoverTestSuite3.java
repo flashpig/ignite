@@ -34,8 +34,6 @@ public class IgniteCacheFailoverTestSuite3 extends TestSuite {
         TestSuite suite = new TestSuite("Cache Failover Test Suite3");
 
         suite.addTestSuite(IgniteCachePutRetryTransactionalSelfTest.class);
-        suite.addTestSuite(IgniteCachePutRetryTransactionalSelfTest.class);
-        suite.addTestSuite(IgniteCachePutRetryTransactionalSelfTest.class);
 
         return suite;
     }
