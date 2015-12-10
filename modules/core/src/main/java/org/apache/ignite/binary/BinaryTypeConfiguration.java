@@ -17,9 +17,13 @@
 
 package org.apache.ignite.binary;
 
+import org.apache.ignite.internal.portable.BinaryMarshaller;
+import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.configuration.BinaryConfiguration;
+
+import java.io.Externalizable;
 
 /**
  * Defines configuration properties for a specific binary type. Providing per-type
@@ -29,6 +33,9 @@ import org.apache.ignite.configuration.BinaryConfiguration;
  * binary type without affecting configuration for other binary types.
  */
 public class BinaryTypeConfiguration {
+    /** Default value of "use default serialization" flag. */
+    public static final boolean DFLT_USE_DFLT_SER = false;
+
     /** Class name. */
     private String typeName;
 
@@ -41,10 +48,29 @@ public class BinaryTypeConfiguration {
     /** Enum flag. */
     private boolean isEnum;
 
+    /** Use default serialization flag. */
+    private boolean useDfltSer = DFLT_USE_DFLT_SER;
+
     /**
+     * Constructor.
      */
     public BinaryTypeConfiguration() {
         // No-op.
+    }
+
+    /**
+     * Copying constructor.
+     *
+     * @param other Other instance.
+     */
+    public BinaryTypeConfiguration(BinaryTypeConfiguration other) {
+        A.notNull(other, "other");
+
+        typeName = other.typeName;
+        idMapper = other.idMapper;
+        serializer = other.serializer;
+        isEnum = other.isEnum;
+        useDfltSer = other.useDfltSer;
     }
 
     /**
@@ -124,6 +150,34 @@ public class BinaryTypeConfiguration {
      */
     public void setEnum(boolean isEnum) {
         this.isEnum = isEnum;
+    }
+
+    /**
+     * Gets whether to use default serialization.
+     * <p>
+     * {@link BinaryMarshaller} allows for objects to be used without deserialization. To achieve this fields metadata
+     * is written along with their values. When default Java serialization mechanisms, such as {@link Externalizable}
+     * or {@code writeObject()} method, are used, there is no way to get this metadata. For this reason by default
+     * {@code BinaryMarshaller} ignores these mechanisms and writes all non-transient fields directly.
+     * <p>
+     * Sometimes you might want to disable this behavior and fallback to default serialization. Set value of this flag
+     * to {@code true} to achieve this.
+     * <p>
+     * Defaults to {@link #DFLT_USE_DFLT_SER}.
+     *
+     * @return {@code True} if default serialization should be used.
+     */
+    public boolean isUseDefaultSerialization() {
+        return useDfltSer;
+    }
+
+    /**
+     * Sets whether to use default serialization. See {@link #isUseDefaultSerialization()} for details.
+     *
+     * @param useDfltSer {@code True} if default serialization should be used.
+     */
+    public void setUseDefaultSerialization(boolean useDfltSer) {
+        this.useDfltSer = useDfltSer;
     }
 
     /** {@inheritDoc} */
