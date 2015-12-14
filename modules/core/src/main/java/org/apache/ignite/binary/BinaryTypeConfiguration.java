@@ -34,7 +34,7 @@ import java.io.Externalizable;
  */
 public class BinaryTypeConfiguration {
     /** Default value of "use default serialization" flag. */
-    public static final boolean DFLT_USE_DFLT_SER = false;
+    public static final boolean DFLT_USE_DFLT_SER = true;
 
     /** Class name. */
     private String typeName;

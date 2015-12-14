@@ -113,8 +113,8 @@ public class BinaryContext implements Externalizable {
     /** */
     private final Map<String, BinaryIdMapper> typeMappers = new ConcurrentHashMap8<>(0);
 
-    /** Default serialization flags. */
-    private final Set<Integer> dfltSerializationFlags =
+    /** Non-default serialization flags. */
+    private final Set<Integer> nonDfltSerializationFlags =
         Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
 
     /** */
@@ -574,7 +574,7 @@ public class BinaryContext implements Externalizable {
             true,
             registered,
             false /* predefined */,
-            dfltSerializationFlags.contains(typeId)
+            !nonDfltSerializationFlags.contains(typeId)
         );
 
         if (!deserialize) {
@@ -733,7 +733,7 @@ public class BinaryContext implements Externalizable {
             false,
             true, /* registered */
             true, /* predefined */
-            false /* default serialization */
+            true /* default serialization */
         );
 
         predefinedTypeNames.put(typeName, id);
@@ -790,8 +790,8 @@ public class BinaryContext implements Externalizable {
 
         typeMappers.put(typeName, idMapper);
 
-        if (useDfltSerialization)
-            dfltSerializationFlags.add(id);
+        if (!useDfltSerialization)
+            nonDfltSerializationFlags.add(id);
 
         Map<String, Integer> fieldsMeta = null;
         Collection<BinarySchema> schemas = null;
