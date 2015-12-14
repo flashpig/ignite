@@ -128,6 +128,7 @@ public class BinaryClassDescriptor {
      * @param metaDataEnabled Metadata enabled flag.
      * @param registered Whether typeId has been successfully registered by MarshallerContext or not.
      * @param predefined Whether the class is predefined or not.
+     * @param useDfltSerialization Whether to use default configuration.
      * @throws BinaryObjectException In case of error.
      */
     BinaryClassDescriptor(
@@ -141,7 +142,8 @@ public class BinaryClassDescriptor {
         @Nullable BinarySerializer serializer,
         boolean metaDataEnabled,
         boolean registered,
-        boolean predefined
+        boolean predefined,
+        boolean useDfltSerialization
     ) throws BinaryObjectException {
         assert ctx != null;
         assert cls != null;

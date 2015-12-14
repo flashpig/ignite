@@ -70,6 +70,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -110,6 +111,10 @@ public class BinaryContext implements Externalizable {
 
     /** */
     private final Map<String, BinaryIdMapper> typeMappers = new ConcurrentHashMap8<>(0);
+
+    /** Default serialization flags. */
+    private final Set<Integer> dfltSerializationFlags =
+        Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
 
     /** */
     private BinaryMetadataHandler metaHnd;
@@ -298,16 +303,17 @@ public class BinaryContext implements Externalizable {
 
                     for (String clsName0 : classesInPackage(pkgName))
                         descs.add(clsName0, idMapper, serializer, affFields.get(clsName0),
-                            typeCfg.isEnum(), true);
+                            typeCfg.isEnum(), typeCfg.isUseDefaultSerialization(), true);
                 }
                 else
                     descs.add(clsName, idMapper, serializer, affFields.get(clsName),
-                        typeCfg.isEnum(), false);
+                        typeCfg.isEnum(), typeCfg.isUseDefaultSerialization(), false);
             }
         }
 
         for (TypeDescriptor desc : descs.descriptors())
-            registerUserType(desc.clsName, desc.idMapper, desc.serializer, desc.affKeyFieldName, desc.isEnum);
+            registerUserType(desc.clsName, desc.idMapper, desc.serializer, desc.affKeyFieldName, desc.isEnum,
+                desc.useDfltSerialization);
 
         BinaryInternalIdMapper dfltMapper = BinaryInternalIdMapper.create(globalIdMapper);
 
@@ -505,7 +511,8 @@ public class BinaryContext implements Externalizable {
                 null,
                 false,
                 true, /* registered */
-                false /* predefined */
+                false, /* predefined */
+                true /* prefer default serialization */
             );
 
             BinaryClassDescriptor old = descByCls.putIfAbsent(cls, desc);
@@ -553,7 +560,8 @@ public class BinaryContext implements Externalizable {
             null,
             true,
             registered,
-            false /* predefined */
+            false /* predefined */,
+            dfltSerializationFlags.contains(typeId)
         );
 
         if (!deserialize) {
@@ -711,7 +719,8 @@ public class BinaryContext implements Externalizable {
             null,
             false,
             true, /* registered */
-            true /* predefined */
+            true, /* predefined */
+            false /* default serialization */
         );
 
         predefinedTypeNames.put(typeName, id);
@@ -728,6 +737,7 @@ public class BinaryContext implements Externalizable {
      * @param serializer Serializer.
      * @param affKeyFieldName Affinity key field name.
      * @param isEnum If enum.
+     * @param useDfltSerialization Use default serialization flag.
      * @throws BinaryObjectException In case of error.
      */
     @SuppressWarnings("ErrorNotRethrown")
@@ -735,7 +745,8 @@ public class BinaryContext implements Externalizable {
         BinaryIdMapper idMapper,
         @Nullable BinarySerializer serializer,
         @Nullable String affKeyFieldName,
-        boolean isEnum)
+        boolean isEnum,
+        boolean useDfltSerialization)
         throws BinaryObjectException {
         assert idMapper != null;
 
@@ -766,6 +777,9 @@ public class BinaryContext implements Externalizable {
 
         typeMappers.put(typeName, idMapper);
 
+        if (useDfltSerialization)
+            dfltSerializationFlags.add(id);
+
         Map<String, Integer> fieldsMeta = null;
         Collection<BinarySchema> schemas = null;
 
@@ -781,7 +795,8 @@ public class BinaryContext implements Externalizable {
                 serializer,
                 true,
                 true, /* registered */
-                false /* predefined */
+                false, /* predefined */
+                useDfltSerialization
             );
 
             fieldsMeta = desc.fieldsMeta();
@@ -969,6 +984,7 @@ public class BinaryContext implements Externalizable {
          * @param serializer Serializer.
          * @param affKeyFieldName Affinity key field name.
          * @param isEnum Enum flag.
+         * @param useDfltSerialziation Use default serialization flag.
          * @param canOverride Whether this descriptor can be override.
          * @throws BinaryObjectException If failed.
          */
@@ -977,6 +993,7 @@ public class BinaryContext implements Externalizable {
             BinarySerializer serializer,
             String affKeyFieldName,
             boolean isEnum,
+            boolean useDfltSerialziation,
             boolean canOverride)
             throws BinaryObjectException {
             TypeDescriptor desc = new TypeDescriptor(clsName,
@@ -984,6 +1001,7 @@ public class BinaryContext implements Externalizable {
                 serializer,
                 affKeyFieldName,
                 isEnum,
+                useDfltSerialziation,
                 canOverride);
 
             TypeDescriptor oldDesc = descs.get(clsName);
@@ -1023,6 +1041,9 @@ public class BinaryContext implements Externalizable {
         /** Enum flag. */
         private boolean isEnum;
 
+        /** Use default serialization flag. */
+        private boolean useDfltSerialization;
+
         /** Whether this descriptor can be override. */
         private boolean canOverride;
 
@@ -1034,15 +1055,17 @@ public class BinaryContext implements Externalizable {
          * @param serializer Serializer.
          * @param affKeyFieldName Affinity key field name.
          * @param isEnum Enum type.
+         * @param useDfltSerialization Use default serialization flag.
          * @param canOverride Whether this descriptor can be override.
          */
         private TypeDescriptor(String clsName, BinaryIdMapper idMapper, BinarySerializer serializer,
-            String affKeyFieldName, boolean isEnum, boolean canOverride) {
+            String affKeyFieldName, boolean isEnum, boolean useDfltSerialization, boolean canOverride) {
             this.clsName = clsName;
             this.idMapper = idMapper;
             this.serializer = serializer;
             this.affKeyFieldName = affKeyFieldName;
             this.isEnum = isEnum;
+            this.useDfltSerialization = useDfltSerialization;
             this.canOverride = canOverride;
         }
 
