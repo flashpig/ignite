@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.processors.cache.dr;
 
+import javax.cache.processor.EntryProcessor;
 import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -51,6 +52,21 @@ public class GridCacheDrExpirationInfo extends GridCacheDrInfo {
      */
     public GridCacheDrExpirationInfo(CacheObject val, GridCacheVersion ver, long ttl, long expireTime) {
         super(val, ver);
+
+        this.ttl = ttl;
+        this.expireTime = expireTime;
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param proc Entry processor.
+     * @param ver Version.
+     * @param ttl TTL.
+     * @param expireTime Expire time.
+     */
+    public GridCacheDrExpirationInfo(EntryProcessor proc, GridCacheVersion ver, long ttl, long expireTime) {
+        super(proc, ver);
 
         this.ttl = ttl;
         this.expireTime = expireTime;

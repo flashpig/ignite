@@ -46,6 +46,7 @@ import org.apache.ignite.internal.processors.cache.GridCacheTryPutFailedExceptio
 import org.apache.ignite.internal.processors.cache.KeyCacheObject;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtTopologyFuture;
 import org.apache.ignite.internal.processors.cache.distributed.near.GridNearAtomicCache;
+import org.apache.ignite.internal.processors.cache.dr.GridCacheDrExpirationInfo;
 import org.apache.ignite.internal.processors.cache.dr.GridCacheDrInfo;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteInternalTx;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
@@ -987,7 +988,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                 else if (conflictPutVals != null) {
                     GridCacheDrInfo conflictPutVal =  conflictPutValsIt.next();
 
-                    val = conflictPutVal.value();
+                    val = conflictPutVal.valueEx();
                     conflictVer = conflictPutVal.version();
                     conflictTtl =  conflictPutVal.ttl();
                     conflictExpireTime = conflictPutVal.expireTime();
@@ -1090,7 +1091,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                 // Conflict PUT.
                 GridCacheDrInfo conflictPutVal = F.first(conflictPutVals);
 
-                val = conflictPutVal.value();
+                val = conflictPutVal.valueEx();
                 conflictVer = conflictPutVal.version();
                 conflictTtl = conflictPutVal.ttl();
                 conflictExpireTime = conflictPutVal.expireTime();
