@@ -382,7 +382,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
 
                                     procRes = processor.process(invokeEntry, t.get2());
 
-                                    val = cacheCtx.toCacheObject(invokeEntry.getValue(true));
+                                     val = cacheCtx.toCacheObject(invokeEntry.getValue());
                                 }
                                 catch (Exception e) {
                                     err = e;

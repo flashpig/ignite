@@ -561,9 +561,6 @@ public final class BinaryObjectImpl extends BinaryObjectExImpl implements Extern
      * @return Reader.
      */
     private BinaryReaderExImpl reader(@Nullable BinaryReaderHandles rCtx) {
-        return new BinaryReaderExImpl(ctx,
-            BinaryHeapInputStream.create(arr, start),
-            ctx.configuration().getClassLoader(),
-            rCtx);
+        return new BinaryReaderExImpl(ctx, BinaryHeapInputStream.create(arr, start), null, rCtx);
     }
 }
