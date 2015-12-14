@@ -1740,6 +1740,8 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         else {
             out.unsafeEnsure(1 + 4);
 
+            System.out.println("HANDLE (builder) [pos=" + out().position() + ", handle=" + (pos - old) + ", obj=" + obj + ']');
+
             out.unsafeWriteByte(GridBinaryMarshaller.HANDLE);
             out.unsafeWriteInt(pos - old);
 

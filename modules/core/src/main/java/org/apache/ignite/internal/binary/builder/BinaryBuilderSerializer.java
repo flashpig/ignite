@@ -92,6 +92,8 @@ class BinaryBuilderSerializer {
             else {
                 int handle = writer.out().position() - posInResArr;
 
+                System.out.println("HANDLE (builder) [pos=" + writer.out().position() + ", handle=" + handle + ", objType=" + obj.typeName + ']');
+
                 writer.writeByte(GridBinaryMarshaller.HANDLE);
                 writer.writeInt(handle);
             }
