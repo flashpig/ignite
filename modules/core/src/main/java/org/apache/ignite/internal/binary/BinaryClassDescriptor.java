@@ -179,7 +179,8 @@ public class BinaryClassDescriptor {
         if (!useDfltSerialization && mode0 == BinaryWriteMode.EXTERNALIZABLE) {
             mode0 = BinaryWriteMode.OBJECT;
 
-            // TODO: Warning.
+            U.warn(ctx.log(), "Ignored \"Externalizable\" interface for class (use " +
+                "BinaryTypeConfiguration.setUseDefaultSerialization(true) to enable it): " + cls.getName());
         }
 
         mode = mode0;
@@ -307,11 +308,13 @@ public class BinaryClassDescriptor {
             }
             else {
                 if (readResolveMtd0 != null) {
-                    // TODO: WARN
+                    U.warn(ctx.log(), "Ignored \"readResolve()\" method for class (use " +
+                        "BinaryTypeConfiguration.setUseDefaultSerialization(true) to enable it): " + cls.getName());
                 }
 
                 if (writeReplaceMtd0 != null) {
-                    // TODO: WARN
+                    U.warn(ctx.log(), "Ignored \"writeReplace()\" method for class (use " +
+                        "BinaryTypeConfiguration.setUseDefaultSerialization(true) to enable it): " + cls.getName());
                 }
 
                 readResolveMtd = null;

@@ -18,6 +18,7 @@
 package org.apache.ignite.internal.binary;
 
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.binary.BinaryIdMapper;
 import org.apache.ignite.binary.BinaryInvalidTypeException;
 import org.apache.ignite.binary.BinaryObjectException;
@@ -131,6 +132,9 @@ public class BinaryContext implements Externalizable {
     /** */
     private IgniteConfiguration igniteCfg;
 
+    /** Logger. */
+    private IgniteLogger log;
+
     /** */
     private final OptimizedMarshaller optmMarsh = new OptimizedMarshaller();
 
@@ -150,13 +154,15 @@ public class BinaryContext implements Externalizable {
     /**
      * @param metaHnd Meta data handler.
      * @param igniteCfg Ignite configuration.
+     * @param log Logger.
      */
-    public BinaryContext(BinaryMetadataHandler metaHnd, IgniteConfiguration igniteCfg) {
+    public BinaryContext(BinaryMetadataHandler metaHnd, IgniteConfiguration igniteCfg, IgniteLogger log) {
         assert metaHnd != null;
         assert igniteCfg != null;
 
         this.metaHnd = metaHnd;
         this.igniteCfg = igniteCfg;
+        this.log = log;
 
         gridName = igniteCfg.getGridName();
 
@@ -212,6 +218,13 @@ public class BinaryContext implements Externalizable {
         registerPredefinedType(T2.class, 62);
 
         // IDs range [200..1000] is used by Ignite internal APIs.
+    }
+
+    /**
+     * @return Logger.
+     */
+    public IgniteLogger log() {
+        return log;
     }
 
     /**
