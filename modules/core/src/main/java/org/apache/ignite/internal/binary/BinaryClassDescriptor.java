@@ -163,16 +163,26 @@ public class BinaryClassDescriptor {
 
         excluded = MarshallerExclusions.isExcluded(cls);
 
-        useOptMarshaller = !predefined && initUseOptimizedMarshallerFlag();
+        useOptMarshaller = !predefined && useDfltSerialization && initUseOptimizedMarshallerFlag();
+
+        BinaryWriteMode mode0;
 
         if (excluded)
-            mode = BinaryWriteMode.EXCLUSION;
+            mode0 = BinaryWriteMode.EXCLUSION;
         else {
             if (cls == BinaryEnumObjectImpl.class)
-                mode = BinaryWriteMode.BINARY_ENUM;
+                mode0 = BinaryWriteMode.BINARY_ENUM;
             else
-                mode = serializer != null ? BinaryWriteMode.BINARY : BinaryUtils.mode(cls);
+                mode0 = serializer != null ? BinaryWriteMode.BINARY : BinaryUtils.mode(cls);
         }
+
+        if (!useDfltSerialization && mode0 == BinaryWriteMode.EXTERNALIZABLE) {
+            mode0 = BinaryWriteMode.OBJECT;
+
+            // TODO: Warning.
+        }
+
+        mode = mode0;
 
         switch (mode) {
             case P_BYTE:
@@ -288,8 +298,25 @@ public class BinaryClassDescriptor {
 
         if (mode == BinaryWriteMode.BINARY || mode == BinaryWriteMode.EXTERNALIZABLE ||
             mode == BinaryWriteMode.OBJECT) {
-            readResolveMtd = U.findNonPublicMethod(cls, "readResolve");
-            writeReplaceMtd = U.findNonPublicMethod(cls, "writeReplace");
+            Method readResolveMtd0 = U.findNonPublicMethod(cls, "readResolve");
+            Method writeReplaceMtd0 = U.findNonPublicMethod(cls, "writeReplace");
+
+            if (useDfltSerialization) {
+                readResolveMtd = readResolveMtd0;
+                writeReplaceMtd = writeReplaceMtd0;
+            }
+            else {
+                if (readResolveMtd0 != null) {
+                    // TODO: WARN
+                }
+
+                if (writeReplaceMtd0 != null) {
+                    // TODO: WARN
+                }
+
+                readResolveMtd = null;
+                writeReplaceMtd = null;
+            }
         }
         else {
             readResolveMtd = null;
