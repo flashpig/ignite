@@ -26,6 +26,7 @@ import org.apache.ignite.binary.BinarySerializer;
 import org.apache.ignite.binary.BinaryType;
 import org.apache.ignite.binary.BinaryTypeConfiguration;
 import org.apache.ignite.cache.CacheKeyConfiguration;
+import org.apache.ignite.cache.affinity.AffinityKey;
 import org.apache.ignite.cache.affinity.AffinityKeyMapped;
 import org.apache.ignite.configuration.BinaryConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -205,13 +206,16 @@ public class BinaryContext implements Externalizable {
         registerPredefinedType(Timestamp[].class, GridBinaryMarshaller.TIMESTAMP_ARR);
         registerPredefinedType(Object[].class, GridBinaryMarshaller.OBJ_ARR);
 
+        // Special collections.
         registerPredefinedType(ArrayList.class, 0);
         registerPredefinedType(LinkedList.class, 0);
         registerPredefinedType(HashSet.class, 0);
         registerPredefinedType(LinkedHashSet.class, 0);
-
         registerPredefinedType(HashMap.class, 0);
         registerPredefinedType(LinkedHashMap.class, 0);
+
+        // Classes with overriden default serialziation flag.
+        registerPredefinedType(AffinityKey.class, 0, false);
 
         registerPredefinedType(GridMapEntry.class, 60);
         registerPredefinedType(IgniteBiTuple.class, 61);
@@ -719,7 +723,20 @@ public class BinaryContext implements Externalizable {
      * @return GridBinaryClassDescriptor.
      */
     public BinaryClassDescriptor registerPredefinedType(Class<?> cls, int id) {
+        return registerPredefinedType(cls, id, true);
+    }
+
+    /**
+     * @param cls Class.
+     * @param id Type ID.
+     * @param useDfltSerialization Use default serialization flag.
+     * @return GridBinaryClassDescriptor.
+     */
+    public BinaryClassDescriptor registerPredefinedType(Class<?> cls, int id, boolean useDfltSerialization) {
         String typeName = typeName(cls.getName());
+
+        if (id == 0)
+            id = BinaryInternalIdMapper.defaultInstance().typeId(typeName);
 
         BinaryClassDescriptor desc = new BinaryClassDescriptor(
             this,
@@ -733,7 +750,7 @@ public class BinaryContext implements Externalizable {
             false,
             true, /* registered */
             true, /* predefined */
-            true /* default serialization */
+            useDfltSerialization /* default serialization */
         );
 
         predefinedTypeNames.put(typeName, id);
