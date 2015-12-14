@@ -30,7 +30,6 @@ import org.apache.ignite.internal.binary.streams.BinaryHeapInputStream;
 import org.apache.ignite.internal.binary.BinaryUtils;
 
 import java.sql.Timestamp;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -494,9 +493,6 @@ public class BinaryBuilderReader implements BinaryPositionReadable {
 
             case GridBinaryMarshaller.HANDLE: {
                 int objStart = pos - 1 - readInt();
-
-                System.out.println("FOUND HANDLE: " + objStart);
-                System.out.println("DATA ARRAY: " + Arrays.toString(arr));
 
                 BinaryObjectBuilderImpl res = objMap.get(objStart);
 

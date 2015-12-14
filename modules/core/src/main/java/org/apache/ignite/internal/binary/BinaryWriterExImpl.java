@@ -302,8 +302,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
         // Actual write.
         int retPos = out.position();
 
-        System.out.println("POST WRITE HC: " + hashCode);
-
         out.unsafePosition(start);
 
         out.unsafeWriteByte(GridBinaryMarshaller.OBJ);
@@ -1739,8 +1737,6 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             return false;
         else {
             out.unsafeEnsure(1 + 4);
-
-            System.out.println("HANDLE (builder) [pos=" + out().position() + ", handle=" + (pos - old) + ", obj=" + obj + ']');
 
             out.unsafeWriteByte(GridBinaryMarshaller.HANDLE);
             out.unsafeWriteInt(pos - old);

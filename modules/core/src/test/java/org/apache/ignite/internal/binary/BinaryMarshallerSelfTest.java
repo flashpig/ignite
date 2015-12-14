@@ -76,7 +76,6 @@ import org.apache.ignite.internal.util.lang.GridMapEntry;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.S;
 import org.apache.ignite.internal.util.typedef.internal.U;
-import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.marshaller.MarshallerContextTestImpl;
 import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
@@ -189,7 +188,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testUuid() throws Exception {
-        UUID uuid = CONST_UUID;
+        UUID uuid = UUID.randomUUID();
 
         assertEquals(uuid, marshalUnmarshal(uuid));
     }
@@ -311,7 +310,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testUuidArray() throws Exception {
-        UUID[] arr = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        UUID[] arr = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
 
         assertArrayEquals(arr, marshalUnmarshal(arr));
     }
@@ -1148,7 +1147,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
             new BinaryTypeConfiguration(DetachedInnerTestObject.class.getName())
         ));
 
-        UUID id = CONST_UUID;
+        UUID id = UUID.randomUUID();
 
         DetachedTestObject obj = marshal(new DetachedTestObject(
             new DetachedInnerTestObject(null, id)), marsh).deserialize();
@@ -1475,8 +1474,6 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
 
         assertEquals(obj, po.deserialize());
 
-        System.out.println("DATA ARRAY: " + Arrays.toString(((BinaryObjectImpl) po).array()));
-
         BinaryObject copy = copy(po, null);
 
         assertEquals(obj, copy.deserialize());
@@ -1619,7 +1616,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
 
         BinaryObject po = marshal(obj, marsh);
 
-        UUID uuid = CONST_UUID;
+        UUID uuid = UUID.randomUUID();
 
         BinaryObject copy = copy(po, F.<String, Object>asMap("uuid", uuid));
 
@@ -2302,42 +2299,6 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
     /**
      * @throws Exception If failed.
      */
-    // TODO: Remove?
-    public void _testCyclicReferencesMarshalling() throws Exception {
-        BinaryMarshaller marsh = binaryMarshaller();
-
-        SimpleObject obj = simpleObject();
-
-        obj.bArr = obj.inner.bArr;
-        obj.cArr = obj.inner.cArr;
-        obj.boolArr = obj.inner.boolArr;
-        obj.sArr = obj.inner.sArr;
-        obj.strArr = obj.inner.strArr;
-        obj.iArr = obj.inner.iArr;
-        obj.lArr = obj.inner.lArr;
-        obj.fArr = obj.inner.fArr;
-        obj.dArr = obj.inner.dArr;
-        obj.dateArr = obj.inner.dateArr;
-        obj.uuidArr = obj.inner.uuidArr;
-        obj.objArr = obj.inner.objArr;
-        obj.bdArr = obj.inner.bdArr;
-        obj.map = obj.inner.map;
-        obj.col = obj.inner.col;
-        obj.mEntry = obj.inner.mEntry;
-
-        SimpleObject res = (SimpleObject)marshalUnmarshal(obj, marsh);
-
-        assertEquals(obj, res);
-
-        assertTrue(res.objArr == res.inner.objArr);
-        assertTrue(res.map == res.inner.map);
-        assertTrue(res.col == res.inner.col);
-        assertTrue(res.mEntry == res.inner.mEntry);
-    }
-
-    /**
-     * @throws Exception If failed.
-     */
     public void testProxy() throws Exception {
         BinaryMarshaller marsh = binaryMarshaller();
 
@@ -2759,8 +2720,6 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         private final long time = System.currentTimeMillis();
     }
 
-    private static final UUID CONST_UUID = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
-    
     /**
      * @return Simple object.
      */
@@ -2776,7 +2735,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         inner.c = 1;
         inner.bool = true;
         inner.str = "str1";
-        inner.uuid = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
+        inner.uuid = UUID.randomUUID();
         inner.date = new Date();
         inner.ts = new Timestamp(System.currentTimeMillis());
         inner.bArr = new byte[] {1, 2, 3};
@@ -2788,9 +2747,9 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         inner.cArr = new char[] {1, 2, 3};
         inner.boolArr = new boolean[] {true, false, true};
         inner.strArr = new String[] {"str1", "str2", "str3"};
-        inner.uuidArr = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        inner.uuidArr = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         inner.dateArr = new Date[] {new Date(11111), new Date(22222), new Date(33333)};
-        inner.objArr = new Object[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        inner.objArr = new Object[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         inner.col = new ArrayList<>();
         inner.map = new HashMap<>();
         inner.enumVal = TestEnum.A;
@@ -2805,8 +2764,6 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         inner.map.put(2, "str2");
         inner.map.put(3, "str3");
 
-        //inner.mEntry = inner.map.entrySet().iterator().next();
-
         SimpleObject outer = new SimpleObject();
 
         outer.b = 2;
@@ -2818,7 +2775,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         outer.c = 2;
         outer.bool = false;
         outer.str = "str2";
-        outer.uuid = CONST_UUID;
+        outer.uuid = UUID.randomUUID();
         outer.date = new Date();
         outer.ts = new Timestamp(System.currentTimeMillis());
         outer.bArr = new byte[] {10, 20, 30};
@@ -2830,9 +2787,9 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         outer.cArr = new char[] {10, 20, 30};
         outer.boolArr = new boolean[] {false, true, false};
         outer.strArr = new String[] {"str10", "str20", "str30"};
-        outer.uuidArr = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        outer.uuidArr = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         outer.dateArr = new Date[] {new Date(44444), new Date(55555), new Date(66666)};
-        outer.objArr = new Object[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        outer.objArr = new Object[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         outer.col = new ArrayList<>();
         outer.map = new HashMap<>();
         outer.enumVal = TestEnum.B;
@@ -2848,8 +2805,6 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         outer.map.put(4, "str4");
         outer.map.put(5, "str5");
         outer.map.put(6, "str6");
-
-        //outer.mEntry = outer.map.entrySet().iterator().next();
 
         return outer;
     }
@@ -2869,7 +2824,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         innerSimple.c = 1;
         innerSimple.bool = true;
         innerSimple.str = "str1";
-        innerSimple.uuid = CONST_UUID;
+        innerSimple.uuid = UUID.randomUUID();
         innerSimple.date = new Date();
         innerSimple.ts = new Timestamp(System.currentTimeMillis());
         innerSimple.bArr = new byte[] {1, 2, 3};
@@ -2881,9 +2836,9 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         innerSimple.cArr = new char[] {1, 2, 3};
         innerSimple.boolArr = new boolean[] {true, false, true};
         innerSimple.strArr = new String[] {"str1", "str2", "str3"};
-        innerSimple.uuidArr = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        innerSimple.uuidArr = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         innerSimple.dateArr = new Date[] {new Date(11111), new Date(22222), new Date(33333)};
-        innerSimple.objArr = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        innerSimple.objArr = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         innerSimple.col = new ArrayList<>();
         innerSimple.map = new HashMap<>();
         innerSimple.enumVal = TestEnum.A;
@@ -2908,7 +2863,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         innerBinary.c = 2;
         innerBinary.bool = true;
         innerBinary.str = "str2";
-        innerBinary.uuid = CONST_UUID;
+        innerBinary.uuid = UUID.randomUUID();
         innerBinary.date = new Date();
         innerBinary.ts = new Timestamp(System.currentTimeMillis());
         innerBinary.bArr = new byte[] {10, 20, 30};
@@ -2920,9 +2875,9 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         innerBinary.cArr = new char[] {10, 20, 30};
         innerBinary.boolArr = new boolean[] {true, false, true};
         innerBinary.strArr = new String[] {"str10", "str20", "str30"};
-        innerBinary.uuidArr = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        innerBinary.uuidArr = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         innerBinary.dateArr = new Date[] {new Date(44444), new Date(55555), new Date(66666)};
-        innerBinary.objArr = new Object[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        innerBinary.objArr = new Object[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         innerBinary.bRaw = 3;
         innerBinary.sRaw = 3;
         innerBinary.iRaw = 3;
@@ -2932,7 +2887,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         innerBinary.cRaw = 3;
         innerBinary.boolRaw = true;
         innerBinary.strRaw = "str3";
-        innerBinary.uuidRaw = CONST_UUID;
+        innerBinary.uuidRaw = UUID.randomUUID();
         innerBinary.dateRaw = new Date();
         innerBinary.tsRaw = new Timestamp(System.currentTimeMillis());
         innerBinary.bArrRaw = new byte[] {11, 21, 31};
@@ -2944,9 +2899,9 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         innerBinary.cArrRaw = new char[] {11, 21, 31};
         innerBinary.boolArrRaw = new boolean[] {true, false, true};
         innerBinary.strArrRaw = new String[] {"str11", "str21", "str31"};
-        innerBinary.uuidArrRaw = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        innerBinary.uuidArrRaw = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         innerBinary.dateArrRaw = new Date[] {new Date(77777), new Date(88888), new Date(99999)};
-        innerBinary.objArrRaw = new Object[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        innerBinary.objArrRaw = new Object[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         innerBinary.col = new ArrayList<>();
         innerBinary.colRaw = new ArrayList<>();
         innerBinary.map = new HashMap<>();
@@ -2983,7 +2938,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         outer.c = 4;
         outer.bool = true;
         outer.str = "str4";
-        outer.uuid = CONST_UUID;
+        outer.uuid = UUID.randomUUID();
         outer.date = new Date();
         outer.ts = new Timestamp(System.currentTimeMillis());
         outer.bArr = new byte[] {12, 22, 32};
@@ -2995,9 +2950,9 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         outer.cArr = new char[] {12, 22, 32};
         outer.boolArr = new boolean[] {true, false, true};
         outer.strArr = new String[] {"str12", "str22", "str32"};
-        outer.uuidArr = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        outer.uuidArr = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         outer.dateArr = new Date[] {new Date(10101), new Date(20202), new Date(30303)};
-        outer.objArr = new Object[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        outer.objArr = new Object[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         outer.simple = innerSimple;
         outer.binary = innerBinary;
         outer.bRaw = 5;
@@ -3009,7 +2964,7 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         outer.cRaw = 5;
         outer.boolRaw = true;
         outer.strRaw = "str5";
-        outer.uuidRaw = CONST_UUID;
+        outer.uuidRaw = UUID.randomUUID();
         outer.dateRaw = new Date();
         outer.tsRaw = new Timestamp(System.currentTimeMillis());
         outer.bArrRaw = new byte[] {13, 23, 33};
@@ -3021,9 +2976,9 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         outer.cArrRaw = new char[] {13, 23, 33};
         outer.boolArrRaw = new boolean[] {true, false, true};
         outer.strArrRaw = new String[] {"str13", "str23", "str33"};
-        outer.uuidArrRaw = new UUID[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        outer.uuidArrRaw = new UUID[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         outer.dateArr = new Date[] {new Date(40404), new Date(50505), new Date(60606)};
-        outer.objArrRaw = new Object[] {CONST_UUID, CONST_UUID, CONST_UUID};
+        outer.objArrRaw = new Object[] {UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
         outer.col = new ArrayList<>();
         outer.colRaw = new ArrayList<>();
         outer.map = new HashMap<>();
@@ -3154,10 +3109,6 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
 
         /** */
         private SimpleObject inner;
-
-        @Override public int hashCode() {
-            return 1;
-        }
 
         /** {@inheritDoc} */
         @SuppressWarnings("FloatingPointEquality")
@@ -3493,11 +3444,6 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
             enumArrRaw = raw.readEnumArray();
             simpleRaw = raw.readObject();
             binaryRaw = raw.readObject();
-        }
-
-        /** {@inheritDoc} */
-        @Override public int hashCode() {
-            return 1;
         }
 
         /** {@inheritDoc} */

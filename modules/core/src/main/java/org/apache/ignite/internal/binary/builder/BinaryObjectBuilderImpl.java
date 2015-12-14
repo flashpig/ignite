@@ -56,7 +56,7 @@ public class BinaryObjectBuilderImpl implements BinaryObjectBuilder {
     private final int typeId;
 
     /** May be null. */
-    public String typeName;
+    private String typeName;
 
     /** May be null. */
     private String clsNameToWrite;
