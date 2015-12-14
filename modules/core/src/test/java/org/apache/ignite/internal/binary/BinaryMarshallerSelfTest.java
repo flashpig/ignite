@@ -3105,9 +3105,6 @@ public class BinaryMarshallerSelfTest extends GridCommonAbstractTest {
         private TestEnum[] enumArr;
 
         /** */
-        private Map.Entry<Integer, String> mEntry;
-
-        /** */
         private SimpleObject inner;
 
         /** {@inheritDoc} */
