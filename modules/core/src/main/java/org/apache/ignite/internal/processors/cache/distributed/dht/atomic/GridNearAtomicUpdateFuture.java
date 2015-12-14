@@ -750,7 +750,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                         updateNear(req0, res0);
                     }
                 }
-                else
+                else if (!nodeErr)
                     updateNear(req, res);
             }
 
