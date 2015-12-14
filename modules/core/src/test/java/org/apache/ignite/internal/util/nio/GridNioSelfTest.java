@@ -80,7 +80,7 @@ public class GridNioSelfTest extends GridCommonAbstractTest {
     private static volatile Marshaller marsh;
 
     /** Test port. */
-    private static int port = 55443;
+    private int port = 55443;
 
     /** {@inheritDoc} */
     @Override protected void beforeTestsStarted() throws Exception {
