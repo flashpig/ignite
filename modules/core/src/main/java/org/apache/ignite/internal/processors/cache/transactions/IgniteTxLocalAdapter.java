@@ -1979,6 +1979,26 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     }
 
     /** {@inheritDoc} */
+    @Override public IgniteInternalFuture<?> invokeAllDrAsync(GridCacheContext cacheCtx,
+        Map<KeyCacheObject, GridCacheDrInfo> drMap,
+        Object... args
+    ) {
+        Map<Object, EntryProcessor<Object, Object, Object>> invoke = new LinkedHashMap<>();
+
+        for (Map.Entry<KeyCacheObject, GridCacheDrInfo> e : drMap.entrySet())
+            if (e.getValue().entryProcessor() != null)
+                invoke.put(e.getKey(), e.getValue().entryProcessor());
+
+        return this.<Object, Object>putAllAsync0(cacheCtx,
+            null,
+            invoke,
+            args,
+            drMap,
+            true,
+            null);
+    }
+
+    /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Override public <K, V, T> IgniteInternalFuture<GridCacheReturn> invokeAsync(
         GridCacheContext cacheCtx,
@@ -3062,13 +3082,20 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         if (drMap != null) {
             assert map == null;
 
-            map0 = F.viewReadOnly(drMap, new IgniteClosure<GridCacheDrInfo, Object>() {
-                @Override public Object apply(GridCacheDrInfo val) {
-                    return val.value();
-                }
-            });
+            if (invokeMap == null) {
+                map0 = F.viewReadOnly(drMap, new IgniteClosure<GridCacheDrInfo, Object>() {
+                    @Override public Object apply(GridCacheDrInfo val) {
+                        return val.value();
+                    }
+                });
 
-            invokeMap0 = null;
+                invokeMap0 = null;
+            }
+            else  {
+                map0 = null;
+
+                invokeMap0 = (Map<K, EntryProcessor<K, V, Object>>)invokeMap;
+            }
         }
         else {
             map0 = map;

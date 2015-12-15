@@ -523,6 +523,25 @@ public class GridCacheProxyImpl<K, V> implements IgniteInternalCache<K, V>, Exte
     }
 
     /** {@inheritDoc} */
+    @Override public void invokeAllConflict(Map<KeyCacheObject, GridCacheDrInfo> map,
+        Object... args) throws IgniteCheckedException {
+        CacheOperationContext prev = gate.enter(opCtx);
+
+        try {
+            delegate.invokeAllConflict(map, args);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public IgniteInternalFuture<?> invokeAllConflictAsync(Map<KeyCacheObject, GridCacheDrInfo> map,
+        Object... args) throws IgniteCheckedException {
+        return null;
+    }
+
+    /** {@inheritDoc} */
     @Override public <T> EntryProcessorResult<T> invoke(K key,
         EntryProcessor<K, V, T> entryProcessor,
         Object... args) throws IgniteCheckedException {

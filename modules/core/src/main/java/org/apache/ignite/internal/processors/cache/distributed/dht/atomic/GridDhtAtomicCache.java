@@ -587,6 +587,27 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
+    public void invokeAllConflict(Map<KeyCacheObject, GridCacheDrInfo> map, Object... args)
+        throws IgniteCheckedException {
+        invokeAllConflictAsync(map, args).get();
+    }
+
+    /** {@inheritDoc} */
+    public IgniteInternalFuture<?> invokeAllConflictAsync(Map<KeyCacheObject, GridCacheDrInfo> conflictMap,
+        Object... args) throws IgniteCheckedException {
+
+        return updateAllAsync0(null,
+            null,
+            args,
+            conflictMap,
+            null,
+            false,
+            false,
+            null,
+            true);
+    }
+
+    /** {@inheritDoc} */
     @Override public V getAndRemove(K key) throws IgniteCheckedException {
         return getAndRemoveAsync(key).get();
     }
@@ -897,11 +918,16 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
         int taskNameHash = ctx.kernalContext().job().currentTaskNameHash();
 
+        GridCacheOperation op = invokeMap != null ? TRANSFORM : UPDATE;
+
+        if (op == UPDATE && conflictPutMap != null && !conflictPutMap.isEmpty())
+            op = F.firstEntry(conflictPutMap).getValue().entryProcessor() != null ? TRANSFORM : UPDATE;
+
         final GridNearAtomicUpdateFuture updateFut = new GridNearAtomicUpdateFuture(
             ctx,
             this,
             ctx.config().getWriteSynchronizationMode(),
-            invokeMap != null ? TRANSFORM : UPDATE,
+            op,
             map != null ? map.keySet() : invokeMap != null ? invokeMap.keySet() : conflictPutMap != null ?
                 conflictPutMap.keySet() : conflictRmvMap.keySet(),
             map != null ? map.values() : invokeMap != null ? invokeMap.values() : null,

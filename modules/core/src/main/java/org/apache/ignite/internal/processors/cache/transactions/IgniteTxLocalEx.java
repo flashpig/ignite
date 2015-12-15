@@ -156,6 +156,16 @@ public interface IgniteTxLocalEx extends IgniteInternalTx {
 
     /**
      * @param cacheCtx Cache context.
+     * @param drMap DR map to put.
+     * @return Future for DR put operation.
+     */
+    public IgniteInternalFuture<?> invokeAllDrAsync(
+        GridCacheContext cacheCtx,
+        Map<KeyCacheObject, GridCacheDrInfo> drMap,
+        Object... args);
+
+    /**
+     * @param cacheCtx Cache context.
      * @param drMap DR map.
      * @return Future for asynchronous remove.
      */

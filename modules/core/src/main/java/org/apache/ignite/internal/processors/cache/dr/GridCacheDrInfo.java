@@ -71,7 +71,7 @@ public class GridCacheDrInfo implements Externalizable {
      * @param ver Version.
      */
     public GridCacheDrInfo(EntryProcessor proc, GridCacheVersion ver) {
-        assert val != null;
+        assert proc != null;
         assert ver != null;
 
         this.proc = proc;
@@ -83,6 +83,13 @@ public class GridCacheDrInfo implements Externalizable {
      */
     public CacheObject value() {
         return val;
+    }
+
+    /**
+     * @return Entry processor.
+     */
+    public EntryProcessor entryProcessor() {
+        return proc;
     }
 
     /**

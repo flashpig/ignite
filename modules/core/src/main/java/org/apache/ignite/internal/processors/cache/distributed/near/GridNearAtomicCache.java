@@ -545,6 +545,18 @@ public class GridNearAtomicCache<K, V> extends GridNearCacheAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
+    @Override public void invokeAllConflict(Map<KeyCacheObject, GridCacheDrInfo> map,
+        Object... args) throws IgniteCheckedException {
+        dht.invokeAllConflict(map, args);
+    }
+
+    /** {@inheritDoc} */
+    @Override public IgniteInternalFuture<?> invokeAllConflictAsync(Map<KeyCacheObject, GridCacheDrInfo> map,
+        Object... args) throws IgniteCheckedException {
+        return dht.invokeAllConflictAsync(map, args);
+    }
+
+    /** {@inheritDoc} */
     @Override public <T> EntryProcessorResult<T> invoke(K key,
         EntryProcessor<K, V, T> entryProcessor,
         Object... args) throws IgniteCheckedException {

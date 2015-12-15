@@ -1557,6 +1557,28 @@ public interface IgniteInternalCache<K, V> extends Iterable<Cache.Entry<K, V>> {
         throws IgniteCheckedException;
 
     /**
+     * Invoke with conflict resolution.
+     *
+     * @param map Map containing keys and entry processors to be applied to values.
+     * @param args Arguments.
+     * @return Invoke results.
+     * @throws IgniteCheckedException If failed.
+     */
+    public void invokeAllConflict(Map<KeyCacheObject, GridCacheDrInfo> map, Object... args)
+        throws IgniteCheckedException;
+
+    /**
+     * Invoke async with conflict resolution.
+     *
+     * @param map Map containing keys and entry processors to be applied to values.
+     * @param args Arguments.
+     * @return Invoke results.
+     * @throws IgniteCheckedException If failed.
+     */
+    public IgniteInternalFuture<?> invokeAllConflictAsync(Map<KeyCacheObject, GridCacheDrInfo> map, Object... args)
+        throws IgniteCheckedException;
+
+    /**
      * Removes DR data.
      *
      * @param drMap DR map.
