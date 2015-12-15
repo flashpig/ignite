@@ -589,7 +589,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                 else
                     req = mappings != null ? mappings.get(nodeId) : null;
 
-                if (req != null) {
+                if (req != null && req.response() == null) {
                     res = new GridNearAtomicUpdateResponse(cctx.cacheId(), nodeId, req.futureVersion(),
                         cctx.deploymentEnabled());
 
@@ -848,6 +848,8 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                 assert futVer == null : this;
                 assert this.topVer == AffinityTopologyVersion.ZERO : this;
 
+                resCnt = 0;
+
                 this.topVer = topVer;
 
                 futVer = cctx.versions().next(topVer);
@@ -891,8 +893,6 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                                 mappings = new HashMap<>(pendingMappings);
 
                             assert !mappings.isEmpty() || size == 0 : GridNearAtomicUpdateFuture.this;
-
-                            resCnt = 0;
                         }
                     }
 
