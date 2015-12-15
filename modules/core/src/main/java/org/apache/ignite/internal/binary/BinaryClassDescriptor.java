@@ -18,7 +18,6 @@
 package org.apache.ignite.internal.binary;
 
 import java.io.Externalizable;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
@@ -165,25 +164,21 @@ public class BinaryClassDescriptor {
 
         useOptMarshaller = !predefined && useDfltSerialization && initUseOptimizedMarshallerFlag();
 
-        BinaryWriteMode mode0;
-
         if (excluded)
-            mode0 = BinaryWriteMode.EXCLUSION;
+            mode = BinaryWriteMode.EXCLUSION;
         else {
             if (cls == BinaryEnumObjectImpl.class)
-                mode0 = BinaryWriteMode.BINARY_ENUM;
+                mode = BinaryWriteMode.BINARY_ENUM;
             else
-                mode0 = serializer != null ? BinaryWriteMode.BINARY : BinaryUtils.mode(cls);
+                mode = serializer != null ? BinaryWriteMode.BINARY : BinaryUtils.mode(cls);
         }
 
-        if (!useDfltSerialization && mode0 == BinaryWriteMode.EXTERNALIZABLE) {
-            mode0 = BinaryWriteMode.OBJECT;
+        if (useOptMarshaller) {
+            // TODO: IGNITE-2100: Correct warning.
 
             U.warn(ctx.log(), "Ignored \"Externalizable\" interface for class (use " +
                 "BinaryTypeConfiguration.setUseDefaultSerialization(true) to enable it): " + cls.getName());
         }
-
-        mode = mode0;
 
         switch (mode) {
             case P_BYTE:
@@ -237,7 +232,6 @@ public class BinaryClassDescriptor {
                 break;
 
             case BINARY:
-            case EXTERNALIZABLE:
                 ctor = constructor(cls);
                 fields = null;
                 stableFieldsMeta = null;
@@ -280,8 +274,11 @@ public class BinaryClassDescriptor {
 
                             schemaBuilder.addField(fieldId);
 
-                            if (metaDataEnabled)
+                            if (metaDataEnabled) {
+                                assert stableFieldsMeta != null;
+
                                 stableFieldsMeta.put(name, fieldInfo.mode().typeId());
+                            }
                         }
                     }
                 }
@@ -297,29 +294,9 @@ public class BinaryClassDescriptor {
                 throw new BinaryObjectException("Invalid mode: " + mode);
         }
 
-        if (mode == BinaryWriteMode.BINARY || mode == BinaryWriteMode.EXTERNALIZABLE ||
-            mode == BinaryWriteMode.OBJECT) {
-            Method readResolveMtd0 = U.findNonPublicMethod(cls, "readResolve");
-            Method writeReplaceMtd0 = U.findNonPublicMethod(cls, "writeReplace");
-
-            if (useDfltSerialization) {
-                readResolveMtd = readResolveMtd0;
-                writeReplaceMtd = writeReplaceMtd0;
-            }
-            else {
-                if (readResolveMtd0 != null) {
-                    U.warn(ctx.log(), "Ignored \"readResolve()\" method for class (use " +
-                        "BinaryTypeConfiguration.setUseDefaultSerialization(true) to enable it): " + cls.getName());
-                }
-
-                if (writeReplaceMtd0 != null) {
-                    U.warn(ctx.log(), "Ignored \"writeReplace()\" method for class (use " +
-                        "BinaryTypeConfiguration.setUseDefaultSerialization(true) to enable it): " + cls.getName());
-                }
-
-                readResolveMtd = null;
-                writeReplaceMtd = null;
-            }
+        if (mode == BinaryWriteMode.BINARY || mode == BinaryWriteMode.OBJECT) {
+            readResolveMtd = U.findNonPublicMethod(cls, "readResolve");
+            writeReplaceMtd = U.findNonPublicMethod(cls, "writeReplace");
         }
         else {
             readResolveMtd = null;
@@ -640,25 +617,6 @@ public class BinaryClassDescriptor {
 
                 break;
 
-            case EXTERNALIZABLE:
-                if (preWrite(writer, obj)) {
-                    writer.rawWriter();
-
-                    try {
-                        ((Externalizable)obj).writeExternal(writer);
-
-                        postWrite(writer, obj);
-                    }
-                    catch (IOException e) {
-                        throw new BinaryObjectException("Failed to write Externalizable object: " + obj, e);
-                    }
-                    finally {
-                        writer.popSchema();
-                    }
-                }
-
-                break;
-
             case OBJECT:
                 if (preWrite(writer, obj)) {
                     try {
@@ -701,21 +659,6 @@ public class BinaryClassDescriptor {
                     serializer.readBinary(res, reader);
                 else
                     ((Binarylizable)res).readBinary(reader);
-
-                break;
-
-            case EXTERNALIZABLE:
-                res = newInstance();
-
-                reader.setHandle(res);
-
-                try {
-                    ((Externalizable)res).readExternal(reader);
-                }
-                catch (IOException | ClassNotFoundException e) {
-                    throw new BinaryObjectException("Failed to read Externalizable object: " +
-                        res.getClass().getName(), e);
-                }
 
                 break;
 
@@ -827,6 +770,9 @@ public class BinaryClassDescriptor {
     @SuppressWarnings("unchecked")
     private boolean initUseOptimizedMarshallerFlag() {
         for (Class c = cls; c != null && !c.equals(Object.class); c = c.getSuperclass()) {
+            if (Externalizable.class.isAssignableFrom(c))
+                return true;
+
             try {
                 Method writeObj = c.getDeclaredMethod("writeObject", ObjectOutputStream.class);
                 Method readObj = c.getDeclaredMethod("readObject", ObjectInputStream.class);

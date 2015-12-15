@@ -137,7 +137,7 @@ public class BinaryContext implements Externalizable {
     private IgniteLogger log;
 
     /** */
-    private final OptimizedMarshaller optmMarsh = new OptimizedMarshaller();
+    private final OptimizedMarshaller optmMarsh = new OptimizedMarshaller(false);
 
     /** Compact footer flag. */
     private boolean compactFooter;
@@ -216,6 +216,8 @@ public class BinaryContext implements Externalizable {
 
         // Classes with overriden default serialziation flag.
         registerPredefinedType(AffinityKey.class, 0, false);
+        registerPredefinedType(BinaryObjectImpl.class, 0, false);
+        registerPredefinedType(BinaryObjectOffheapImpl.class, 0, false);
 
         registerPredefinedType(GridMapEntry.class, 60);
         registerPredefinedType(IgniteBiTuple.class, 61);

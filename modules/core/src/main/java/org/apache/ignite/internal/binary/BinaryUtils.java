@@ -33,7 +33,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
 
 import java.io.ByteArrayInputStream;
-import java.io.Externalizable;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -952,8 +951,6 @@ public class BinaryUtils {
             return BinaryWriteMode.BINARY_OBJ;
         else if (Binarylizable.class.isAssignableFrom(cls))
             return BinaryWriteMode.BINARY;
-        else if (Externalizable.class.isAssignableFrom(cls))
-            return BinaryWriteMode.EXTERNALIZABLE;
         else if (isSpecialCollection(cls))
             return BinaryWriteMode.COL;
         else if (isSpecialMap(cls))
