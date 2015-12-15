@@ -17,24 +17,6 @@
 
 package org.apache.ignite.internal.binary;
 
-import java.io.Externalizable;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.binary.BinaryIdMapper;
 import org.apache.ignite.binary.BinaryObjectException;
@@ -47,6 +29,21 @@ import org.apache.ignite.marshaller.MarshallerExclusions;
 import org.apache.ignite.marshaller.optimized.OptimizedMarshaller;
 import org.jetbrains.annotations.Nullable;
 import sun.misc.Unsafe;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
 
 import static java.lang.reflect.Modifier.isStatic;
 import static java.lang.reflect.Modifier.isTransient;
@@ -162,7 +159,7 @@ public class BinaryClassDescriptor {
 
         excluded = MarshallerExclusions.isExcluded(cls);
 
-        useOptMarshaller = !predefined && useDfltSerialization && initUseOptimizedMarshallerFlag();
+        useOptMarshaller = !predefined && useDfltSerialization && BinaryUtils.requireOptimizedMarshaller(cls);
 
         if (excluded)
             mode = BinaryWriteMode.EXCLUSION;
@@ -759,33 +756,5 @@ public class BinaryClassDescriptor {
         catch (IgniteCheckedException e) {
             throw new BinaryObjectException("Failed to get constructor for class: " + cls.getName(), e);
         }
-    }
-
-    /**
-     * Determines whether to use {@link OptimizedMarshaller} for serialization or
-     * not.
-     *
-     * @return {@code true} if to use, {@code false} otherwise.
-     */
-    @SuppressWarnings("unchecked")
-    private boolean initUseOptimizedMarshallerFlag() {
-        for (Class c = cls; c != null && !c.equals(Object.class); c = c.getSuperclass()) {
-            if (Externalizable.class.isAssignableFrom(c))
-                return true;
-
-            try {
-                Method writeObj = c.getDeclaredMethod("writeObject", ObjectOutputStream.class);
-                Method readObj = c.getDeclaredMethod("readObject", ObjectInputStream.class);
-
-                if (!Modifier.isStatic(writeObj.getModifiers()) && !Modifier.isStatic(readObj.getModifiers()) &&
-                    writeObj.getReturnType() == void.class && readObj.getReturnType() == void.class)
-                    return true;
-            }
-            catch (NoSuchMethodException ignored) {
-                // No-op.
-            }
-        }
-
-        return false;
     }
 }

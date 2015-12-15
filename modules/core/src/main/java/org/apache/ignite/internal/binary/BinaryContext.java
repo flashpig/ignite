@@ -241,6 +241,18 @@ public class BinaryContext implements Externalizable {
     }
 
     /**
+     * Whether binary marshalling is forced for class.
+     *
+     * @param cls Class.
+     * @return {@code True} if forced.
+     */
+    public boolean forceBinaryMarshalling(Class cls) {
+        int typeId = typeId(cls.getName());
+
+        return nonDfltSerializationFlags.contains(typeId);
+    }
+
+    /**
      * @return Ignite configuration.
      */
     public IgniteConfiguration configuration(){

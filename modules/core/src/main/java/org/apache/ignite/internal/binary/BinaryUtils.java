@@ -33,7 +33,12 @@ import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
 
 import java.io.ByteArrayInputStream;
+import java.io.Externalizable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
@@ -53,6 +58,8 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+
+import org.apache.ignite.marshaller.optimized.OptimizedMarshaller;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -1832,6 +1839,35 @@ public class BinaryUtils {
      */
     public static int positionForHandle(BinaryInputStream in) {
         return in.position() - 1;
+    }
+
+    /**
+     * Determines whether to use {@link OptimizedMarshaller} for serialization or
+     * not.
+     *
+     * @param cls Class.
+     * @return {@code true} if to use, {@code false} otherwise.
+     */
+    @SuppressWarnings("unchecked")
+    public static boolean requireOptimizedMarshaller(Class cls) {
+        for (Class c = cls; c != null && !c.equals(Object.class); c = c.getSuperclass()) {
+            if (Externalizable.class.isAssignableFrom(c))
+                return true;
+
+            try {
+                Method writeObj = c.getDeclaredMethod("writeObject", ObjectOutputStream.class);
+                Method readObj = c.getDeclaredMethod("readObject", ObjectInputStream.class);
+
+                if (!Modifier.isStatic(writeObj.getModifiers()) && !Modifier.isStatic(readObj.getModifiers()) &&
+                    writeObj.getReturnType() == void.class && readObj.getReturnType() == void.class)
+                    return true;
+            }
+            catch (NoSuchMethodException ignored) {
+                // No-op.
+            }
+        }
+
+        return false;
     }
 
     /**
