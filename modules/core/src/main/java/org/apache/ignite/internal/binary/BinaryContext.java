@@ -217,14 +217,15 @@ public class BinaryContext implements Externalizable {
 
         // Classes with overriden default serialization flag.
         registerPredefinedType(AffinityKey.class, 0, false);
-        registerPredefinedType(BinaryObjectImpl.class, 0, false);
-        registerPredefinedType(BinaryObjectOffheapImpl.class, 0, false);
 
         registerPredefinedType(GridMapEntry.class, 60);
         registerPredefinedType(IgniteBiTuple.class, 61);
+        registerPredefinedType(T2.class, 62);
+
+        registerPredefinedType(BinaryObjectImpl.class, 0);
+        registerPredefinedType(BinaryObjectOffheapImpl.class, 0);
         registerPredefinedType(BinaryMetadataKey.class, 0);
         registerPredefinedType(BinaryMetadata.class, 0);
-        registerPredefinedType(T2.class, 62);
 
         // IDs range [200..1000] is used by Ignite internal APIs.
     }
