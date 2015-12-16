@@ -165,6 +165,7 @@ public final class GridNearLockFuture extends GridCompoundIdentityFuture<Boolean
      * @param accessTtl TTL for read operation.
      * @param filter Filter.
      * @param skipStore skipStore
+     * @param keepBinary Keep binary flag.
      */
     public GridNearLockFuture(
         GridCacheContext<?, ?> cctx,
