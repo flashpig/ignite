@@ -198,7 +198,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
         idx.registerCache(ccfg);
 
         try {
-            List<Class<?>> extClasses = null;
+            List<Class<?>> mustDeserializeClss = null;
 
             boolean binaryEnabled = ctx.cacheObjects().isBinaryEnabled(ccfg);
 
@@ -217,16 +217,16 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                     Class<?> valCls = U.classForName(qryEntity.getValueType(), null);
 
                     // If local node has the classes and they are externalizable, we must use reflection properties.
-                    boolean binaryKeyAsOptimized = mustDeserializeBinary(keyCls);
-                    boolean binaryValAsOptimized = mustDeserializeBinary(valCls);
+                    boolean keyMustDeserialize = mustDeserializeBinary(keyCls);
+                    boolean valMustDeserialize = mustDeserializeBinary(valCls);
 
-                    boolean binaryKeyOrValAsOptimized = binaryKeyAsOptimized || binaryValAsOptimized;
+                    boolean keyOrValMustDeserialize = keyMustDeserialize || valMustDeserialize;
 
                     String simpleValType = valCls == null ? typeName(qryEntity.getValueType()) : typeName(valCls);
 
                     desc.name(simpleValType);
 
-                    if (binaryEnabled && !binaryKeyOrValAsOptimized) {
+                    if (binaryEnabled && !keyOrValMustDeserialize) {
                         // Safe to check null.
                         if (SQL_TYPES.contains(valCls))
                             desc.valueClass(valCls);
@@ -251,21 +251,21 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                         desc.keyClass(keyCls);
                     }
 
-                    if (binaryEnabled && binaryKeyOrValAsOptimized) {
-                        if (extClasses == null)
-                            extClasses = new ArrayList<>();
+                    if (binaryEnabled && keyOrValMustDeserialize) {
+                        if (mustDeserializeClss == null)
+                            mustDeserializeClss = new ArrayList<>();
 
-                        if (binaryKeyAsOptimized)
-                            extClasses.add(keyCls);
+                        if (keyMustDeserialize)
+                            mustDeserializeClss.add(keyCls);
 
-                        if (binaryValAsOptimized)
-                            extClasses.add(valCls);
+                        if (valMustDeserialize)
+                            mustDeserializeClss.add(valCls);
                     }
 
                     TypeId typeId;
                     TypeId altTypeId = null;
 
-                    if (valCls == null || (binaryEnabled && !binaryKeyOrValAsOptimized)) {
+                    if (valCls == null || (binaryEnabled && !keyOrValMustDeserialize)) {
                         processBinaryMeta(qryEntity, desc);
 
                         typeId = new TypeId(ccfg.getName(), ctx.cacheObjects().typeId(qryEntity.getValueType()));
@@ -308,14 +308,14 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                     Class<?> valCls = U.classForName(meta.getValueType(), null);
 
                     // If local node has the classes and they are externalizable, we must use reflection properties.
-                    boolean binaryKeyAsOptimized = mustDeserializeBinary(keyCls);
-                    boolean binaryValAsOptimized= mustDeserializeBinary(valCls);
+                    boolean keyMustDeserialize = mustDeserializeBinary(keyCls);
+                    boolean valMustDeserialize = mustDeserializeBinary(valCls);
 
-                    boolean binaryKeyOrValAsOptimized = binaryKeyAsOptimized || binaryValAsOptimized;
+                    boolean keyOrValMustDeserialize = keyMustDeserialize || valMustDeserialize;
 
                     desc.name(meta.getSimpleValueType());
 
-                    if (binaryEnabled && !binaryKeyOrValAsOptimized) {
+                    if (binaryEnabled && !keyOrValMustDeserialize) {
                         // Safe to check null.
                         if (SQL_TYPES.contains(valCls))
                             desc.valueClass(valCls);
@@ -332,21 +332,21 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                         desc.keyClass(keyCls);
                     }
 
-                    if (binaryEnabled && binaryKeyOrValAsOptimized) {
-                        if (extClasses == null)
-                            extClasses = new ArrayList<>();
+                    if (binaryEnabled && keyOrValMustDeserialize) {
+                        if (mustDeserializeClss == null)
+                            mustDeserializeClss = new ArrayList<>();
 
-                        if (binaryKeyAsOptimized)
-                            extClasses.add(keyCls);
+                        if (keyMustDeserialize)
+                            mustDeserializeClss.add(keyCls);
 
-                        if (binaryValAsOptimized)
-                            extClasses.add(valCls);
+                        if (valMustDeserialize)
+                            mustDeserializeClss.add(valCls);
                     }
 
                     TypeId typeId;
                     TypeId altTypeId = null;
 
-                    if (valCls == null || (binaryEnabled && !binaryKeyOrValAsOptimized)) {
+                    if (valCls == null || (binaryEnabled && !keyOrValMustDeserialize)) {
                         processBinaryMeta(meta, desc);
 
                         typeId = new TypeId(ccfg.getName(), ctx.cacheObjects().typeId(meta.getValueType()));
@@ -373,11 +373,13 @@ public class GridQueryProcessor extends GridProcessorAdapter {
 
             // Indexed types must be translated to CacheTypeMetadata in CacheConfiguration.
 
-            if (extClasses != null) {
-                U.quietAndWarn(log, "Externalizable classes are specified in query configuration while " +
-                    "BinaryMarshaller is used. Values of the following types will be deserialized in order to build " +
-                    "indexes (use Serializable or " + Binarylizable.class.getSimpleName() +" implementation to " +
-                    "allow fields extraction without deserialization): " + extClasses);
+            if (mustDeserializeClss != null) {
+                U.quietAndWarn(log, "Some classes in query configuration cannot be written in binary format " +
+                    "because they either implement Externalizable interface or have writeObject/readObject methods. " +
+                    "Their instances will be deserialized in order to build indexes. Please ensure that all nodes " +
+                    "have this class in classpath. To enable binary serialization either implement " +
+                    Binarylizable.class.getSimpleName() + " interface or set explicit serializer using " +
+                    "BinaryTypeConfiguration.setSerializer() method: " + mustDeserializeClss);
             }
         }
         catch (IgniteCheckedException | RuntimeException e) {

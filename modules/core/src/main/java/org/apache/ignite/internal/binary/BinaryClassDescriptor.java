@@ -177,10 +177,10 @@ public class BinaryClassDescriptor {
         }
 
         if (useOptMarshaller) {
-            U.warn(ctx.log(), "Class \"" + cls.getName() + "\" cannot be written in binary format because it " +
-                "either implements Externalizable interface or have writeObject/readObject methods. Please ensure " +
-                "that all nodes have this class in classpath. To enable binary serialization either implement " +
-                Binarylizable.class.getSimpleName() + " interface or set explicit serializer using " +
+            U.quietAndWarn(ctx.log(), "Class \"" + cls.getName() + "\" cannot be written in binary format because " +
+                "it either implements Externalizable interface or have writeObject/readObject methods. Please " +
+                "ensure that all nodes have this class in classpath. To enable binary serialization either " +
+                "implement " + Binarylizable.class.getSimpleName() + " interface or set explicit serializer using " +
                 "BinaryTypeConfiguration.setSerializer() method." );
         }
 
