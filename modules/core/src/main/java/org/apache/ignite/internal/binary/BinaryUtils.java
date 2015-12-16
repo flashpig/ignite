@@ -59,8 +59,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import org.apache.ignite.marshaller.optimized.OptimizedMarshaller;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**

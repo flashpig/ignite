@@ -578,7 +578,7 @@ public class BinaryContext implements Externalizable {
         }
 
         BinarySerializer serializer = BinaryUtils.isBinarylizable(cls) || !BinaryUtils.isCustomJavaSerialization(cls) ?
-            new BinaryReflectiveSerializer() : null;
+            new BinaryReflectiveSerializer() : defaultSerializer();
 
         String affFieldName = affinityFieldName(cls);
 
@@ -612,6 +612,15 @@ public class BinaryContext implements Externalizable {
         mappers.putIfAbsent(typeId, idMapper);
 
         return desc;
+    }
+
+    /**
+     * @return Default serializer.
+     */
+    private BinarySerializer defaultSerializer() {
+        BinaryConfiguration binCfg = igniteCfg.getBinaryConfiguration();
+
+        return binCfg != null ? binCfg.getSerializer() : null;
     }
 
     /**
