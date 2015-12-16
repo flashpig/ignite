@@ -116,9 +116,6 @@ public class BinaryContext implements Externalizable {
     /** */
     private final Map<String, BinaryIdMapper> typeMappers = new ConcurrentHashMap8<>(0);
 
-    /** Non-default serialization flags. */
-    private final Set<String> forceBinaryFlags = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-
     /** */
     private BinaryMetadataHandler metaHnd;
 
@@ -833,9 +830,6 @@ public class BinaryContext implements Externalizable {
                 if (BinaryUtils.isBinarylizable(cls) || !BinaryUtils.isCustomJavaSerialization(cls))
                     serializer = new BinaryReflectiveSerializer();
             }
-
-            if (serializer != null)
-                forceBinaryFlags.add(cls.getName());
 
             BinaryClassDescriptor desc = new BinaryClassDescriptor(
                 this,
