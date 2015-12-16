@@ -212,7 +212,7 @@ public class BinaryContext implements Externalizable {
         registerPredefinedType(LinkedHashMap.class, 0);
 
         // Classes with overriden default serialization flag.
-        registerPredefinedType(AffinityKey.class, 0, false);
+        registerPredefinedType(AffinityKey.class, 0);
 
         registerPredefinedType(GridMapEntry.class, 60);
         registerPredefinedType(IgniteBiTuple.class, 61);
@@ -540,8 +540,7 @@ public class BinaryContext implements Externalizable {
                 BinaryInternalIdMapper.defaultInstance(),
                 null,
                 false,
-                true, /* registered */
-                false /* predefined */
+                true /* registered */
             );
 
             BinaryClassDescriptor old = descByCls.putIfAbsent(cls, desc);
@@ -591,8 +590,7 @@ public class BinaryContext implements Externalizable {
             idMapper,
             serializer,
             true,
-            registered,
-            false /* predefined */
+            registered
         );
 
         if (!deserialize) {
@@ -746,16 +744,6 @@ public class BinaryContext implements Externalizable {
      * @return GridBinaryClassDescriptor.
      */
     public BinaryClassDescriptor registerPredefinedType(Class<?> cls, int id) {
-        return registerPredefinedType(cls, id, true);
-    }
-
-    /**
-     * @param cls Class.
-     * @param id Type ID.
-     * @param javaSerialization Use default serialization flag.
-     * @return GridBinaryClassDescriptor.
-     */
-    public BinaryClassDescriptor registerPredefinedType(Class<?> cls, int id, boolean javaSerialization) {
         String typeName = typeName(cls.getName());
 
         if (id == 0)
@@ -769,10 +757,9 @@ public class BinaryContext implements Externalizable {
             typeName,
             null,
             BinaryInternalIdMapper.defaultInstance(),
-            javaSerialization ? null : new BinaryReflectiveSerializer(),
+            new BinaryReflectiveSerializer(),
             false,
-            true, /* registered */
-            true /* predefined */
+            true /* registered */
         );
 
         predefinedTypeNames.put(typeName, id);
@@ -849,8 +836,7 @@ public class BinaryContext implements Externalizable {
                 idMapper,
                 serializer,
                 true,
-                true, /* registered */
-                false /* predefined */
+                true /* registered */
             );
 
             fieldsMeta = desc.fieldsMeta();

@@ -124,7 +124,6 @@ public class BinaryClassDescriptor {
      * @param serializer Serializer.
      * @param metaDataEnabled Metadata enabled flag.
      * @param registered Whether typeId has been successfully registered by MarshallerContext or not.
-     * @param predefined Whether the class is predefined or not.
      * @throws BinaryObjectException In case of error.
      */
     BinaryClassDescriptor(
@@ -137,15 +136,14 @@ public class BinaryClassDescriptor {
         @Nullable BinaryIdMapper idMapper,
         @Nullable BinarySerializer serializer,
         boolean metaDataEnabled,
-        boolean registered,
-        boolean predefined
+        boolean registered
     ) throws BinaryObjectException {
         assert ctx != null;
         assert cls != null;
         assert idMapper != null;
 
         // If serializer is not defined at this point, then we have to user OptimizedMarshaller.
-        useOptMarshaller = !predefined && serializer == null;
+        useOptMarshaller = serializer == null;
 
         // Reset reflective serializer so that we rely on existing reflection-based serialization.
         if (serializer instanceof BinaryReflectiveSerializer)
