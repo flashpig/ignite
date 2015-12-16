@@ -33,6 +33,7 @@ import org.apache.ignite.configuration.BinaryConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.IgniteKernal;
 import org.apache.ignite.internal.IgnitionEx;
+import org.apache.ignite.internal.processors.cache.binary.BinaryMetadataKey;
 import org.apache.ignite.internal.processors.cache.binary.CacheObjectBinaryProcessorImpl;
 import org.apache.ignite.internal.processors.datastructures.CollocatedQueueItemKey;
 import org.apache.ignite.internal.processors.datastructures.CollocatedSetItemKey;
@@ -221,6 +222,8 @@ public class BinaryContext implements Externalizable {
 
         registerPredefinedType(GridMapEntry.class, 60);
         registerPredefinedType(IgniteBiTuple.class, 61);
+        registerPredefinedType(BinaryMetadataKey.class, 0);
+        registerPredefinedType(BinaryMetadata.class, 0);
         registerPredefinedType(T2.class, 62);
 
         // IDs range [200..1000] is used by Ignite internal APIs.

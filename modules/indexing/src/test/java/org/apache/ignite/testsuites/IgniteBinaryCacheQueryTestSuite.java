@@ -18,6 +18,8 @@
 package org.apache.ignite.testsuites;
 
 import junit.framework.TestSuite;
+import org.apache.ignite.internal.processors.cache.BinarySerializationQuerySelfTest;
+import org.apache.ignite.internal.processors.cache.BinarySerializationQueryWithReflectiveSerializerSelfTest;
 import org.apache.ignite.internal.processors.cache.CacheLocalQueryMetricsSelfTest;
 import org.apache.ignite.internal.processors.cache.CachePartitionedQueryMetricsDistributedSelfTest;
 import org.apache.ignite.internal.processors.cache.CachePartitionedQueryMetricsLocalSelfTest;
@@ -63,7 +65,11 @@ public class IgniteBinaryCacheQueryTestSuite extends TestSuite {
 
         TestSuite suite = new TestSuite("Grid Cache Query Test Suite using BinaryMarshaller");
 
-        // Parsing
+        // Serialization.
+        suite.addTestSuite(BinarySerializationQuerySelfTest.class);
+        suite.addTestSuite(BinarySerializationQueryWithReflectiveSerializerSelfTest.class);
+
+        // Parsing.
         suite.addTestSuite(GridQueryParsingTest.class);
 
         // Queries tests.

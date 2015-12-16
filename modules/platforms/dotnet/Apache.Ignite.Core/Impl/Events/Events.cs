@@ -88,6 +88,15 @@ namespace Apache.Ignite.Core.Impl.Events
         private Events(Events events) : base(UU.EventsWithAsync(events.Target), events.Marshaller)
         {
             _clusterGroup = events.ClusterGroup;
+
+            List<int> list = null;
+
+            list.ToList();
+        }
+
+        public T GetCollection<T, K() where T : ICollection<K>
+        {
+            return null;
         }
 
         /** <inheritDoc /> */
