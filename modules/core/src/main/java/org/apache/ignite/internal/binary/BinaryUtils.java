@@ -1842,14 +1842,28 @@ public class BinaryUtils {
     }
 
     /**
-     * Determines whether to use {@link OptimizedMarshaller} for serialization or
-     * not.
+     * Check if class is binarylizable.
      *
      * @param cls Class.
-     * @return {@code true} if to use, {@code false} otherwise.
+     * @return {@code True} if binarylizable.
+     */
+    public static boolean isBinarylizable(Class cls) {
+        for (Class c = cls; c != null && !c.equals(Object.class); c = c.getSuperclass()) {
+            if (Binarylizable.class.isAssignableFrom(c))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determines whether class contains custom Java serialization logic.
+     *
+     * @param cls Class.
+     * @return {@code true} if custom Java serialization logic exists, {@code false} otherwise.
      */
     @SuppressWarnings("unchecked")
-    public static boolean requireOptimizedMarshaller(Class cls) {
+    public static boolean isCustomJavaSerialization(Class cls) {
         for (Class c = cls; c != null && !c.equals(Object.class); c = c.getSuperclass()) {
             if (Externalizable.class.isAssignableFrom(c))
                 return true;

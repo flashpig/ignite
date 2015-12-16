@@ -17,13 +17,10 @@
 
 package org.apache.ignite.binary;
 
-import org.apache.ignite.internal.binary.BinaryMarshaller;
+import org.apache.ignite.configuration.BinaryConfiguration;
+import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.S;
-import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.configuration.BinaryConfiguration;
-
-import java.io.Externalizable;
 
 /**
  * Defines configuration properties for a specific binary type. Providing per-type
@@ -33,9 +30,6 @@ import java.io.Externalizable;
  * binary type without affecting configuration for other binary types.
  */
 public class BinaryTypeConfiguration {
-    /** Default value of "ignore Java serialization" flag. */
-    public static final boolean DFLT_IGNORE_JAVA_SER = false;
-
     /** Class name. */
     private String typeName;
 
@@ -47,9 +41,6 @@ public class BinaryTypeConfiguration {
 
     /** Enum flag. */
     private boolean isEnum;
-
-    /** Ignore Java serialization flag. */
-    private boolean ignoreJavaSer = DFLT_IGNORE_JAVA_SER;
 
     /**
      * Constructor.
@@ -70,7 +61,6 @@ public class BinaryTypeConfiguration {
         idMapper = other.idMapper;
         serializer = other.serializer;
         isEnum = other.isEnum;
-        ignoreJavaSer = other.ignoreJavaSer;
     }
 
     /**
@@ -150,39 +140,6 @@ public class BinaryTypeConfiguration {
      */
     public void setEnum(boolean isEnum) {
         this.isEnum = isEnum;
-    }
-
-    /**
-     * Gets whether to ignore Java serialization mechanisms.
-     * <p>
-     * {@link BinaryMarshaller} allows for objects to be used without deserialization. To achieve this fields metadata
-     * must be written along with their values. When custom Java serialization mechanics is present (such as
-     * {@link Externalizable} or {@code writeObject()} method), Ignite has to respect it. But fields metadata cannot
-     * be written in this case and so objects will be deserialized on the server.
-     * <p>
-     * To avoid deserialization on the server you can set this property to {@code true}. In this case Ignite will
-     * ignore custom Java serialization and will write all objects fields (except of transient ones) directly.
-     * <p>
-     * Note that there are other ways to achieve the same things:
-     * <ul>
-     *     <li>Implement {@link Binarylizable} interface;</li>
-     *     <li>Define custom {@link BinaryIdMapper} using {@link #setIdMapper(BinaryIdMapper)}.</li>
-     * </ul>
-     * Defaults to {@link #DFLT_IGNORE_JAVA_SER}.
-     *
-     * @return {@code True} if Java serialization should be ignored.
-     */
-    public boolean isIgnoreJavaSerialization() {
-        return ignoreJavaSer;
-    }
-
-    /**
-     * Sets whether to ignore Java serialization mechanisms. See {@link #isIgnoreJavaSerialization()} for details.
-     *
-     * @param ignoreJavaSer {@code True} if Java serialization should be ignored.
-     */
-    public void setIgnoreJavaSerialization(boolean ignoreJavaSer) {
-        this.ignoreJavaSer = ignoreJavaSer;
     }
 
     /** {@inheritDoc} */

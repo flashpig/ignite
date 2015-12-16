@@ -20,6 +20,7 @@ package org.apache.ignite.internal.binary;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.binary.BinaryIdMapper;
 import org.apache.ignite.binary.BinaryObjectException;
+import org.apache.ignite.binary.BinaryReflectiveSerializer;
 import org.apache.ignite.binary.BinarySerializer;
 import org.apache.ignite.binary.Binarylizable;
 import org.apache.ignite.internal.processors.cache.CacheObjectImpl;
@@ -61,7 +62,7 @@ public class BinaryClassDescriptor {
     /** */
     private final Class<?> cls;
 
-    /** */
+    /** Configured serializer. */
     private final BinarySerializer serializer;
 
     /** ID mapper. */
@@ -124,7 +125,6 @@ public class BinaryClassDescriptor {
      * @param metaDataEnabled Metadata enabled flag.
      * @param registered Whether typeId has been successfully registered by MarshallerContext or not.
      * @param predefined Whether the class is predefined or not.
-     * @param useDfltSerialization Whether to use default configuration.
      * @throws BinaryObjectException In case of error.
      */
     BinaryClassDescriptor(
@@ -137,13 +137,18 @@ public class BinaryClassDescriptor {
         @Nullable BinaryIdMapper idMapper,
         @Nullable BinarySerializer serializer,
         boolean metaDataEnabled,
-        boolean registered,
-        boolean predefined,
-        boolean useDfltSerialization
+        boolean registered
     ) throws BinaryObjectException {
         assert ctx != null;
         assert cls != null;
         assert idMapper != null;
+
+        // If serializer is not defined at this point, then we have to user OptimizedMarshaller.
+        useOptMarshaller = serializer == null;
+
+        // Reset reflective serializer so that we rely on existing reflection-based serialization.
+        if (serializer instanceof BinaryReflectiveSerializer)
+            serializer = null;
 
         this.ctx = ctx;
         this.cls = cls;
@@ -159,10 +164,10 @@ public class BinaryClassDescriptor {
 
         excluded = MarshallerExclusions.isExcluded(cls);
 
-        useOptMarshaller = !predefined && useDfltSerialization && BinaryUtils.requireOptimizedMarshaller(cls);
-
         if (excluded)
             mode = BinaryWriteMode.EXCLUSION;
+        else if (useOptMarshaller)
+            mode = BinaryWriteMode.OBJECT; // Will not be used anywhere.
         else {
             if (cls == BinaryEnumObjectImpl.class)
                 mode = BinaryWriteMode.BINARY_ENUM;
@@ -171,10 +176,11 @@ public class BinaryClassDescriptor {
         }
 
         if (useOptMarshaller) {
-            // TODO: IGNITE-2100: Correct warning.
-
-            U.warn(ctx.log(), "Ignored \"Externalizable\" interface for class (use " +
-                "BinaryTypeConfiguration.setUseDefaultSerialization(true) to enable it): " + cls.getName());
+            U.warn(ctx.log(), "Class \"" + cls.getName() + "\" cannot be written in binary format because it " +
+                "either implements Externalizable interface or have writeObject/readObject methods. Please ensure " +
+                "that all nodes have this class in classpath. To enable binary serialization either implement " +
+                Binarylizable.class.getSimpleName() + " interface or set explicit serializer using " +
+                "BinaryTypeConfiguration.setSerializer() method." );
         }
 
         switch (mode) {

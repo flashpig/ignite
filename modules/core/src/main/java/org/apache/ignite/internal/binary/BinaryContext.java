@@ -22,6 +22,7 @@ import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.binary.BinaryIdMapper;
 import org.apache.ignite.binary.BinaryInvalidTypeException;
 import org.apache.ignite.binary.BinaryObjectException;
+import org.apache.ignite.binary.BinaryReflectiveSerializer;
 import org.apache.ignite.binary.BinarySerializer;
 import org.apache.ignite.binary.BinaryType;
 import org.apache.ignite.binary.BinaryTypeConfiguration;
@@ -115,8 +116,7 @@ public class BinaryContext implements Externalizable {
     private final Map<String, BinaryIdMapper> typeMappers = new ConcurrentHashMap8<>(0);
 
     /** Non-default serialization flags. */
-    private final Set<Integer> nonDfltSerializationFlags =
-        Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+    private final Set<String> forceBinaryFlags = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
     /** */
     private BinaryMetadataHandler metaHnd;
@@ -214,7 +214,7 @@ public class BinaryContext implements Externalizable {
         registerPredefinedType(HashMap.class, 0);
         registerPredefinedType(LinkedHashMap.class, 0);
 
-        // Classes with overriden default serialziation flag.
+        // Classes with overriden default serialization flag.
         registerPredefinedType(AffinityKey.class, 0, false);
         registerPredefinedType(BinaryObjectImpl.class, 0, false);
         registerPredefinedType(BinaryObjectOffheapImpl.class, 0, false);
@@ -241,15 +241,15 @@ public class BinaryContext implements Externalizable {
     }
 
     /**
-     * Whether binary marshalling is forced for class.
+     * Check whether class must be deserialized anyway.
      *
      * @param cls Class.
-     * @return {@code True} if forced.
+     * @return {@code True} if must be deserialized.
      */
-    public boolean forceBinaryMarshalling(Class cls) {
-        int typeId = typeId(cls.getName());
+    public boolean mustDeserialize(Class cls) {
+        BinaryClassDescriptor desc = descriptorForClass(cls, false);
 
-        return nonDfltSerializationFlags.contains(typeId);
+        return desc.useOptimizedMarshaller();
     }
 
     /**
@@ -334,17 +334,16 @@ public class BinaryContext implements Externalizable {
 
                     for (String clsName0 : classesInPackage(pkgName))
                         descs.add(clsName0, idMapper, serializer, affFields.get(clsName0),
-                            typeCfg.isEnum(), !typeCfg.isIgnoreJavaSerialization(), true);
+                            typeCfg.isEnum(), true);
                 }
                 else
                     descs.add(clsName, idMapper, serializer, affFields.get(clsName),
-                        typeCfg.isEnum(), !typeCfg.isIgnoreJavaSerialization(), false);
+                        typeCfg.isEnum(), false);
             }
         }
 
         for (TypeDescriptor desc : descs.descriptors())
-            registerUserType(desc.clsName, desc.idMapper, desc.serializer, desc.affKeyFieldName, desc.isEnum,
-                desc.useJavaSerialization);
+            registerUserType(desc.clsName, desc.idMapper, desc.serializer, desc.affKeyFieldName, desc.isEnum);
 
         BinaryInternalIdMapper dfltMapper = BinaryInternalIdMapper.create(globalIdMapper);
 
@@ -541,9 +540,7 @@ public class BinaryContext implements Externalizable {
                 BinaryInternalIdMapper.defaultInstance(),
                 null,
                 false,
-                true, /* registered */
-                false, /* predefined */
-                true /* prefer default serialization */
+                true /* registered */
             );
 
             BinaryClassDescriptor old = descByCls.putIfAbsent(cls, desc);
@@ -579,6 +576,9 @@ public class BinaryContext implements Externalizable {
             throw new BinaryObjectException("Failed to register class.", e);
         }
 
+        BinarySerializer serializer = BinaryUtils.isBinarylizable(cls) || !BinaryUtils.isCustomJavaSerialization(cls) ?
+            new BinaryReflectiveSerializer() : null;
+
         String affFieldName = affinityFieldName(cls);
 
         BinaryClassDescriptor desc = new BinaryClassDescriptor(this,
@@ -588,11 +588,9 @@ public class BinaryContext implements Externalizable {
             typeName,
             affFieldName,
             idMapper,
-            null,
+            serializer,
             true,
-            registered,
-            false /* predefined */,
-            !nonDfltSerializationFlags.contains(typeId)
+            registered
         );
 
         if (!deserialize) {
@@ -743,10 +741,10 @@ public class BinaryContext implements Externalizable {
     /**
      * @param cls Class.
      * @param id Type ID.
-     * @param useDfltSerialization Use default serialization flag.
+     * @param javaSerialization Use default serialization flag.
      * @return GridBinaryClassDescriptor.
      */
-    public BinaryClassDescriptor registerPredefinedType(Class<?> cls, int id, boolean useDfltSerialization) {
+    public BinaryClassDescriptor registerPredefinedType(Class<?> cls, int id, boolean javaSerialization) {
         String typeName = typeName(cls.getName());
 
         if (id == 0)
@@ -760,11 +758,9 @@ public class BinaryContext implements Externalizable {
             typeName,
             null,
             BinaryInternalIdMapper.defaultInstance(),
-            null,
+            javaSerialization ? null : new BinaryReflectiveSerializer(),
             false,
-            true, /* registered */
-            true, /* predefined */
-            useDfltSerialization /* default serialization */
+            true /* registered */
         );
 
         predefinedTypeNames.put(typeName, id);
@@ -781,7 +777,6 @@ public class BinaryContext implements Externalizable {
      * @param serializer Serializer.
      * @param affKeyFieldName Affinity key field name.
      * @param isEnum If enum.
-     * @param useJavaSerialization Use default serialization flag.
      * @throws BinaryObjectException In case of error.
      */
     @SuppressWarnings("ErrorNotRethrown")
@@ -789,8 +784,7 @@ public class BinaryContext implements Externalizable {
         BinaryIdMapper idMapper,
         @Nullable BinarySerializer serializer,
         @Nullable String affKeyFieldName,
-        boolean isEnum,
-        boolean useJavaSerialization)
+        boolean isEnum)
         throws BinaryObjectException {
         assert idMapper != null;
 
@@ -821,13 +815,21 @@ public class BinaryContext implements Externalizable {
 
         typeMappers.put(typeName, idMapper);
 
-        if (!useJavaSerialization)
-            nonDfltSerializationFlags.add(id);
-
         Map<String, Integer> fieldsMeta = null;
         Collection<BinarySchema> schemas = null;
 
         if (cls != null) {
+            if (serializer == null) {
+                // At this point we must decide whether to rely on Java serialization mechanics or not.
+                // If no serializer is provided, we examine the class and if it doesn't contain non-trivial
+                // serialization logic we are safe to fallback to reflective binary serialization.
+                if (BinaryUtils.isBinarylizable(cls) || !BinaryUtils.isCustomJavaSerialization(cls))
+                    serializer = new BinaryReflectiveSerializer();
+            }
+
+            if (serializer != null)
+                forceBinaryFlags.add(cls.getName());
+
             BinaryClassDescriptor desc = new BinaryClassDescriptor(
                 this,
                 cls,
@@ -838,9 +840,7 @@ public class BinaryContext implements Externalizable {
                 idMapper,
                 serializer,
                 true,
-                true, /* registered */
-                false, /* predefined */
-                useJavaSerialization
+                true /* registered */
             );
 
             fieldsMeta = desc.fieldsMeta();
@@ -1028,7 +1028,6 @@ public class BinaryContext implements Externalizable {
          * @param serializer Serializer.
          * @param affKeyFieldName Affinity key field name.
          * @param isEnum Enum flag.
-         * @param useJavaSer Whether to use Java serialization.
          * @param canOverride Whether this descriptor can be override.
          * @throws BinaryObjectException If failed.
          */
@@ -1037,7 +1036,6 @@ public class BinaryContext implements Externalizable {
             BinarySerializer serializer,
             String affKeyFieldName,
             boolean isEnum,
-            boolean useJavaSer,
             boolean canOverride)
             throws BinaryObjectException {
             TypeDescriptor desc = new TypeDescriptor(clsName,
@@ -1045,7 +1043,6 @@ public class BinaryContext implements Externalizable {
                 serializer,
                 affKeyFieldName,
                 isEnum,
-                useJavaSer,
                 canOverride);
 
             TypeDescriptor oldDesc = descs.get(clsName);
@@ -1085,9 +1082,6 @@ public class BinaryContext implements Externalizable {
         /** Enum flag. */
         private boolean isEnum;
 
-        /** Use default serialization flag. */
-        private boolean useJavaSerialization;
-
         /** Whether this descriptor can be override. */
         private boolean canOverride;
 
@@ -1099,17 +1093,15 @@ public class BinaryContext implements Externalizable {
          * @param serializer Serializer.
          * @param affKeyFieldName Affinity key field name.
          * @param isEnum Enum type.
-         * @param useJavaSerialization Use default serialization flag.
          * @param canOverride Whether this descriptor can be override.
          */
         private TypeDescriptor(String clsName, BinaryIdMapper idMapper, BinarySerializer serializer,
-            String affKeyFieldName, boolean isEnum, boolean useJavaSerialization, boolean canOverride) {
+            String affKeyFieldName, boolean isEnum, boolean canOverride) {
             this.clsName = clsName;
             this.idMapper = idMapper;
             this.serializer = serializer;
             this.affKeyFieldName = affKeyFieldName;
             this.isEnum = isEnum;
-            this.useJavaSerialization = useJavaSerialization;
             this.canOverride = canOverride;
         }
 
@@ -1126,6 +1118,7 @@ public class BinaryContext implements Externalizable {
                 idMapper = other.idMapper;
                 serializer = other.serializer;
                 affKeyFieldName = other.affKeyFieldName;
+                isEnum = other.isEnum;
                 canOverride = other.canOverride;
             }
             else if (!other.canOverride)

@@ -217,8 +217,8 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                     Class<?> valCls = U.classForName(qryEntity.getValueType(), null);
 
                     // If local node has the classes and they are externalizable, we must use reflection properties.
-                    boolean binaryKeyAsOptimized = binaryAsOptimized(keyCls);
-                    boolean binaryValAsOptimized = binaryAsOptimized(valCls);
+                    boolean binaryKeyAsOptimized = mustDeserializeBinary(keyCls);
+                    boolean binaryValAsOptimized = mustDeserializeBinary(valCls);
 
                     boolean binaryKeyOrValAsOptimized = binaryKeyAsOptimized || binaryValAsOptimized;
 
@@ -308,8 +308,8 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                     Class<?> valCls = U.classForName(meta.getValueType(), null);
 
                     // If local node has the classes and they are externalizable, we must use reflection properties.
-                    boolean binaryKeyAsOptimized = binaryAsOptimized(keyCls);
-                    boolean binaryValAsOptimized= binaryAsOptimized(valCls);
+                    boolean binaryKeyAsOptimized = mustDeserializeBinary(keyCls);
+                    boolean binaryValAsOptimized= mustDeserializeBinary(valCls);
 
                     boolean binaryKeyOrValAsOptimized = binaryKeyAsOptimized || binaryValAsOptimized;
 
@@ -388,21 +388,19 @@ public class GridQueryProcessor extends GridProcessorAdapter {
     }
 
     /**
-     * Check whether class will be deserialized anyways.
+     * Check whether type still must be deserialized when binary marshaller is set.
      *
      * @param cls Class.
      * @return {@code True} if will be deserialized.
      */
-    private boolean binaryAsOptimized(Class cls) {
-        if (BinaryUtils.requireOptimizedMarshaller(cls)) {
-            if (ctx.config().getMarshaller() instanceof BinaryMarshaller) {
-                CacheObjectBinaryProcessorImpl proc0 = (CacheObjectBinaryProcessorImpl)ctx.cacheObjects();
+    private boolean mustDeserializeBinary(Class cls) {
+        if (ctx.config().getMarshaller() instanceof BinaryMarshaller) {
+            CacheObjectBinaryProcessorImpl proc0 = (CacheObjectBinaryProcessorImpl)ctx.cacheObjects();
 
-                return !proc0.binaryContext().forceBinaryMarshalling(cls);
-            }
+            return proc0.binaryContext().mustDeserialize(cls);
         }
-
-        return false;
+        else
+            return false;
     }
 
     /**
