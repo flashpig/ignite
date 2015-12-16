@@ -376,8 +376,8 @@ public class GridQueryProcessor extends GridProcessorAdapter {
             if (mustDeserializeClss != null) {
                 U.quietAndWarn(log, "Some classes in query configuration cannot be written in binary format " +
                     "because they either implement Externalizable interface or have writeObject/readObject methods. " +
-                    "Their instances will be deserialized in order to build indexes. Please ensure that all nodes " +
-                    "have this class in classpath. To enable binary serialization either implement " +
+                    "Instances of these classes will be deserialized in order to build indexes. Please ensure that " +
+                    "all nodes have these classes in classpath. To enable binary serialization either implement " +
                     Binarylizable.class.getSimpleName() + " interface or set explicit serializer using " +
                     "BinaryTypeConfiguration.setSerializer() method: " + mustDeserializeClss);
             }
