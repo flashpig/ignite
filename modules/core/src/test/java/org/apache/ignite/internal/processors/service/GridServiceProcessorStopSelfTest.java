@@ -23,6 +23,7 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteServices;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.services.Service;
 import org.apache.ignite.services.ServiceContext;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
@@ -50,6 +51,8 @@ public class GridServiceProcessorStopSelfTest extends GridCommonAbstractTest {
 
         Thread t = new Thread(new Runnable() {
             @Override public void run() {
+                Thread.currentThread().setName("deploy-thread");
+
                 IgniteServices svcs = ignite.services();
 
                 IgniteServices services = svcs.withAsync();
@@ -76,7 +79,12 @@ public class GridServiceProcessorStopSelfTest extends GridCommonAbstractTest {
 
         Ignition.stopAll(true);
 
-        assertTrue("Deploy future isn't completed", finishLatch.await(15, TimeUnit.SECONDS));
+        boolean wait = finishLatch.await(15, TimeUnit.SECONDS);
+
+        if (!wait)
+            U.dumpThreads(log);
+
+        assertTrue("Deploy future isn't completed", wait);
     }
 
     /**
