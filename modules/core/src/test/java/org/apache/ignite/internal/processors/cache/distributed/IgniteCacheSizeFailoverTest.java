@@ -97,7 +97,7 @@ public class IgniteCacheSizeFailoverTest extends GridCommonAbstractTest {
 
                 return null;
             }
-        }, 2, "size-thread");
+        }, 10, "size-thread");
 
         try {
             for (int i = 0; i < 10; i++) {
