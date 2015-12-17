@@ -247,9 +247,12 @@ public class BinaryContext implements Externalizable {
      * @return {@code True} if must be deserialized.
      */
     public boolean mustDeserialize(Class cls) {
-        BinaryClassDescriptor desc = descriptorForClass(cls, false);
+        BinaryClassDescriptor desc = descByCls.get(cls);
 
-        return desc.useOptimizedMarshaller();
+        if (desc == null)
+            return marshCtx.isSystemType(cls.getName()) || serializerForClass(cls) == null;
+        else
+            return desc.useOptimizedMarshaller();
     }
 
     /**
@@ -576,8 +579,7 @@ public class BinaryContext implements Externalizable {
             throw new BinaryObjectException("Failed to register class.", e);
         }
 
-        BinarySerializer serializer = BinaryUtils.isBinarylizable(cls) || !BinaryUtils.isCustomJavaSerialization(cls) ?
-            new BinaryReflectiveSerializer() : defaultSerializer();
+        BinarySerializer serializer = serializerForClass(cls);
 
         String affFieldName = affinityFieldName(cls);
 
@@ -610,6 +612,21 @@ public class BinaryContext implements Externalizable {
         mappers.putIfAbsent(typeId, idMapper);
 
         return desc;
+    }
+
+    /**
+     * Get serializer for class taking in count default one.
+     *
+     * @param cls Class.
+     * @return Serializer for class or {@code null} if none exists.
+     */
+    private @Nullable BinarySerializer serializerForClass(Class cls) {
+        BinarySerializer serializer = defaultSerializer();
+
+        if (serializer == null && canUseReflectiveSerializer(cls))
+            serializer = new BinaryReflectiveSerializer();
+
+        return serializer;
     }
 
     /**
@@ -822,7 +839,7 @@ public class BinaryContext implements Externalizable {
                 // At this point we must decide whether to rely on Java serialization mechanics or not.
                 // If no serializer is provided, we examine the class and if it doesn't contain non-trivial
                 // serialization logic we are safe to fallback to reflective binary serialization.
-                if (BinaryUtils.isBinarylizable(cls) || !BinaryUtils.isCustomJavaSerialization(cls))
+                if (canUseReflectiveSerializer(cls))
                     serializer = new BinaryReflectiveSerializer();
             }
 
@@ -849,6 +866,16 @@ public class BinaryContext implements Externalizable {
         }
 
         metaHnd.addMeta(id, new BinaryMetadata(id, typeName, fieldsMeta, affKeyFieldName, schemas, isEnum).wrap(this));
+    }
+
+    /**
+     * Check whether reflective serializer can be used for class.
+     *
+     * @param cls Class.
+     * @return {@code True} if reflective serializer can be used.
+     */
+    private static boolean canUseReflectiveSerializer(Class cls) {
+        return BinaryUtils.isBinarylizable(cls) || !BinaryUtils.isCustomJavaSerialization(cls);
     }
 
     /**
