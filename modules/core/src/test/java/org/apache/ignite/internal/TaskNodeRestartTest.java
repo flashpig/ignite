@@ -109,12 +109,14 @@ public class TaskNodeRestartTest extends GridCommonAbstractTest {
             }
         }, 2, "stop-thread");
 
+        IgniteInternalFuture<?> fut = null;
+
         try {
             final long stopTime = System.currentTimeMillis() + 60_000;
 
             final AtomicInteger idx = new AtomicInteger();
 
-            IgniteInternalFuture<?> fut = GridTestUtils.runMultiThreadedAsync(new Callable<Void>() {
+            fut = GridTestUtils.runMultiThreadedAsync(new Callable<Void>() {
                 @Override public Void call() throws Exception {
                     int node = idx.getAndIncrement() % NODES;
 
@@ -151,6 +153,9 @@ public class TaskNodeRestartTest extends GridCommonAbstractTest {
         }
         finally {
             finished.set(true);
+
+            if (fut != null)
+                fut.cancel();
 
             restartFut.get(5000);
         }
