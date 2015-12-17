@@ -395,7 +395,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
      * @return {@code True} if will be deserialized.
      */
     private boolean mustDeserializeBinary(Class cls) {
-        if (ctx.config().getMarshaller() instanceof BinaryMarshaller) {
+        if (cls != null && ctx.config().getMarshaller() instanceof BinaryMarshaller) {
             CacheObjectBinaryProcessorImpl proc0 = (CacheObjectBinaryProcessorImpl)ctx.cacheObjects();
 
             return proc0.binaryContext().mustDeserialize(cls);
