@@ -31,6 +31,13 @@ import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
  * Tests that {@link GridServiceProcessor} completes deploy/undeploy futures during node stop.
  */
 public class GridServiceProcessorStopSelfTest extends GridCommonAbstractTest {
+    /** {@inheritDoc} */
+    @Override protected void afterTest() throws Exception {
+        stopAllGrids();
+
+        super.afterTest();
+    }
+
     /**
      * @throws Exception If failed.
      */
@@ -76,6 +83,7 @@ public class GridServiceProcessorStopSelfTest extends GridCommonAbstractTest {
      * Simple map service.
      */
     public interface TestService {
+        // No-op.
     }
 
     /**
