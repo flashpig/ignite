@@ -57,21 +57,6 @@ public class GridCacheDrExpirationInfo extends GridCacheDrInfo {
         this.expireTime = expireTime;
     }
 
-    /**
-     * Constructor.
-     *
-     * @param proc Entry processor.
-     * @param ver Version.
-     * @param ttl TTL.
-     * @param expireTime Expire time.
-     */
-    public GridCacheDrExpirationInfo(EntryProcessor proc, GridCacheVersion ver, long ttl, long expireTime) {
-        super(proc, ver);
-
-        this.ttl = ttl;
-        this.expireTime = expireTime;
-    }
-
     /** {@inheritDoc} */
     @Override public long ttl() {
         return ttl;

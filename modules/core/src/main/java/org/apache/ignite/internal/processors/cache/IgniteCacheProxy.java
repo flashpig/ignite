@@ -64,8 +64,10 @@ import org.apache.ignite.internal.AsyncSupportAdapter;
 import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.IgniteInternalFuture;
+import org.apache.ignite.internal.processors.cache.dr.GridCacheDrInfo;
 import org.apache.ignite.internal.processors.cache.query.CacheQuery;
 import org.apache.ignite.internal.processors.cache.query.CacheQueryFuture;
+import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.processors.query.GridQueryProcessor;
 import org.apache.ignite.internal.util.GridCloseableIteratorAdapter;
 import org.apache.ignite.internal.util.GridEmptyIterator;
@@ -1069,6 +1071,76 @@ public class IgniteCacheProxy<K, V> extends AsyncSupportAdapter<IgniteCache<K, V
                 }
                 else
                     delegate.put(key, val);
+            }
+            finally {
+                onLeave(gate, prev);
+            }
+        }
+        catch (IgniteCheckedException e) {
+            throw cacheException(e);
+        }
+    }
+
+    /**
+     * Put entries to cache with conflict resolution.
+     *
+     * @param conflictMap Conflict map.
+     */
+    public void putAllConflict(Map<KeyCacheObject, GridCacheDrInfo> conflictMap) {
+        try {
+            GridCacheGateway<K, V> gate = this.gate;
+
+            CacheOperationContext prev = onEnter(gate, opCtx);
+
+            try {
+                delegate.putAllConflict(conflictMap);
+            }
+            finally {
+                onLeave(gate, prev);
+            }
+        }
+        catch (IgniteCheckedException e) {
+            throw cacheException(e);
+        }
+    }
+
+    /**
+     * Remove entries from cache with conflict resolution.
+     *
+     * @param conflictMap Conflict map.
+     */
+    public void removeAllConflict(Map<KeyCacheObject, GridCacheVersion> conflictMap) {
+        try {
+            GridCacheGateway<K, V> gate = this.gate;
+
+            CacheOperationContext prev = onEnter(gate, opCtx);
+
+            try {
+                delegate.removeAllConflict(conflictMap);
+            }
+            finally {
+                onLeave(gate, prev);
+            }
+        }
+        catch (IgniteCheckedException e) {
+            throw cacheException(e);
+        }
+    }
+
+    /**
+     * Invoke entries from cache with conflict resolution.
+     *
+     * @param map Conflict map.
+     * @param args Invoke arguments.
+     */
+    public void invokeAllConflict(Map<KeyCacheObject, GridCacheDrInfo> map, Object... args) {
+        try {
+            GridCacheGateway<K, V> gate = this.gate;
+
+            CacheOperationContext prev = onEnter(gate, opCtx);
+
+            try {
+                delegate.invokeAllConflict(map, args);
             }
             finally {
                 onLeave(gate, prev);

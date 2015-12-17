@@ -1969,8 +1969,14 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         GridCacheContext cacheCtx,
         Map<KeyCacheObject, GridCacheDrInfo> drMap
     ) {
+        Map<KeyCacheObject, Object> map = F.viewReadOnly(drMap, new IgniteClosure<GridCacheDrInfo, Object>() {
+            @Override public Object apply(GridCacheDrInfo val) {
+                return val.value();
+            }
+        });
+
         return this.<Object, Object>putAllAsync0(cacheCtx,
-            null,
+            map,
             null,
             null,
             drMap,
@@ -1983,15 +1989,16 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         Map<KeyCacheObject, GridCacheDrInfo> drMap,
         Object... args
     ) {
-        Map<Object, EntryProcessor<Object, Object, Object>> invoke = new LinkedHashMap<>();
-
-        for (Map.Entry<KeyCacheObject, GridCacheDrInfo> e : drMap.entrySet())
-            if (e.getValue().entryProcessor() != null)
-                invoke.put(e.getKey(), e.getValue().entryProcessor());
+        Map<Object, EntryProcessor<Object, Object, Object>> invokeMap =
+            F.viewReadOnly(drMap, (IgniteClosure)new IgniteClosure<Object, EntryProcessor<Object, Object, Object>>() {
+                @Override public EntryProcessor<Object, Object, Object> apply(Object val) {
+                    return (EntryProcessor<Object, Object, Object>)((GridCacheDrInfo)val).entryProcessor();
+                }
+            });
 
         return this.<Object, Object>putAllAsync0(cacheCtx,
             null,
-            invoke,
+            invokeMap,
             args,
             drMap,
             true,
@@ -3076,31 +3083,8 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         }
 
         // Cached entry may be passed only from entry wrapper.
-        final Map<?, ?> map0;
-        final Map<?, EntryProcessor<K, V, Object>> invokeMap0;
-
-        if (drMap != null) {
-            assert map == null;
-
-            if (invokeMap == null) {
-                map0 = F.viewReadOnly(drMap, new IgniteClosure<GridCacheDrInfo, Object>() {
-                    @Override public Object apply(GridCacheDrInfo val) {
-                        return val.value();
-                    }
-                });
-
-                invokeMap0 = null;
-            }
-            else  {
-                map0 = null;
-
-                invokeMap0 = (Map<K, EntryProcessor<K, V, Object>>)invokeMap;
-            }
-        }
-        else {
-            map0 = map;
-            invokeMap0 = (Map<K, EntryProcessor<K, V, Object>>)invokeMap;
-        }
+        final Map<?, ?> map0 = map;
+        final Map<?, EntryProcessor<K, V, Object>> invokeMap0 = (Map<K, EntryProcessor<K, V, Object>>)invokeMap;
 
         if (log.isDebugEnabled())
             log.debug("Called putAllAsync(...) [tx=" + this + ", map=" + map0 + ", retval=" + retval + "]");

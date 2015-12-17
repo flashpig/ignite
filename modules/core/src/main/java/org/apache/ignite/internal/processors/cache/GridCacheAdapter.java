@@ -2094,23 +2094,6 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
     }
 
     /** {@inheritDoc} */
-    @Override public IgniteInternalFuture<?> invokeAllConflictAsync(final Map<KeyCacheObject, GridCacheDrInfo> map,
-        final Object... args) throws IgniteCheckedException {
-        if (F.isEmpty(map))
-            return new GridFinishedFuture<Object>();
-
-        return asyncOp(new AsyncInOp(map.keySet()) {
-            @Override public IgniteInternalFuture<?> inOp(IgniteTxLocalAdapter tx) {
-                return tx.invokeAllDrAsync(ctx, map, args);
-            }
-
-            @Override public String toString() {
-                return "invokeAllDrAsync [drMap=" + map + ']';
-            }
-        });
-    }
-
-    /** {@inheritDoc} */
     @Override public <T> EntryProcessorResult<T> invoke(final K key,
         final EntryProcessor<K, V, T> entryProcessor,
         final Object... args)

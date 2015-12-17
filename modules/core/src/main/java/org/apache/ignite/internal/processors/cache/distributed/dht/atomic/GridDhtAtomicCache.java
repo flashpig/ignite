@@ -421,7 +421,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             true,
             false,
             filter,
-            true);
+            true,
+            UPDATE);
     }
 
     /** {@inheritDoc} */
@@ -437,7 +438,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             false,
             false,
             filter,
-            true);
+            true,
+            UPDATE);
     }
 
     /** {@inheritDoc} */
@@ -452,7 +454,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             true,
             false,
             ctx.noValArray(),
-            false).get();
+            false,
+            UPDATE).get();
     }
 
     /** {@inheritDoc} */
@@ -544,7 +547,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             true,
             true,
             ctx.equalsValArray(oldVal),
-            true);
+            true,
+            UPDATE);
     }
 
     /** {@inheritDoc} */
@@ -562,7 +566,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             false,
             false,
             CU.empty0(),
-            true).chain(RET2NULL);
+            true,
+            UPDATE).chain(RET2NULL);
     }
 
     /** {@inheritDoc} */
@@ -583,20 +588,14 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             false,
             false,
             null,
-            true);
+            true,
+            UPDATE);
     }
 
     /** {@inheritDoc} */
-    public void invokeAllConflict(Map<KeyCacheObject, GridCacheDrInfo> map, Object... args)
+    public void invokeAllConflict(Map<KeyCacheObject, GridCacheDrInfo> conflictMap, Object... args)
         throws IgniteCheckedException {
-        invokeAllConflictAsync(map, args).get();
-    }
-
-    /** {@inheritDoc} */
-    public IgniteInternalFuture<?> invokeAllConflictAsync(Map<KeyCacheObject, GridCacheDrInfo> conflictMap,
-        Object... args) throws IgniteCheckedException {
-
-        return updateAllAsync0(null,
+        updateAllAsync0(null,
             null,
             args,
             conflictMap,
@@ -604,7 +603,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             false,
             false,
             null,
-            true);
+            true,
+            TRANSFORM).get();
     }
 
     /** {@inheritDoc} */
@@ -784,7 +784,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             false,
             false,
             null,
-            true);
+            true,
+            TRANSFORM);
 
         return fut.chain(new CX1<IgniteInternalFuture<Map<K, EntryProcessorResult<T>>>, EntryProcessorResult<T>>() {
             @Override public EntryProcessorResult<T> applyx(IgniteInternalFuture<Map<K, EntryProcessorResult<T>>> fut)
@@ -840,7 +841,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             false,
             false,
             null,
-            true);
+            true,
+            TRANSFORM);
 
         return resFut.chain(new CX1<IgniteInternalFuture<Map<K, EntryProcessorResult<T>>>, Map<K, EntryProcessorResult<T>>>() {
             @Override public Map<K, EntryProcessorResult<T>> applyx(IgniteInternalFuture<Map<K, EntryProcessorResult<T>>> fut) throws IgniteCheckedException {
@@ -876,7 +878,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             false,
             false,
             null,
-            true);
+            true,
+            TRANSFORM);
     }
 
     /**
@@ -903,7 +906,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
         final boolean retval,
         final boolean rawRetval,
         @Nullable final CacheEntryPredicate[] filter,
-        final boolean waitTopFut
+        final boolean waitTopFut,
+        final GridCacheOperation op
     ) {
         assert ctx.updatesAllowed();
 
@@ -917,11 +921,6 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
         UUID subjId = ctx.subjectIdPerCall(null, opCtx);
 
         int taskNameHash = ctx.kernalContext().job().currentTaskNameHash();
-
-        GridCacheOperation op = invokeMap != null ? TRANSFORM : UPDATE;
-
-        if (op == UPDATE && conflictPutMap != null && !conflictPutMap.isEmpty())
-            op = F.firstEntry(conflictPutMap).getValue().entryProcessor() != null ? TRANSFORM : UPDATE;
 
         final GridNearAtomicUpdateFuture updateFut = new GridNearAtomicUpdateFuture(
             ctx,
