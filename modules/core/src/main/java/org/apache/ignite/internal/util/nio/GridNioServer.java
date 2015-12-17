@@ -1609,15 +1609,14 @@ public class GridNioServer<T> {
 
             sessions.remove(ses);
 
-            if (closed)
-                ses.onServerStopped();
-
             SelectionKey key = ses.key();
 
             // Shutdown input and output so that remote client will see correct socket close.
             Socket sock = ((SocketChannel)key.channel()).socket();
 
             if (ses.setClosed()) {
+                ses.onClosed();
+
                 if (directBuf) {
                     if (ses.writeBuffer() != null)
                         ((DirectBuffer)ses.writeBuffer()).cleaner().clean();
