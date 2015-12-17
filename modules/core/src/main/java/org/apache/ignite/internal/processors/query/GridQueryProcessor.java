@@ -212,7 +212,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
 
                     // Key and value classes still can be available if they are primitive or JDK part.
                     // We need that to set correct types for _key and _val columns.
-                    Class<?> keyCls = U.classForName(qryEntity.getKeyType(), Object.class);
+                    Class<?> keyCls = U.classForName(qryEntity.getKeyType(), null);
                     Class<?> valCls = U.classForName(qryEntity.getValueType(), null);
 
                     // If local node has the classes and they are externalizable, we must use reflection properties.
@@ -220,6 +220,9 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                     boolean valMustDeserialize = mustDeserializeBinary(valCls);
 
                     boolean keyOrValMustDeserialize = keyMustDeserialize || valMustDeserialize;
+
+                    if (keyCls == null)
+                        keyCls = Object.class;
 
                     String simpleValType = valCls == null ? typeName(qryEntity.getValueType()) : typeName(valCls);
 
@@ -303,7 +306,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
 
                     // Key and value classes still can be available if they are primitive or JDK part.
                     // We need that to set correct types for _key and _val columns.
-                    Class<?> keyCls = U.classForName(meta.getKeyType(), Object.class);
+                    Class<?> keyCls = U.classForName(meta.getKeyType(), null);
                     Class<?> valCls = U.classForName(meta.getValueType(), null);
 
                     // If local node has the classes and they are externalizable, we must use reflection properties.
@@ -311,6 +314,9 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                     boolean valMustDeserialize = mustDeserializeBinary(valCls);
 
                     boolean keyOrValMustDeserialize = keyMustDeserialize || valMustDeserialize;
+
+                    if (keyCls == null)
+                        keyCls = Object.class;
 
                     desc.name(meta.getSimpleValueType());
 
