@@ -73,6 +73,9 @@ import org.apache.ignite.transactions.Transaction;
 import org.apache.ignite.transactions.TransactionConcurrency;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.apache.ignite.cache.CacheAtomicWriteOrderMode.CLOCK;
+import static org.apache.ignite.cache.CacheAtomicWriteOrderMode.PRIMARY;
+import static org.apache.ignite.cache.CacheAtomicWriteOrderMode.values;
 import static org.apache.ignite.cache.CacheAtomicWriteOrderMode.*;
 import static org.apache.ignite.cache.CacheAtomicityMode.ATOMIC;
 import static org.apache.ignite.cache.CacheAtomicityMode.TRANSACTIONAL;
@@ -788,8 +791,7 @@ public class IgniteClientReconnectCacheTest extends IgniteClientReconnectAbstrac
 
         for (CacheAtomicityMode atomicityMode : CacheAtomicityMode.values()) {
             CacheAtomicWriteOrderMode[] writeOrders =
-                atomicityMode == ATOMIC ? values() :
-                new CacheAtomicWriteOrderMode[]{CLOCK};
+                atomicityMode == ATOMIC ? values() : new CacheAtomicWriteOrderMode[]{CLOCK};
 
             for (CacheAtomicWriteOrderMode writeOrder : writeOrders) {
                 for (CacheWriteSynchronizationMode syncMode : CacheWriteSynchronizationMode.values()) {
