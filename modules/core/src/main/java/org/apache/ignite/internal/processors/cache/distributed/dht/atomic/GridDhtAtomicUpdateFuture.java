@@ -349,7 +349,7 @@ public class GridDhtAtomicUpdateFuture extends GridFutureAdapter<Void>
     /** {@inheritDoc} */
     @Override public boolean onDone(@Nullable Void res, @Nullable Throwable err) {
         if (super.onDone(res, err)) {
-            cctx.mvcc().removeAtomicFuture(version());
+            cctx.mvcc().removeAtomicFuture(version(), false);
 
             if (err != null) {
                 if (!mappings.isEmpty()) {

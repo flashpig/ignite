@@ -382,7 +382,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
 
                                     procRes = processor.process(invokeEntry, t.get2());
 
-                                    val = cacheCtx.toCacheObject(invokeEntry.getValue());
+                                    val = cacheCtx.toCacheObject(invokeEntry.getValue(true));
                                 }
                                 catch (Exception e) {
                                     err = e;
@@ -643,7 +643,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
 
                     if (prepErr == null) {
                         try {
-                            fut = tx.commitAsync();
+                            fut = tx.commitAsync(true);
                         }
                         catch (RuntimeException | Error e) {
                             Exception hEx = new IgniteTxHeuristicCheckedException("Commit produced a runtime " +

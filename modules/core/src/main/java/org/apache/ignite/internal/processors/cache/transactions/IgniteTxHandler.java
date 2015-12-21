@@ -691,7 +691,7 @@ public class IgniteTxHandler {
                 tx.nearFinishFutureId(req.futureId());
                 tx.nearFinishMiniId(req.miniId());
 
-                IgniteInternalFuture<IgniteInternalTx> commitFut = tx.commitAsync();
+                IgniteInternalFuture<IgniteInternalTx> commitFut = tx.commitAsync(true);
 
                 // Only for error logging.
                 commitFut.listen(CU.errorLogger(log));

@@ -480,7 +480,7 @@ public class GridDhtTxLocal extends GridDhtTxLocalAdapter implements GridCacheMa
 
     /** {@inheritDoc} */
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync() {
+    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync(boolean waitTopFut) {
         if (log.isDebugEnabled())
             log.debug("Committing dht local tx: " + this);
 

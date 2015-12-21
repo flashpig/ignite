@@ -91,9 +91,6 @@ public class GridCacheSharedContext<K, V> {
     /** Tx metrics. */
     private volatile TransactionMetricsAdapter txMetrics;
 
-    /** Preloaders start future. */
-    private IgniteInternalFuture<Object> preloadersStartFut;
-
     /** Store session listeners. */
     private Collection<CacheStoreSessionListener> storeSesLsnrs;
 
@@ -572,6 +569,26 @@ public class GridCacheSharedContext<K, V> {
     }
 
     /**
+     * @param ignore Transaction to ignore.
+     * @return Not null topology version if current thread holds lock preventing topology change.
+     */
+    @Nullable public AffinityTopologyVersion lockedTopologyVersion(IgniteInternalTx ignore) {
+        long threadId = Thread.currentThread().getId();
+
+        IgniteInternalTx tx = txMgr.anyActiveThreadTx(threadId, ignore);
+
+        AffinityTopologyVersion topVer = null;
+
+        if (tx != null && tx.topologyVersionSnapshot() != null)
+            topVer = tx.topologyVersionSnapshot();
+
+        if (topVer == null)
+            topVer = mvccMgr.lastExplicitLockTopologyVersion(threadId);
+
+        return topVer;
+    }
+
+    /**
      * Nulling references to potentially leak-prone objects.
      */
     public void cleanup() {
@@ -601,7 +618,7 @@ public class GridCacheSharedContext<K, V> {
         if (ctx == null) {
             tx.txState().awaitLastFut(this);
 
-            return tx.commitAsync();
+            return tx.commitAsync(true);
         }
         else
             return ctx.cache().commitTxAsync(tx);

@@ -135,7 +135,9 @@ public class GridNearPessimisticTxPrepareFuture extends GridNearTxPrepareFutureA
     }
 
     /** {@inheritDoc} */
-    @Override public void prepare() {
+    @Override public void prepare(boolean waitTopFut) {
+        assert waitTopFut;
+
         if (!tx.state(PREPARING)) {
             if (tx.setRollbackOnly()) {
                 if (tx.timedOut())

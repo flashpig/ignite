@@ -728,7 +728,7 @@ public class GridDistributedTxRemoteAdapter extends IgniteTxAdapter
     }
 
     /** {@inheritDoc} */
-    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync() {
+    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync(boolean waitTopFut) {
         try {
             commit();
 

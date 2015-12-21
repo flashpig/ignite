@@ -84,7 +84,8 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
      * @param cctx Context.
      * @param tx Transaction.
      */
-    public GridNearOptimisticSerializableTxPrepareFuture(GridCacheSharedContext cctx, GridNearTxLocal tx) {
+    public GridNearOptimisticSerializableTxPrepareFuture(GridCacheSharedContext cctx,
+        GridNearTxLocal tx) {
         super(cctx, tx);
 
         assert tx.optimistic() && tx.serializable() : tx;
@@ -856,7 +857,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
          * @param res Response.
          */
         private void remap(final GridNearTxPrepareResponse res) {
-            prepareOnTopology(true, new Runnable() {
+            prepareOnTopology(true, true, new Runnable() {
                 @Override public void run() {
                     onDone(res);
                 }

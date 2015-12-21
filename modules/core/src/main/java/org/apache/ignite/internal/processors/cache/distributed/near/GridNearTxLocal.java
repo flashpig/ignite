@@ -341,7 +341,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
             return cacheCtx.nearTx().txLoadAsync(this,
                 keys,
                 readThrough,
-                /*deserializePortable*/false,
+                /*deserializeBinary*/false,
                 accessPolicy(cacheCtx, keys),
                 skipVals,
                 needVer).chain(new C1<IgniteInternalFuture<Map<Object, Object>>, Void>() {
@@ -372,7 +372,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
                     topologyVersion(),
                     CU.subjectId(this, cctx),
                     resolveTaskName(),
-                    /*deserializePortable*/false,
+                    /*deserializeBinary*/false,
                     accessPolicy(cacheCtx, keys),
                     skipVals,
                     /*can remap*/true,
@@ -403,7 +403,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
                     topologyVersion(),
                     CU.subjectId(this, cctx),
                     resolveTaskName(),
-                    /*deserializePortable*/false,
+                    /*deserializeBinary*/false,
                     accessPolicy(cacheCtx, keys),
                     skipVals,
                     /*can remap*/true,
@@ -784,6 +784,14 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
     /** {@inheritDoc} */
     @Override public IgniteInternalFuture<?> prepareAsync() {
+        return prepareAsync0(true);
+    }
+
+    /**
+     * @param waitTopFut If {@code false} does not wait for affinity change future.
+     * @return Prepare future.
+     */
+    private IgniteInternalFuture<?> prepareAsync0(boolean waitTopFut) {
         GridNearTxPrepareFutureAdapter fut = (GridNearTxPrepareFutureAdapter)prepFut.get();
 
         if (fut == null) {
@@ -805,18 +813,18 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
         mapExplicitLocks();
 
-        fut.prepare();
+        fut.prepare(waitTopFut);
 
         return fut;
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync() {
+    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync(boolean waitTopFut) {
         if (log.isDebugEnabled())
             log.debug("Committing near local tx: " + this);
 
-        prepareAsync();
+        prepareAsync0(waitTopFut);
 
         GridNearTxFinishFuture fut = commitFut.get();
 
