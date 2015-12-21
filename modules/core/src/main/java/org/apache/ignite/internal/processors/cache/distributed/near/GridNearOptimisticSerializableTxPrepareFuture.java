@@ -83,12 +83,10 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
     /**
      * @param cctx Context.
      * @param tx Transaction.
-     * @param waitTopFut If {@code false} does not wait for affinity change future.
      */
     public GridNearOptimisticSerializableTxPrepareFuture(GridCacheSharedContext cctx,
-        GridNearTxLocal tx,
-        boolean waitTopFut) {
-        super(cctx, tx, waitTopFut);
+        GridNearTxLocal tx) {
+        super(cctx, tx);
 
         assert tx.optimistic() && tx.serializable() : tx;
 
@@ -859,7 +857,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
          * @param res Response.
          */
         private void remap(final GridNearTxPrepareResponse res) {
-            prepareOnTopology(true, new Runnable() {
+            prepareOnTopology(true, true, new Runnable() {
                 @Override public void run() {
                     onDone(res);
                 }

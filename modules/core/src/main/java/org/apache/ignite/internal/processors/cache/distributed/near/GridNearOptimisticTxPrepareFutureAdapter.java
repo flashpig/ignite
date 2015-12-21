@@ -38,26 +38,19 @@ import org.jetbrains.annotations.Nullable;
  *
  */
 public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearTxPrepareFutureAdapter {
-    /** */
-    private final boolean waitTopFut;
-
     /**
      * @param cctx Context.
      * @param tx Transaction.
-     * @param waitTopFut If {@code false} does not wait for affinity change future.
      */
     public GridNearOptimisticTxPrepareFutureAdapter(GridCacheSharedContext cctx,
-        GridNearTxLocal tx,
-        boolean waitTopFut) {
+        GridNearTxLocal tx) {
         super(cctx, tx);
 
         assert tx.optimistic() : tx;
-
-        this.waitTopFut = waitTopFut;
     }
 
     /** {@inheritDoc} */
-    @Override public final void prepare() {
+    @Override public final void prepare(boolean waitTopFut) {
         // Obtain the topology version to use.
         long threadId = Thread.currentThread().getId();
 
@@ -81,7 +74,7 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
             return;
         }
 
-        prepareOnTopology(false, null);
+        prepareOnTopology(waitTopFut, false, null);
     }
 
     /**
@@ -101,10 +94,11 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
     }
 
     /**
+     * @param waitTopFut If {@code false} does not wait for affinity change future.
      * @param remap Remap flag.
      * @param c Optional closure to run after map.
      */
-    protected final void prepareOnTopology(final boolean remap, @Nullable final Runnable c) {
+    protected final void prepareOnTopology(boolean waitTopFut, final boolean remap, @Nullable final Runnable c) {
         GridDhtTopologyFuture topFut = topologyReadLock();
 
         AffinityTopologyVersion topVer = null;
@@ -165,7 +159,7 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
                             try {
                                 fut.get();
 
-                                prepareOnTopology(remap, c);
+                                prepareOnTopology(true, remap, c);
                             }
                             catch (IgniteCheckedException e) {
                                 onDone(e);

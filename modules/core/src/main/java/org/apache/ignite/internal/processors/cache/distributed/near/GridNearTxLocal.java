@@ -798,8 +798,8 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
             // Future must be created before any exception can be thrown.
             if (optimistic()) {
                 fut = serializable() ?
-                    new GridNearOptimisticSerializableTxPrepareFuture(cctx, this, waitTopFut) :
-                    new GridNearOptimisticTxPrepareFuture(cctx, this, waitTopFut);
+                    new GridNearOptimisticSerializableTxPrepareFuture(cctx, this) :
+                    new GridNearOptimisticTxPrepareFuture(cctx, this);
             }
             else
                 fut = new GridNearPessimisticTxPrepareFuture(cctx, this);
@@ -813,7 +813,7 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
         mapExplicitLocks();
 
-        fut.prepare();
+        fut.prepare(waitTopFut);
 
         return fut;
     }
