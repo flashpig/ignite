@@ -286,7 +286,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
         }
 
         for (Map.Entry<Integer, BinaryMetadata> e : metaBuf.entrySet())
-            addMeta(e.getKey(), e.getValue().wrap(binaryCtx));
+            addMeta(e.getKey(), e.getValue().wrap(binaryCtx), false);
 
         metaBuf.clear();
 
@@ -475,6 +475,15 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
 
     /** {@inheritDoc} */
     @Override public void addMeta(final int typeId, final BinaryType newMeta) throws BinaryObjectException {
+        addMeta(typeId, newMeta, true);
+    }
+
+    /**
+     * @param typeId Type ID.
+     * @param newMeta New meta data.
+     * @param tryInvoke If {@code true} uses {@link IgniteCacheProxy#tryInvoke} for metadata update.
+     */
+    public void addMeta(final int typeId, final BinaryType newMeta, boolean tryInvoke) {
         assert newMeta != null;
         assert newMeta instanceof BinaryTypeImpl;
 
@@ -486,7 +495,9 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
             BinaryMetadata oldMeta = metaDataCache.localPeek(key);
             BinaryMetadata mergedMeta = BinaryUtils.mergeMetadata(oldMeta, newMeta0);
 
-            BinaryObjectException err = metaDataCache.tryInvoke(key, new MetadataProcessor(mergedMeta));
+            BinaryObjectException err = tryInvoke ?
+                metaDataCache.tryInvoke(key, new MetadataProcessor(mergedMeta)) :
+                metaDataCache.invoke(key, new MetadataProcessor(mergedMeta));
 
             if (err != null)
                 throw err;
