@@ -630,8 +630,9 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
 
     /**
      * @param tx Transaction.
+     * @return {@code True} if topology hint was set.
      */
-    public boolean setTxTopologyHint(IgniteInternalTx tx) {
+    public boolean setTxTopologyHint(@Nullable IgniteInternalTx tx) {
         if (tx == null)
             txTopology.remove();
         else {
@@ -1761,7 +1762,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
         }
 
         if (commit)
-            tx.commitAsync().listen(new CommitListener(tx));
+            tx.commitAsync(true).listen(new CommitListener(tx));
         else
             tx.rollbackAsync();
     }

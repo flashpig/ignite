@@ -27,9 +27,11 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheEntryProcessor;
+import org.apache.ignite.cluster.ClusterTopologyException;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.IgniteInternalFuture;
+import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
@@ -113,7 +115,7 @@ public class IgniteBinaryMetadataUpdateNodeRestartTest extends GridCommonAbstrac
      * @throws Exception If failed.
      */
     public void testNodeRestart() throws Exception {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             log.info("Iteration: " + i);
 
             client = false;
@@ -170,6 +172,13 @@ public class IgniteBinaryMetadataUpdateNodeRestartTest extends GridCommonAbstrac
                             }
                             catch (CacheException e) {
                                 log.info("Error: " + e);
+
+                                if (X.hasCause(e, ClusterTopologyException.class)) {
+                                    ClusterTopologyException cause = X.cause(e, ClusterTopologyException.class);
+
+                                    if (cause.retryReadyFuture() != null)
+                                        cause.retryReadyFuture().get();
+                                }
                             }
                         }
 
@@ -177,7 +186,7 @@ public class IgniteBinaryMetadataUpdateNodeRestartTest extends GridCommonAbstrac
                     }
                 }, 10, "update-thread");
 
-                U.sleep(10_000);
+                U.sleep(5_000);
 
                 stop.set(true);
 

@@ -2077,7 +2077,30 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
     }
 
     /** {@inheritDoc} */
+    @Nullable @Override public <T> EntryProcessorResult<T> tryInvoke(K key,
+        EntryProcessor<K, V, T> entryProcessor,
+        Object... args) throws IgniteCheckedException {
+        return invoke0(false, key, entryProcessor, args);
+    }
+
+    /** {@inheritDoc} */
     @Override public <T> EntryProcessorResult<T> invoke(final K key,
+        final EntryProcessor<K, V, T> entryProcessor,
+        final Object... args) throws IgniteCheckedException {
+        return invoke0(true, key, entryProcessor, args);
+    }
+
+    /**
+     * @param waitTopFut If {@code false} does not wait for affinity change future.
+     * @param key Key.
+     * @param entryProcessor Entry processor.
+     * @param args Entry processor arguments.
+     * @return Invoke result.
+     * @throws IgniteCheckedException If failed.
+     */
+    private <T> EntryProcessorResult<T> invoke0(
+        final boolean waitTopFut,
+        final K key,
         final EntryProcessor<K, V, T> entryProcessor,
         final Object... args)
         throws IgniteCheckedException {
@@ -2090,7 +2113,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
             @Nullable @Override public EntryProcessorResult<T> op(IgniteTxLocalAdapter tx)
                 throws IgniteCheckedException {
                 IgniteInternalFuture<GridCacheReturn> fut =
-                    tx.invokeAsync(ctx, key, (EntryProcessor<K, V, Object>)entryProcessor, args);
+                    tx.invokeAsync(ctx, waitTopFut, key, (EntryProcessor<K, V, Object>)entryProcessor, args);
 
                 Map<K, EntryProcessorResult<T>> resMap = fut.get().value();
 
@@ -2324,16 +2347,8 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
         });
     }
 
-    /**
-     * Tries to put value in cache. Will fail with {@link GridCacheTryPutFailedException}
-     * if topology exchange is in progress.
-     *
-     * @param key Key.
-     * @param val value.
-     * @return Old value.
-     * @throws IgniteCheckedException In case of error.
-     */
-    @Nullable public V tryPutIfAbsent(K key, V val) throws IgniteCheckedException {
+    /** {@inheritDoc} */
+    @Nullable @Override public V tryPutIfAbsent(K key, V val) throws IgniteCheckedException {
         // Supported only in ATOMIC cache.
         throw new UnsupportedOperationException();
     }
@@ -3969,7 +3984,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                 IgniteInternalFuture<IgniteInternalTx> f = new GridEmbeddedFuture<>(fut,
                     new C2<Object, Exception, IgniteInternalFuture<IgniteInternalTx>>() {
                         @Override public IgniteInternalFuture<IgniteInternalTx> apply(Object o, Exception e) {
-                            return tx.commitAsync();
+                            return tx.commitAsync(true);
                         }
                     });
 
@@ -3978,7 +3993,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                 return f;
             }
 
-            IgniteInternalFuture<IgniteInternalTx> f = tx.commitAsync();
+            IgniteInternalFuture<IgniteInternalTx> f = tx.commitAsync(true);
 
             saveFuture(holder, f);
 

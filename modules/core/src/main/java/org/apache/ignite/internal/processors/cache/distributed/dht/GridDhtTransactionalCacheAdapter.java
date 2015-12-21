@@ -950,7 +950,7 @@ public abstract class GridDhtTransactionalCacheAdapter<K, V> extends GridDhtCach
                             if (resp.error() == null && t.onePhaseCommit()) {
                                 assert t.implicit();
 
-                                return t.commitAsync().chain(
+                                return t.commitAsync(true).chain(
                                     new C1<IgniteInternalFuture<IgniteInternalTx>, GridNearLockResponse>() {
                                         @Override public GridNearLockResponse apply(IgniteInternalFuture<IgniteInternalTx> f) {
                                             try {

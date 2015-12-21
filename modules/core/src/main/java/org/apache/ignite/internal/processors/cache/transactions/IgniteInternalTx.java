@@ -619,9 +619,10 @@ public interface IgniteInternalTx extends AutoCloseable, GridTimeoutObject {
     /**
      * Asynchronously commits this transaction by initiating {@code two-phase-commit} process.
      *
+     * @param waitTopFut If {@code false} does not wait for affinity change future.
      * @return Future for commit operation.
      */
-    public IgniteInternalFuture<IgniteInternalTx> commitAsync();
+    public IgniteInternalFuture<IgniteInternalTx> commitAsync(boolean waitTopFut);
 
     /**
      * Callback invoked whenever there is a lock that has been acquired

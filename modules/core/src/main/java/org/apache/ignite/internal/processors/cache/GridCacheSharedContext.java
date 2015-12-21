@@ -91,9 +91,6 @@ public class GridCacheSharedContext<K, V> {
     /** Tx metrics. */
     private volatile TransactionMetricsAdapter txMetrics;
 
-    /** Preloaders start future. */
-    private IgniteInternalFuture<Object> preloadersStartFut;
-
     /** Store session listeners. */
     private Collection<CacheStoreSessionListener> storeSesLsnrs;
 
@@ -621,7 +618,7 @@ public class GridCacheSharedContext<K, V> {
         if (ctx == null) {
             tx.txState().awaitLastFut(this);
 
-            return tx.commitAsync();
+            return tx.commitAsync(true);
         }
         else
             return ctx.cache().commitTxAsync(tx);

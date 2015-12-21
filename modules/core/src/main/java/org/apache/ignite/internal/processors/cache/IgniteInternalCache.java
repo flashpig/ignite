@@ -1863,4 +1863,28 @@ public interface IgniteInternalCache<K, V> extends Iterable<Cache.Entry<K, V>> {
      * @throws IgniteCheckedException If failed.
      */
     public V getTopologySafe(K key) throws IgniteCheckedException;
+
+    /**
+     * Tries to put value in cache. Will fail with {@link GridCacheTryPutFailedException}
+     * if topology exchange is in progress.
+     *
+     * @param key Key.
+     * @param val value.
+     * @return Old value.
+     * @throws IgniteCheckedException In case of error.
+     */
+    @Nullable public V tryPutIfAbsent(K key, V val) throws IgniteCheckedException;
+
+    /**
+     * Tries to execute invoke operation. Will fail if topology exchange is in progress.
+     *
+     * @param key Key.
+     * @param entryProcessor Entry processor.
+     * @param args Arguments.
+     * @return Invoke result.
+     * @throws IgniteCheckedException If failed.
+     */
+    @Nullable public <T> EntryProcessorResult<T> tryInvoke(K key,
+        EntryProcessor<K, V, T> entryProcessor,
+        Object... args) throws IgniteCheckedException;
 }

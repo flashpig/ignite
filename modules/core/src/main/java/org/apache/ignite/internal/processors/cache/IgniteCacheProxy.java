@@ -1483,6 +1483,38 @@ public class IgniteCacheProxy<K, V> extends AsyncSupportAdapter<IgniteCache<K, V
         return invoke(key, (EntryProcessor<K, V, T>)entryProcessor, args);
     }
 
+    /**
+     * Tries to execute invoke operation. Fails if topology exchange is in progress.
+     *
+     * @param key Key.
+     * @param entryProcessor Entry processor.
+     * @param args Arguments.
+     * @return Invoke result.
+     */
+    public <T> T tryInvoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... args) {
+        try {
+            GridCacheGateway<K, V> gate = this.gate;
+
+            CacheOperationContext prev = onEnter(gate, opCtx);
+
+            try {
+                if (isAsync())
+                    throw new UnsupportedOperationException();
+                else {
+                    EntryProcessorResult<T> res = delegate.tryInvoke(key, entryProcessor, args);
+
+                    return res != null ? res.get() : null;
+                }
+            }
+            finally {
+                onLeave(gate, prev);
+            }
+        }
+        catch (IgniteCheckedException e) {
+            throw cacheException(e);
+        }
+    }
+
     /** {@inheritDoc} */
     @Override public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys,
         EntryProcessor<K, V, T> entryProcessor,

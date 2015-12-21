@@ -486,7 +486,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
             BinaryMetadata oldMeta = metaDataCache.localPeek(key);
             BinaryMetadata mergedMeta = BinaryUtils.mergeMetadata(oldMeta, newMeta0);
 
-            BinaryObjectException err = metaDataCache.invoke(key, new MetadataProcessor(mergedMeta));
+            BinaryObjectException err = metaDataCache.tryInvoke(key, new MetadataProcessor(mergedMeta));
 
             if (err != null)
                 throw err;

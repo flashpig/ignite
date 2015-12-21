@@ -20,6 +20,7 @@ package org.apache.ignite.internal.processors.cache.distributed.near;
 import java.util.Collection;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.IgniteInternalFuture;
+import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtTopologyFuture;
@@ -37,14 +38,22 @@ import org.jetbrains.annotations.Nullable;
  *
  */
 public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearTxPrepareFutureAdapter {
+    /** */
+    private final boolean waitTopFut;
+
     /**
      * @param cctx Context.
      * @param tx Transaction.
+     * @param waitTopFut If {@code false} does not wait for affinity change future.
      */
-    public GridNearOptimisticTxPrepareFutureAdapter(GridCacheSharedContext cctx, GridNearTxLocal tx) {
+    public GridNearOptimisticTxPrepareFutureAdapter(GridCacheSharedContext cctx,
+        GridNearTxLocal tx,
+        boolean waitTopFut) {
         super(cctx, tx);
 
         assert tx.optimistic() : tx;
+
+        this.waitTopFut = waitTopFut;
     }
 
     /** {@inheritDoc} */
@@ -138,6 +147,17 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
                 c.run();
         }
         else {
+            if (!waitTopFut) {
+                ClusterTopologyCheckedException err = new ClusterTopologyCheckedException("Failed to execute update, " +
+                    "cluster topology changed.");
+
+                err.retryReadyFuture(topFut);
+
+                onDone(err);
+
+                return;
+            }
+
             topFut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>() {
                 @Override public void apply(final IgniteInternalFuture<AffinityTopologyVersion> fut) {
                     cctx.kernalContext().closure().runLocalSafe(new GridPlainRunnable() {

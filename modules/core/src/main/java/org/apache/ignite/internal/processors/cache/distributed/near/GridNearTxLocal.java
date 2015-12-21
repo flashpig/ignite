@@ -784,14 +784,22 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
     /** {@inheritDoc} */
     @Override public IgniteInternalFuture<?> prepareAsync() {
+        return prepareAsync0(true);
+    }
+
+    /**
+     * @param waitTopFut If {@code false} does not wait for affinity change future.
+     * @return Prepare future.
+     */
+    private IgniteInternalFuture<?> prepareAsync0(boolean waitTopFut) {
         GridNearTxPrepareFutureAdapter fut = (GridNearTxPrepareFutureAdapter)prepFut.get();
 
         if (fut == null) {
             // Future must be created before any exception can be thrown.
             if (optimistic()) {
                 fut = serializable() ?
-                    new GridNearOptimisticSerializableTxPrepareFuture(cctx, this) :
-                    new GridNearOptimisticTxPrepareFuture(cctx, this);
+                    new GridNearOptimisticSerializableTxPrepareFuture(cctx, this, waitTopFut) :
+                    new GridNearOptimisticTxPrepareFuture(cctx, this, waitTopFut);
             }
             else
                 fut = new GridNearPessimisticTxPrepareFuture(cctx, this);
@@ -812,11 +820,11 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
     /** {@inheritDoc} */
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync() {
+    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync(boolean waitTopFut) {
         if (log.isDebugEnabled())
             log.debug("Committing near local tx: " + this);
 
-        prepareAsync();
+        prepareAsync0(waitTopFut);
 
         GridNearTxFinishFuture fut = commitFut.get();
 
