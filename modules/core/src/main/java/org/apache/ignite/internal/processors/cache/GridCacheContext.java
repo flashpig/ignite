@@ -244,6 +244,9 @@ public class GridCacheContext<K, V> implements Externalizable {
     /** */
     private boolean deferredDel;
 
+    /** */
+    private boolean marshallerCache;
+
     /**
      * Empty constructor required for {@link Externalizable}.
      */
@@ -361,6 +364,15 @@ public class GridCacheContext<K, V> implements Externalizable {
             expiryPlc = null;
 
         itHolder = new CacheWeakQueryIteratorsHolder(log);
+
+        marshallerCache = cacheType == CacheType.MARSHALLER;
+    }
+
+    /**
+     * @return {@code True} if marshaller cache.
+     */
+    public boolean marshallerCache() {
+        return marshallerCache;
     }
 
     /**

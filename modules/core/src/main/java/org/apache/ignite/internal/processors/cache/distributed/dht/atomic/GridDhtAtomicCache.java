@@ -1339,7 +1339,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                         res.returnValue(retVal);
 
                         if (dhtFut != null)
-                            ctx.mvcc().addAtomicFuture(dhtFut.version(), dhtFut);
+                            ctx.mvcc().addAtomicFuture(dhtFut.version(), dhtFut, false);
                     }
                     else
                         // Should remap all keys.
@@ -2611,7 +2611,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
         res.nodeId(ctx.localNodeId());
 
-        GridNearAtomicUpdateFuture fut = (GridNearAtomicUpdateFuture)ctx.mvcc().atomicFuture(res.futureVersion());
+        GridNearAtomicUpdateFuture fut = (GridNearAtomicUpdateFuture)ctx.mvcc().atomicFuture(res.futureVersion(),
+            ctx.marshallerCache());
 
         if (fut != null)
             fut.onResult(nodeId, res);
@@ -2783,7 +2784,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             log.debug("Processing dht atomic update response [nodeId=" + nodeId + ", res=" + res + ']');
 
         GridDhtAtomicUpdateFuture updateFut = (GridDhtAtomicUpdateFuture)ctx.mvcc().
-            atomicFuture(res.futureVersion());
+            atomicFuture(res.futureVersion(), false);
 
         if (updateFut != null)
             updateFut.onResult(nodeId, res);
@@ -2802,7 +2803,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
             log.debug("Processing deferred dht atomic update response [nodeId=" + nodeId + ", res=" + res + ']');
 
         for (GridCacheVersion ver : res.futureVersions()) {
-            GridDhtAtomicUpdateFuture updateFut = (GridDhtAtomicUpdateFuture)ctx.mvcc().atomicFuture(ver);
+            GridDhtAtomicUpdateFuture updateFut = (GridDhtAtomicUpdateFuture)ctx.mvcc().atomicFuture(ver, false);
 
             if (updateFut != null)
                 updateFut.onResult(nodeId);

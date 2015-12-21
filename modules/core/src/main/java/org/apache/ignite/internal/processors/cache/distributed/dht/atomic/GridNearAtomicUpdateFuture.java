@@ -327,7 +327,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
             GridCacheVersion futVer = state.onFutureDone();
 
             if (futVer != null)
-                cctx.mvcc().removeAtomicFuture(futVer);
+                cctx.mvcc().removeAtomicFuture(futVer, cctx.marshallerCache());
 
             return true;
         }
@@ -582,7 +582,9 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                     req = mappings != null ? mappings.get(nodeId) : null;
 
                 if (req != null && req.response() == null) {
-                    res = new GridNearAtomicUpdateResponse(cctx.cacheId(), nodeId, req.futureVersion(),
+                    res = new GridNearAtomicUpdateResponse(cctx.cacheId(),
+                        nodeId,
+                        req.futureVersion(),
                         cctx.deploymentEnabled());
 
                     ClusterTopologyCheckedException e = new ClusterTopologyCheckedException("Primary node left grid " +
@@ -718,7 +720,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
 
                         topCompleteFut = null;
 
-                        cctx.mvcc().removeAtomicFuture(futVer);
+                        cctx.mvcc().removeAtomicFuture(futVer, cctx.marshallerCache());
 
                         futVer = null;
                         topVer = AffinityTopologyVersion.ZERO;
@@ -847,7 +849,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                 futVer = cctx.versions().next(topVer);
 
                 if (storeFuture()) {
-                    if (!cctx.mvcc().addAtomicFuture(futVer, GridNearAtomicUpdateFuture.this)) {
+                    if (!cctx.mvcc().addAtomicFuture(futVer, GridNearAtomicUpdateFuture.this, cctx.marshallerCache())) {
                         assert isDone() : GridNearAtomicUpdateFuture.this;
 
                         return;
@@ -999,7 +1001,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                         throw new NullPointerException("Null value.");
                 }
                 else if (conflictPutVals != null) {
-                    GridCacheDrInfo conflictPutVal =  conflictPutValsIt.next();
+                    GridCacheDrInfo conflictPutVal = conflictPutValsIt.next();
 
                     val = conflictPutVal.value();
                     conflictVer = conflictPutVal.version();
