@@ -25,6 +25,7 @@ import javax.cache.CacheException;
 import javax.cache.processor.MutableEntry;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheEntryProcessor;
 import org.apache.ignite.cluster.ClusterTopologyException;
@@ -170,7 +171,7 @@ public class IgniteBinaryMetadataUpdateNodeRestartTest extends GridCommonAbstrac
 
                                 cache2.invoke(new TestClass1(true), new TestEntryProcessor(rnd.nextInt(20) + 1));
                             }
-                            catch (CacheException e) {
+                            catch (CacheException | IgniteException e) {
                                 log.info("Error: " + e);
 
                                 if (X.hasCause(e, ClusterTopologyException.class)) {
