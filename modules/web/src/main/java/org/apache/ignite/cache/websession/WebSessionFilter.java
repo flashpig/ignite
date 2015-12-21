@@ -38,6 +38,7 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.IgniteTransactions;
+import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.cluster.ClusterTopologyException;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.util.typedef.C1;
@@ -433,7 +434,7 @@ public class WebSessionFilter implements Filter {
 
                 break;
             }
-            catch (CacheException e) {
+            catch (CacheException | BinaryObjectException e) {
                 if (log.isDebugEnabled())
                     log.debug(e.getMessage());
 
