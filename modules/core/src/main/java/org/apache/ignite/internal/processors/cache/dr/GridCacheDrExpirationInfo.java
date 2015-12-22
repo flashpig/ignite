@@ -17,7 +17,6 @@
 
 package org.apache.ignite.internal.processors.cache.dr;
 
-import javax.cache.processor.EntryProcessor;
 import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.typedef.internal.S;
