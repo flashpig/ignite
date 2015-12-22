@@ -21,7 +21,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import javax.cache.processor.EntryProcessor;
+import org.apache.ignite.cache.CacheEntryProcessor;
 import org.apache.ignite.internal.processors.cache.CacheObject;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
 import org.apache.ignite.internal.util.typedef.internal.CU;
@@ -38,7 +38,7 @@ public class GridCacheDrInfo implements Externalizable {
     private CacheObject val;
 
     /** Entry processor. */
-    private EntryProcessor proc;
+    private CacheEntryProcessor proc;
 
     /** DR version. */
     private GridCacheVersion ver;
@@ -70,7 +70,7 @@ public class GridCacheDrInfo implements Externalizable {
      * @param proc Entry processor.
      * @param ver Version.
      */
-    public GridCacheDrInfo(EntryProcessor proc, GridCacheVersion ver) {
+    public GridCacheDrInfo(CacheEntryProcessor proc, GridCacheVersion ver) {
         assert proc != null;
         assert ver != null;
 
@@ -88,7 +88,7 @@ public class GridCacheDrInfo implements Externalizable {
     /**
      * @return Entry processor.
      */
-    public EntryProcessor entryProcessor() {
+    public CacheEntryProcessor entryProcessor() {
         return proc;
     }
 
