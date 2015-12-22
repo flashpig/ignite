@@ -2112,8 +2112,16 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
         return syncOp(new SyncOp<EntryProcessorResult<T>>(true) {
             @Nullable @Override public EntryProcessorResult<T> op(IgniteTxLocalAdapter tx)
                 throws IgniteCheckedException {
-                IgniteInternalFuture<GridCacheReturn> fut =
-                    tx.invokeAsync(ctx, waitTopFut, key, (EntryProcessor<K, V, Object>)entryProcessor, args);
+                assert !waitTopFut || tx.implicit();
+
+                if (!waitTopFut)
+                    tx.topologyVersion(ctx.shared().exchange().readyAffinityVersion());
+
+                IgniteInternalFuture<GridCacheReturn> fut = tx.invokeAsync(ctx,
+                    waitTopFut,
+                    key,
+                    (EntryProcessor<K, V, Object>)entryProcessor,
+                    args);
 
                 Map<K, EntryProcessorResult<T>> resMap = fut.get().value();
 
