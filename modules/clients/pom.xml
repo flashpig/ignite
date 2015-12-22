@@ -31,7 +31,7 @@
     </parent>
 
     <artifactId>ignite-clients</artifactId>
-    <version>1.5.0-b2-SNAPSHOT</version>
+    <version>1.5.0.final-SNAPSHOT</version>
     <url>http://ignite.apache.org</url>
 
     <dependencies>
@@ -168,7 +168,7 @@
                                 <configuration>
                                     <target>
                                         <exec executable="${doxygen.exec}" searchpath="true" dir="../platforms/dotnet/">
-                                            <arg value="dotnet.dxg" />
+                                            <arg value="Apache.Ignite.dxg" />
                                         </exec>
 
                                         <copy file="../../assembly/docfiles/ignite_logo.png" todir="target/dotnetdoc/html" />

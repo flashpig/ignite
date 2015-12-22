@@ -156,6 +156,14 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
     ) {
         assert key != null;
 
+        AffinityTopologyVersion lockedTopVer = cctx.shared().lockedTopologyVersion(null);
+
+        if (lockedTopVer != null) {
+            topVer = lockedTopVer;
+
+            canRemap = false;
+        }
+
         this.cctx = cctx;
         this.key = key;
         this.readThrough = readThrough;
@@ -191,8 +199,6 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
      */
     @SuppressWarnings("unchecked")
     private void map(AffinityTopologyVersion topVer) {
-        this.topVer = topVer;
-
         ClusterNode node = mapKeyToNode(topVer);
 
         if (node == null) {
@@ -250,6 +256,9 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
         }
         else {
             synchronized (this) {
+                assert this.node == null;
+
+                this.topVer = topVer;
                 this.node = node;
             }
 
@@ -325,7 +334,7 @@ public class GridPartitionedSingleGetFuture extends GridFutureAdapter<Object> im
             GridDhtCacheAdapter colocated = cctx.dht();
 
             while (true) {
-                GridCacheEntryEx entry = null;
+                GridCacheEntryEx entry;
 
                 try {
                     entry = colocated.context().isSwapOrOffheapEnabled() ? colocated.entryEx(key) :
