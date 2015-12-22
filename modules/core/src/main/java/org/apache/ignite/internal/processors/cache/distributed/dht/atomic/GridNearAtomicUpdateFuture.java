@@ -605,6 +605,7 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
          * @param res Response.
          * @param nodeErr {@code True} if response was created on node failure.
          */
+        @SuppressWarnings("unchecked")
         void onResult(UUID nodeId, GridNearAtomicUpdateResponse res, boolean nodeErr) {
             GridNearAtomicUpdateRequest req;
 
