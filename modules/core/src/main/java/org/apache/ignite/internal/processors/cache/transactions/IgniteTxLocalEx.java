@@ -115,7 +115,6 @@ public interface IgniteTxLocalEx extends IgniteInternalTx {
      */
     public <K, V> IgniteInternalFuture<GridCacheReturn> invokeAsync(
         GridCacheContext cacheCtx,
-        boolean waitTopFut,
         K key,
         EntryProcessor<K, V, Object> entryProcessor,
         Object... invokeArgs);

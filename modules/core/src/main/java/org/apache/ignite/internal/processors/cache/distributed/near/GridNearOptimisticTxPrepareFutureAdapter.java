@@ -20,11 +20,9 @@ package org.apache.ignite.internal.processors.cache.distributed.near;
 import java.util.Collection;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.IgniteInternalFuture;
-import org.apache.ignite.internal.cluster.ClusterTopologyCheckedException;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
 import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtTopologyFuture;
-import org.apache.ignite.internal.processors.cache.transactions.IgniteInternalTx;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteTxKey;
 import org.apache.ignite.internal.util.GridConcurrentHashSet;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
@@ -50,19 +48,15 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
     }
 
     /** {@inheritDoc} */
-    @Override public final void prepare(boolean waitTopFut) {
+    @Override public final void prepare() {
         // Obtain the topology version to use.
         long threadId = Thread.currentThread().getId();
 
         AffinityTopologyVersion topVer = cctx.mvcc().lastExplicitLockTopologyVersion(threadId);
 
         // If there is another system transaction in progress, use it's topology version to prevent deadlock.
-        if (topVer == null && tx != null && tx.system()) {
-            IgniteInternalTx tx0 = cctx.tm().anyActiveThreadTx(threadId, tx);
-
-            if (tx0 != null)
-                topVer = tx0.topologyVersionSnapshot();
-        }
+        if (topVer == null && tx != null && tx.system())
+            topVer = cctx.tm().anyActiveThreadTx(threadId, tx);
 
         if (topVer != null) {
             tx.topologyVersion(topVer);
@@ -74,7 +68,7 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
             return;
         }
 
-        prepareOnTopology(waitTopFut, false, null);
+        prepareOnTopology(false, null);
     }
 
     /**
@@ -94,11 +88,10 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
     }
 
     /**
-     * @param waitTopFut If {@code false} does not wait for affinity change future.
      * @param remap Remap flag.
      * @param c Optional closure to run after map.
      */
-    protected final void prepareOnTopology(boolean waitTopFut, final boolean remap, @Nullable final Runnable c) {
+    protected final void prepareOnTopology(final boolean remap, @Nullable final Runnable c) {
         GridDhtTopologyFuture topFut = topologyReadLock();
 
         AffinityTopologyVersion topVer = null;
@@ -141,17 +134,6 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
                 c.run();
         }
         else {
-            if (!waitTopFut) {
-                ClusterTopologyCheckedException err = new ClusterTopologyCheckedException("Failed to execute update, " +
-                    "cluster topology changed.");
-
-                err.retryReadyFuture(topFut);
-
-                onDone(err);
-
-                return;
-            }
-
             topFut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>() {
                 @Override public void apply(final IgniteInternalFuture<AffinityTopologyVersion> fut) {
                     cctx.kernalContext().closure().runLocalSafe(new GridPlainRunnable() {
@@ -159,7 +141,7 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
                             try {
                                 fut.get();
 
-                                prepareOnTopology(true, remap, c);
+                                prepareOnTopology(remap, c);
                             }
                             catch (IgniteCheckedException e) {
                                 onDone(e);

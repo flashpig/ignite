@@ -305,7 +305,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
             return;
         }
 
-        boolean set = cctx.tm().setTxTopologyHint(tx);
+        boolean set = cctx.tm().setTxTopologyHint(tx.topologyVersionSnapshot());
 
         try {
             prepare(tx.readEntries(), tx.writeEntries(), remap, topLocked);
@@ -857,7 +857,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
          * @param res Response.
          */
         private void remap(final GridNearTxPrepareResponse res) {
-            prepareOnTopology(true, true, new Runnable() {
+            prepareOnTopology(true, new Runnable() {
                 @Override public void run() {
                     onDone(res);
                 }

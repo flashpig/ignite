@@ -2063,7 +2063,7 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
         }
 
         /** {@inheritDoc} */
-        @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync(boolean waitTopFut) {
+        @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync() {
             return null;
         }
 

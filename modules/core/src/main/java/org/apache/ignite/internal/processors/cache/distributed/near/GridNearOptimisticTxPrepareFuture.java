@@ -406,7 +406,7 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
         if (isDone())
             return;
 
-        boolean set = cctx.tm().setTxTopologyHint(tx);
+        boolean set = cctx.tm().setTxTopologyHint(tx.topologyVersionSnapshot());
 
         try {
             assert !m.empty();
@@ -749,7 +749,7 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
          *
          */
         private void remap() {
-            prepareOnTopology(true, true, new Runnable() {
+            prepareOnTopology(true, new Runnable() {
                 @Override public void run() {
                     onDone((GridNearTxPrepareResponse)null);
                 }

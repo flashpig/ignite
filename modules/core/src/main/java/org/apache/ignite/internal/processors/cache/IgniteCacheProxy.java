@@ -64,6 +64,7 @@ import org.apache.ignite.internal.AsyncSupportAdapter;
 import org.apache.ignite.internal.GridKernalContext;
 import org.apache.ignite.internal.IgniteEx;
 import org.apache.ignite.internal.IgniteInternalFuture;
+import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.query.CacheQuery;
 import org.apache.ignite.internal.processors.cache.query.CacheQueryFuture;
 import org.apache.ignite.internal.processors.query.GridQueryProcessor;
@@ -1485,14 +1486,16 @@ public class IgniteCacheProxy<K, V> extends AsyncSupportAdapter<IgniteCache<K, V
     }
 
     /**
-     * Tries to execute invoke operation. Fails if topology exchange is in progress.
-     *
+     * @param topVer Locked topology version.
      * @param key Key.
      * @param entryProcessor Entry processor.
      * @param args Arguments.
      * @return Invoke result.
      */
-    public <T> T tryInvoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... args) {
+    public <T> T invoke(@Nullable AffinityTopologyVersion topVer,
+        K key,
+        EntryProcessor<K, V, T> entryProcessor,
+        Object... args) {
         try {
             GridCacheGateway<K, V> gate = this.gate;
 
@@ -1502,7 +1505,7 @@ public class IgniteCacheProxy<K, V> extends AsyncSupportAdapter<IgniteCache<K, V
                 if (isAsync())
                     throw new UnsupportedOperationException();
                 else {
-                    EntryProcessorResult<T> res = delegate.tryInvoke(key, entryProcessor, args);
+                    EntryProcessorResult<T> res = delegate.invoke(topVer, key, entryProcessor, args);
 
                     return res != null ? res.get() : null;
                 }

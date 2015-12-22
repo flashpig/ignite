@@ -643,7 +643,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
 
                     if (prepErr == null) {
                         try {
-                            fut = tx.commitAsync(true);
+                            fut = tx.commitAsync();
                         }
                         catch (RuntimeException | Error e) {
                             Exception hEx = new IgniteTxHeuristicCheckedException("Commit produced a runtime " +

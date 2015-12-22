@@ -575,12 +575,7 @@ public class GridCacheSharedContext<K, V> {
     @Nullable public AffinityTopologyVersion lockedTopologyVersion(IgniteInternalTx ignore) {
         long threadId = Thread.currentThread().getId();
 
-        IgniteInternalTx tx = txMgr.anyActiveThreadTx(threadId, ignore);
-
-        AffinityTopologyVersion topVer = null;
-
-        if (tx != null && tx.topologyVersionSnapshot() != null)
-            topVer = tx.topologyVersionSnapshot();
+        AffinityTopologyVersion topVer = txMgr.anyActiveThreadTx(threadId, ignore);
 
         if (topVer == null)
             topVer = mvccMgr.lastExplicitLockTopologyVersion(threadId);
@@ -618,7 +613,7 @@ public class GridCacheSharedContext<K, V> {
         if (ctx == null) {
             tx.txState().awaitLastFut(this);
 
-            return tx.commitAsync(true);
+            return tx.commitAsync();
         }
         else
             return ctx.cache().commitTxAsync(tx);

@@ -2077,21 +2077,22 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public <T> EntryProcessorResult<T> tryInvoke(K key,
+    @Nullable @Override public <T> EntryProcessorResult<T> invoke(@Nullable AffinityTopologyVersion topVer,
+        K key,
         EntryProcessor<K, V, T> entryProcessor,
         Object... args) throws IgniteCheckedException {
-        return invoke0(false, key, entryProcessor, args);
+        return invoke0(topVer, key, entryProcessor, args);
     }
 
     /** {@inheritDoc} */
     @Override public <T> EntryProcessorResult<T> invoke(final K key,
         final EntryProcessor<K, V, T> entryProcessor,
         final Object... args) throws IgniteCheckedException {
-        return invoke0(true, key, entryProcessor, args);
+        return invoke0(null, key, entryProcessor, args);
     }
 
     /**
-     * @param waitTopFut If {@code false} does not wait for affinity change future.
+     * @param topVer Locked topology version.
      * @param key Key.
      * @param entryProcessor Entry processor.
      * @param args Entry processor arguments.
@@ -2099,7 +2100,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
      * @throws IgniteCheckedException If failed.
      */
     private <T> EntryProcessorResult<T> invoke0(
-        final boolean waitTopFut,
+        @Nullable final AffinityTopologyVersion topVer,
         final K key,
         final EntryProcessor<K, V, T> entryProcessor,
         final Object... args)
@@ -2112,13 +2113,12 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
         return syncOp(new SyncOp<EntryProcessorResult<T>>(true) {
             @Nullable @Override public EntryProcessorResult<T> op(IgniteTxLocalAdapter tx)
                 throws IgniteCheckedException {
-                assert !waitTopFut || tx.implicit();
+                assert topVer == null || tx.implicit();
 
-                if (!waitTopFut)
-                    tx.topologyVersion(ctx.shared().exchange().readyAffinityVersion());
+                if (topVer != null)
+                    tx.topologyVersion(topVer);
 
                 IgniteInternalFuture<GridCacheReturn> fut = tx.invokeAsync(ctx,
-                    waitTopFut,
                     key,
                     (EntryProcessor<K, V, Object>)entryProcessor,
                     args);
@@ -3992,7 +3992,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                 IgniteInternalFuture<IgniteInternalTx> f = new GridEmbeddedFuture<>(fut,
                     new C2<Object, Exception, IgniteInternalFuture<IgniteInternalTx>>() {
                         @Override public IgniteInternalFuture<IgniteInternalTx> apply(Object o, Exception e) {
-                            return tx.commitAsync(true);
+                            return tx.commitAsync();
                         }
                     });
 
@@ -4001,7 +4001,7 @@ public abstract class GridCacheAdapter<K, V> implements IgniteInternalCache<K, V
                 return f;
             }
 
-            IgniteInternalFuture<IgniteInternalTx> f = tx.commitAsync(true);
+            IgniteInternalFuture<IgniteInternalTx> f = tx.commitAsync();
 
             saveFuture(holder, f);
 

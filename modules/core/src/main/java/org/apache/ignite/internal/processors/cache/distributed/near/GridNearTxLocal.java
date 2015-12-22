@@ -784,14 +784,6 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
     /** {@inheritDoc} */
     @Override public IgniteInternalFuture<?> prepareAsync() {
-        return prepareAsync0(true);
-    }
-
-    /**
-     * @param waitTopFut If {@code false} does not wait for affinity change future.
-     * @return Prepare future.
-     */
-    private IgniteInternalFuture<?> prepareAsync0(boolean waitTopFut) {
         GridNearTxPrepareFutureAdapter fut = (GridNearTxPrepareFutureAdapter)prepFut.get();
 
         if (fut == null) {
@@ -813,18 +805,18 @@ public class GridNearTxLocal extends GridDhtTxLocalAdapter {
 
         mapExplicitLocks();
 
-        fut.prepare(waitTopFut);
+        fut.prepare();
 
         return fut;
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync(boolean waitTopFut) {
+    @Override public IgniteInternalFuture<IgniteInternalTx> commitAsync() {
         if (log.isDebugEnabled())
             log.debug("Committing near local tx: " + this);
 
-        prepareAsync0(waitTopFut);
+        prepareAsync();
 
         GridNearTxFinishFuture fut = commitFut.get();
 

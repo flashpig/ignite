@@ -40,6 +40,7 @@ import org.apache.ignite.cache.store.CacheStore;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.IgniteInternalFuture;
+import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.dr.GridCacheDrInfo;
 import org.apache.ignite.internal.processors.cache.transactions.IgniteInternalTx;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
@@ -1876,15 +1877,16 @@ public interface IgniteInternalCache<K, V> extends Iterable<Cache.Entry<K, V>> {
     @Nullable public V tryPutIfAbsent(K key, V val) throws IgniteCheckedException;
 
     /**
-     * Tries to execute invoke operation. Will fail if topology exchange is in progress.
-     *
+     * @param topVer Locked topology version.
      * @param key Key.
      * @param entryProcessor Entry processor.
      * @param args Arguments.
      * @return Invoke result.
      * @throws IgniteCheckedException If failed.
      */
-    @Nullable public <T> EntryProcessorResult<T> tryInvoke(K key,
+    @Nullable public <T> EntryProcessorResult<T> invoke(
+        @Nullable AffinityTopologyVersion topVer,
+        K key,
         EntryProcessor<K, V, T> entryProcessor,
         Object... args) throws IgniteCheckedException;
 }

@@ -580,7 +580,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     /** {@inheritDoc} */
     @Override public void commit() throws IgniteCheckedException {
         try {
-            commitAsync(true).get();
+            commitAsync().get();
         }
         finally {
             cctx.tm().resetContext();
@@ -1953,16 +1953,15 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         V val,
         boolean retval,
         CacheEntryPredicate[] filter) {
-        return putAsync0(cacheCtx, true, key, val, null, null, retval, filter);
+        return putAsync0(cacheCtx, key, val, null, null, retval, filter);
     }
 
     /** {@inheritDoc} */
     @Override public <K, V> IgniteInternalFuture<GridCacheReturn> invokeAsync(GridCacheContext cacheCtx,
-        boolean waitTopFut,
         K key,
         EntryProcessor<K, V, Object> entryProcessor,
         Object... invokeArgs) {
-        return (IgniteInternalFuture)putAsync0(cacheCtx, waitTopFut, key, null, entryProcessor, invokeArgs, true, null);
+        return (IgniteInternalFuture)putAsync0(cacheCtx, key, null, entryProcessor, invokeArgs, true, null);
     }
 
     /** {@inheritDoc} */
@@ -2915,7 +2914,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
      */
     private <K, V> IgniteInternalFuture putAsync0(
         final GridCacheContext cacheCtx,
-        boolean waitTopFut,
         K key,
         @Nullable V val,
         @Nullable EntryProcessor<K, V, Object> entryProcessor,
@@ -3016,7 +3014,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 }
             }
             else
-                return optimisticPutFuture(cacheCtx, waitTopFut, loadFut, ret, keepBinary);
+                return optimisticPutFuture(cacheCtx, loadFut, ret, keepBinary);
         }
         catch (IgniteCheckedException e) {
             return new GridFinishedFuture(e);
@@ -3195,7 +3193,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 }
             }
             else
-                return optimisticPutFuture(cacheCtx, true, loadFut, ret, keepBinary);
+                return optimisticPutFuture(cacheCtx, loadFut, ret, keepBinary);
         }
         catch (RuntimeException e) {
             onException();
@@ -3206,7 +3204,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
 
     /**
      * @param cacheCtx Cache context.
-     * @param waitTopFut If {@code false} does not wait for affinity change future.
      * @param loadFut Missing keys load future.
      * @param ret Future result.
      * @param keepBinary Keep binary flag.
@@ -3214,7 +3211,6 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
      */
     private IgniteInternalFuture optimisticPutFuture(
         final GridCacheContext cacheCtx,
-        boolean waitTopFut,
         IgniteInternalFuture<Void> loadFut,
         final GridCacheReturn ret,
         final boolean keepBinary
@@ -3231,7 +3227,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 return new GridFinishedFuture<>(e);
             }
 
-            return nonInterruptable(commitAsync(waitTopFut).chain(
+            return nonInterruptable(commitAsync().chain(
                 new CX1<IgniteInternalFuture<IgniteInternalTx>, GridCacheReturn>() {
                     @Override public GridCacheReturn applyx(IgniteInternalFuture<IgniteInternalTx> txFut)
                         throws IgniteCheckedException {
@@ -3472,7 +3468,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 // with prepare response, if required.
                 assert loadFut.isDone();
 
-                return nonInterruptable(commitAsync(true).chain(new CX1<IgniteInternalFuture<IgniteInternalTx>, GridCacheReturn>() {
+                return nonInterruptable(commitAsync().chain(new CX1<IgniteInternalFuture<IgniteInternalTx>, GridCacheReturn>() {
                     @Override public GridCacheReturn applyx(IgniteInternalFuture<IgniteInternalTx> txFut)
                         throws IgniteCheckedException {
                         try {
@@ -3967,7 +3963,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 if (commit && commitAfterLock()) {
                     rollback = false;
 
-                    return commitAsync(true).chain(new CX1<IgniteInternalFuture<IgniteInternalTx>, T>() {
+                    return commitAsync().chain(new CX1<IgniteInternalFuture<IgniteInternalTx>, T>() {
                         @Override public T applyx(IgniteInternalFuture<IgniteInternalTx> f) throws IgniteCheckedException {
                             f.get();
 

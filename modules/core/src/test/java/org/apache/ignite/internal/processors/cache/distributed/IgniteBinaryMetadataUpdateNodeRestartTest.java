@@ -116,7 +116,7 @@ public class IgniteBinaryMetadataUpdateNodeRestartTest extends GridCommonAbstrac
      * @throws Exception If failed.
      */
     public void testNodeRestart() throws Exception {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             log.info("Iteration: " + i);
 
             client = false;

@@ -130,10 +130,8 @@ public abstract class GridNearTxPrepareFutureAdapter extends
 
     /**
      * Prepares transaction.
-     *
-     * @param waitTopFut If {@code false} does not wait for affinity change future.
      */
-    public abstract void prepare(boolean waitTopFut);
+    public abstract void prepare();
 
     /**
      * @param nodeId Sender.
