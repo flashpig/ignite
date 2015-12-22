@@ -897,8 +897,8 @@ public class TcpDiscoverySelfTest extends GridCommonAbstractTest {
      */
     public void testIpFinderCleaning() throws Exception {
         try {
-            ipFinder.registerAddresses(Arrays.asList(new InetSocketAddress("host1", 1024),
-                new InetSocketAddress("host2", 1024)));
+            ipFinder.registerAddresses(Arrays.asList(new InetSocketAddress("1.1.1.1", 1024),
+                new InetSocketAddress("1.1.1.2", 1024)));
 
             Ignite g1 = startGrid(1);
 
@@ -923,8 +923,8 @@ public class TcpDiscoverySelfTest extends GridCommonAbstractTest {
             // Check that missing addresses are returned back.
             ipFinder.unregisterAddresses(ipFinder.getRegisteredAddresses()); // Unregister valid address.
 
-            ipFinder.registerAddresses(Arrays.asList(new InetSocketAddress("host1", 1024),
-                new InetSocketAddress("host2", 1024)));
+            ipFinder.registerAddresses(Arrays.asList(new InetSocketAddress("1.1.1.1", 1024),
+                new InetSocketAddress("1.1.1.2", 1024)));
 
             GridTestUtils.waitForCondition(new GridAbsPredicate() {
                 @Override public boolean apply() {
