@@ -90,7 +90,7 @@ public class DataStreamProcessor<K, V> extends GridProcessorAdapter {
             return;
 
         marshErrBytes = marsh.marshal(new IgniteCheckedException("Failed to marshal response error, " +
-            "see log for details."));
+            "see node log for details."));
 
         flusher = new IgniteThread(new GridWorker(ctx.gridName(), "grid-data-loader-flusher", log) {
             @Override protected void body() throws InterruptedException {

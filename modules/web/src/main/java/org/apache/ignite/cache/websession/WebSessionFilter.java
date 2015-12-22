@@ -38,7 +38,6 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.IgniteTransactions;
-import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.cluster.ClusterTopologyException;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.internal.util.typedef.C1;
@@ -434,7 +433,7 @@ public class WebSessionFilter implements Filter {
 
                 break;
             }
-            catch (CacheException | BinaryObjectException e) {
+            catch (CacheException | IgniteException e) {
                 if (log.isDebugEnabled())
                     log.debug(e.getMessage());
 
@@ -442,7 +441,7 @@ public class WebSessionFilter implements Filter {
                     throw new IgniteException("Failed to save session: " + sesId, e);
                 else {
                     if (log.isDebugEnabled())
-                    log.debug("Failed to save session (will retry): " + sesId);
+                        log.debug("Failed to save session (will retry): " + sesId);
 
                     IgniteFuture<?> retryFut = null;
 

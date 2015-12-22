@@ -32,7 +32,6 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
-import org.apache.ignite.binary.BinaryObjectException;
 import org.apache.ignite.cluster.ClusterTopologyException;
 import org.apache.ignite.internal.IgniteInterruptedCheckedException;
 import org.apache.ignite.internal.util.typedef.T2;
@@ -121,7 +120,7 @@ class WebSessionListener {
 
                     break;
                 }
-                catch (CacheException | BinaryObjectException e) {
+                catch (CacheException | IgniteException e) {
                     if (i == retries - 1) {
                         U.warn(log, "Failed to apply updates for session (maximum number of retries exceeded) [sesId=" +
                             sesId + ", retries=" + retries + ']');
