@@ -56,7 +56,7 @@ public abstract class GridNearOptimisticTxPrepareFutureAdapter extends GridNearT
 
         // If there is another system transaction in progress, use it's topology version to prevent deadlock.
         if (topVer == null && tx != null && tx.system())
-            topVer = cctx.tm().anyActiveThreadTx(threadId, tx);
+            topVer = cctx.tm().lockedTopologyVersion(threadId, tx);
 
         if (topVer != null) {
             tx.topologyVersion(topVer);

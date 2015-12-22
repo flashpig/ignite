@@ -607,9 +607,9 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
     /**
      * @param threadId Thread ID.
      * @param ignore Transaction to ignore.
-     * @return Any transaction associated with the current thread.
+     * @return Not null topology version if current thread holds lock preventing topology change.
      */
-    public AffinityTopologyVersion anyActiveThreadTx(long threadId, IgniteInternalTx ignore) {
+    @Nullable public AffinityTopologyVersion lockedTopologyVersion(long threadId, IgniteInternalTx ignore) {
         IgniteInternalTx tx = threadMap.get(threadId);
 
         if (tx != null) {
