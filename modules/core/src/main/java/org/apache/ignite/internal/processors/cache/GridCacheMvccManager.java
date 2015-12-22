@@ -106,10 +106,6 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
     private final ConcurrentMap<GridCacheVersion, GridCacheAtomicFuture<?>> atomicFuts =
         new ConcurrentHashMap8<>();
 
-    /** Pending atomic futures. */
-    private final ConcurrentMap<GridCacheVersion, GridCacheAtomicFuture<?>> sysCacheAtomicFuts =
-        new ConcurrentHashMap8<>();
-
     /** */
     private final ConcurrentMap<IgniteUuid, GridCacheFuture<?>> futs = new ConcurrentHashMap8<>();
 
@@ -219,28 +215,18 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
             for (GridCacheFuture<?> fut : activeFutures())
                 fut.onNodeLeft(discoEvt.eventNode().id());
 
-            onNodeLeft(discoEvt.eventNode().id(), sysCacheAtomicFuts);
+            for (GridCacheAtomicFuture<?> cacheFut : atomicFuts.values()) {
+                cacheFut.onNodeLeft(discoEvt.eventNode().id());
 
-            onNodeLeft(discoEvt.eventNode().id(), atomicFuts);
-        }
-    };
+                if (cacheFut.isCancelled() || cacheFut.isDone()) {
+                    GridCacheVersion futVer = cacheFut.version();
 
-    /**
-     * @param nodeId Failed node ID.
-     * @param atomicFuts Futures collection.
-     */
-    private void onNodeLeft(UUID nodeId, ConcurrentMap<GridCacheVersion, GridCacheAtomicFuture<?>> atomicFuts) {
-        for (GridCacheAtomicFuture<?> cacheFut : atomicFuts.values()) {
-            cacheFut.onNodeLeft(nodeId);
-
-            if (cacheFut.isCancelled() || cacheFut.isDone()) {
-                GridCacheVersion futVer = cacheFut.version();
-
-                if (futVer != null)
-                    atomicFuts.remove(futVer, cacheFut);
+                    if (futVer != null)
+                        atomicFuts.remove(futVer, cacheFut);
+                }
             }
         }
-    }
+    };
 
     /** {@inheritDoc} */
     @Override protected void start0() throws IgniteCheckedException {
@@ -364,7 +350,7 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
         for (GridCacheFuture<?> fut : activeFutures())
             ((GridFutureAdapter)fut).onDone(err);
 
-        for (GridCacheAtomicFuture<?> future : atomicFutures())
+        for (GridCacheAtomicFuture<?> future : atomicFuts.values())
             ((GridFutureAdapter)future).onDone(err);
     }
 
@@ -404,12 +390,11 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
 
     /**
      * @param futVer Future ID.
-     * @param sysCache If {@code true} uses special futures collection.
      * @param fut Future.
      * @return {@code False} if future was forcibly completed with error.
      */
-    public boolean addAtomicFuture(GridCacheVersion futVer, GridCacheAtomicFuture<?> fut, boolean sysCache) {
-        IgniteInternalFuture<?> old = sysCache ? sysCacheAtomicFuts.put(futVer, fut) : atomicFuts.put(futVer, fut);
+    public boolean addAtomicFuture(GridCacheVersion futVer, GridCacheAtomicFuture<?> fut) {
+        IgniteInternalFuture<?> old = atomicFuts.put(futVer, fut);
 
         assert old == null : "Old future is not null [futVer=" + futVer + ", fut=" + fut + ", old=" + old + ']';
 
@@ -420,27 +405,25 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
      * @return Collection of pending atomic futures.
      */
     public Collection<GridCacheAtomicFuture<?>> atomicFutures() {
-        return F.concat(false, sysCacheAtomicFuts.values(), atomicFuts.values());
+        return atomicFuts.values();
     }
 
     /**
      * Gets future by given future ID.
      *
      * @param futVer Future ID.
-     * @param sysCache If {@code true} uses special futures collection.
      * @return Future.
      */
-    @Nullable public IgniteInternalFuture<?> atomicFuture(GridCacheVersion futVer, boolean sysCache) {
-        return sysCache ? sysCacheAtomicFuts.get(futVer) : atomicFuts.get(futVer);
+    @Nullable public IgniteInternalFuture<?> atomicFuture(GridCacheVersion futVer) {
+        return atomicFuts.get(futVer);
     }
 
     /**
      * @param futVer Future ID.
-     * @param sysCache If {@code true} uses special futures collection.
      * @return Removed future.
      */
-    @Nullable public IgniteInternalFuture<?> removeAtomicFuture(GridCacheVersion futVer, boolean sysCache) {
-        return sysCache ? sysCacheAtomicFuts.remove(futVer) : atomicFuts.remove(futVer);
+    @Nullable public IgniteInternalFuture<?> removeAtomicFuture(GridCacheVersion futVer) {
+        return atomicFuts.remove(futVer);
     }
 
     /**
@@ -1003,7 +986,7 @@ public class GridCacheMvccManager extends GridCacheSharedManagerAdapter {
 
         res.ignoreChildFailures(ClusterTopologyCheckedException.class, CachePartialUpdateCheckedException.class);
 
-        for (GridCacheAtomicFuture<?> fut : atomicFutures()) {
+        for (GridCacheAtomicFuture<?> fut : atomicFuts.values()) {
             IgniteInternalFuture<Void> complete = fut.completeFuture(topVer);
 
             if (complete != null)
