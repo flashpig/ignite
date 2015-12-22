@@ -912,6 +912,12 @@ public class TcpDiscoverySelfTest extends GridCommonAbstractTest {
                 }
             }, timeout);
 
+            if (ipFinder.getRegisteredAddresses().size() != 1) {
+                log.error("Failed to wait for IP cleanup, will dump threads.");
+
+                U.dumpThreads(log);
+            }
+
             assert ipFinder.getRegisteredAddresses().size() == 1 : "ipFinder=" + ipFinder.getRegisteredAddresses();
 
             // Check that missing addresses are returned back.
