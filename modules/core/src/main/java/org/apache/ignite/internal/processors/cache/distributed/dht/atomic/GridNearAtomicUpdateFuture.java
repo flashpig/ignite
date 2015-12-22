@@ -48,6 +48,7 @@ import org.apache.ignite.internal.processors.cache.distributed.dht.GridDhtTopolo
 import org.apache.ignite.internal.processors.cache.distributed.near.GridNearAtomicCache;
 import org.apache.ignite.internal.processors.cache.dr.GridCacheDrInfo;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
+import org.apache.ignite.internal.util.future.GridFinishedFuture;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.CI1;
@@ -775,7 +776,11 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                     return;
                 }
 
-                IgniteInternalFuture<AffinityTopologyVersion> fut = cctx.affinity().affinityReadyFuture(remapTopVer);
+                IgniteInternalFuture<AffinityTopologyVersion> fut =
+                    cctx.shared().exchange().affinityReadyFuture(remapTopVer);
+
+                if (fut == null)
+                    fut = new GridFinishedFuture<>(remapTopVer);
 
                 fut.listen(new CI1<IgniteInternalFuture<AffinityTopologyVersion>>() {
                     @Override public void apply(final IgniteInternalFuture<AffinityTopologyVersion> fut) {
