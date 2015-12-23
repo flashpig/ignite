@@ -845,14 +845,6 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
 
             GridCacheVersion futVer = cctx.versions().next(topVer);
 
-            if (storeFuture()) {
-                if (!cctx.mvcc().addAtomicFuture(futVer, GridNearAtomicUpdateFuture.this)) {
-                    assert isDone() : GridNearAtomicUpdateFuture.this;
-
-                    return;
-                }
-            }
-
             GridCacheVersion updVer;
 
             // Assign version on near node in CLOCK ordering mode even if fastMap is false.
@@ -924,6 +916,14 @@ public class GridNearAtomicUpdateFuture extends GridFutureAdapter<Object>
                 onDone(err);
 
                 return;
+            }
+
+            if (storeFuture()) {
+                if (!cctx.mvcc().addAtomicFuture(futVer, GridNearAtomicUpdateFuture.this)) {
+                    assert isDone() : GridNearAtomicUpdateFuture.this;
+
+                    return;
+                }
             }
 
             // Optimize mapping for single key.
