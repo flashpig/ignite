@@ -419,7 +419,8 @@ public class GridDhtPartitionsExchangeFuture extends GridFutureAdapter<AffinityT
         // If local node did not initiate exchange or local node is the only cache node in grid.
         Collection<ClusterNode> affNodes = CU.affinityNodes(cacheCtx, exchId.topologyVersion());
 
-        return !exchId.nodeId().equals(cctx.localNodeId()) ||
+        return exchId.topologyVersion().equals(cacheCtx.startTopologyVersion()) ||
+            !exchId.nodeId().equals(cctx.localNodeId()) ||
             (affNodes.size() == 1 && affNodes.contains(cctx.localNode()));
     }
 
