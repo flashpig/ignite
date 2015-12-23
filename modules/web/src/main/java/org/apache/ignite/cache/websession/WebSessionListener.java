@@ -33,7 +33,6 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.cluster.ClusterTopologyException;
-import org.apache.ignite.internal.IgniteInterruptedCheckedException;
 import org.apache.ignite.internal.util.typedef.T2;
 import org.apache.ignite.internal.util.typedef.X;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -146,7 +145,7 @@ class WebSessionListener {
                 }
             }
         }
-        catch (CacheException | IgniteException | IgniteInterruptedCheckedException e) {
+        catch (Exception e) {
             U.error(log, "Failed to update session attributes [id=" + sesId + ']', e);
         }
     }

@@ -114,7 +114,7 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
     /** Committing transactions. */
     private final ThreadLocal<IgniteInternalTx> threadCtx = new ThreadLocal<>();
 
-    /** Transaction which topology version should be used when mapping internal tx. */
+    /** Topology version should be used when mapping internal tx. */
     private final ThreadLocal<AffinityTopologyVersion> txTop = new ThreadLocal<>();
 
     /** Per-thread transaction map. */
