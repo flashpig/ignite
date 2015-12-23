@@ -150,11 +150,15 @@ public class IgniteBinaryMetadataUpdateNodeRestartTest extends GridCommonAbstrac
 
                 IgniteInternalFuture<?> fut = GridTestUtils.runMultiThreadedAsync(new Callable<Object>() {
                     @Override public Object call() throws Exception {
-                        int node = idx.getAndIncrement() % (SRVS + CLIENTS);
+                        int threadIdx = idx.getAndIncrement();
+
+                        int node = threadIdx % (SRVS + CLIENTS);
 
                         Ignite ignite = ignite(node);
 
                         log.info("Started thread: " + ignite.name());
+
+                        Thread.currentThread().setName("update-thread-" + threadIdx + "-" + ignite.name());
 
                         IgniteCache<Object, Object> cache1 = ignite.cache(ATOMIC_CACHE);
                         IgniteCache<Object, Object> cache2 = ignite.cache(TX_CACHE);
