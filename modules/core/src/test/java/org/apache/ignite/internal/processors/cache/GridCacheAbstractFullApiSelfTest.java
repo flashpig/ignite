@@ -3328,11 +3328,11 @@ public abstract class GridCacheAbstractFullApiSelfTest extends GridCacheAbstract
 
             GridTestUtils.waitForCondition(new GridAbsPredicate() {
                 @Override public boolean apply() {
-                    return c.localPeek(key, ONHEAP) == null;
+                    return peek(c, key) == null;
                 }
             }, 2000);
 
-            assertNull(c.localPeek(key, ONHEAP));
+            assertNull(peek(c, key));
 
             assert c.localSize() == 0;
         }
