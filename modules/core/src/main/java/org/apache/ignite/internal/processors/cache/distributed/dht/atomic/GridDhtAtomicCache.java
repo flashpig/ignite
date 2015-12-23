@@ -1292,6 +1292,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
                         IgniteTxManager tm = ctx.tm();
 
+                        // Needed for metadata cache transaction.
                         boolean set = tm.setTxTopologyHint(req.topologyVersion());
 
                         try {
