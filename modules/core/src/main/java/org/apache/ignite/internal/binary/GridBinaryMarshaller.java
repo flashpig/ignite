@@ -34,6 +34,9 @@ public class GridBinaryMarshaller {
         }
     };
 
+    /** Binary context in TLS store. */
+    private static final ThreadLocal<BinaryContext> BINARY_CTX = new ThreadLocal<>();
+
     /** */
     static final byte OPTM_MARSH = -2;
 
@@ -237,7 +240,16 @@ public class GridBinaryMarshaller {
     @Nullable public <T> T unmarshal(byte[] bytes, @Nullable ClassLoader clsLdr) throws BinaryObjectException {
         assert bytes != null;
 
-        return (T)BinaryUtils.unmarshal(BinaryHeapInputStream.create(bytes, 0), ctx, clsLdr);
+        assert BINARY_CTX.get() == null;
+
+        BINARY_CTX.set(ctx);
+
+        try {
+            return (T) BinaryUtils.unmarshal(BinaryHeapInputStream.create(bytes, 0), ctx, clsLdr);
+        }
+        finally {
+            BINARY_CTX.remove();
+        }
     }
 
     /**
@@ -247,7 +259,16 @@ public class GridBinaryMarshaller {
      */
     @SuppressWarnings("unchecked")
     @Nullable public <T> T unmarshal(BinaryInputStream in) throws BinaryObjectException {
-        return (T)BinaryUtils.unmarshal(in, ctx, null);
+        assert BINARY_CTX.get() == null;
+
+        BINARY_CTX.set(ctx);
+
+        try {
+            return (T)BinaryUtils.unmarshal(in, ctx, null);
+        }
+        finally {
+            BINARY_CTX.remove();
+        }
     }
 
     /**
@@ -264,7 +285,16 @@ public class GridBinaryMarshaller {
         if (arr[0] == NULL)
             return null;
 
-        return (T)new BinaryReaderExImpl(ctx, BinaryHeapInputStream.create(arr, 0), ldr).deserialize();
+        assert BINARY_CTX.get() == null;
+
+        BINARY_CTX.set(ctx);
+
+        try {
+            return (T)new BinaryReaderExImpl(ctx, BinaryHeapInputStream.create(arr, 0), ldr).deserialize();
+        }
+        finally {
+            BINARY_CTX.remove();
+        }
     }
 
     /**
@@ -291,6 +321,19 @@ public class GridBinaryMarshaller {
      * @return Context.
      */
     public BinaryContext context() {
+        return ctx;
+    }
+
+    /**
+     * @return Thread-bound context.
+     */
+    public static BinaryContext threadLocalContext() {
+        BinaryContext ctx = GridBinaryMarshaller.BINARY_CTX.get();
+
+        if (ctx == null)
+            throw new IllegalStateException("Failed to get BinaryContext (binary objects can only be deserialized " +
+                "inside Ignite).");
+
         return ctx;
     }
 }

@@ -427,8 +427,6 @@ public final class BinaryObjectImpl extends BinaryObjectExImpl implements Extern
 
     /** {@inheritDoc} */
     @Override public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(ctx);
-
         if (detachAllowed) {
             int len = length();
 
@@ -445,7 +443,7 @@ public final class BinaryObjectImpl extends BinaryObjectExImpl implements Extern
 
     /** {@inheritDoc} */
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        ctx = (BinaryContext)in.readObject();
+        ctx = GridBinaryMarshaller.threadLocalContext();
 
         arr = new byte[in.readInt()];
 
