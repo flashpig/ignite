@@ -37,14 +37,12 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.cache.CachePeekMode;
 import org.apache.ignite.events.CacheEvent;
-import org.apache.ignite.internal.util.lang.GridAbsPredicate;
 import org.apache.ignite.internal.util.lang.GridMapEntry;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.lang.IgniteBiPredicate;
 import org.apache.ignite.lang.IgniteInClosure;
 import org.apache.ignite.stream.StreamMultipleTupleExtractor;
 import org.apache.ignite.stream.StreamSingleTupleExtractor;
-import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
 import com.github.rholder.retry.StopStrategies;
@@ -197,7 +195,9 @@ public class IgniteMqttStreamerTest extends GridCommonAbstractTest {
      * @throws Exception If failed.
      */
     public void testConnectionStatusWithBrokerDisconnection() throws Exception {
-        // configure streamer
+        fail("https://issues.apache.org/jira/browse/IGNITE-2255");
+
+        // Configure streamer.
         streamer.setSingleTupleExtractor(singleTupleExtractor());
         streamer.setTopic(SINGLE_TOPIC_NAME);
         streamer.setBlockUntilConnected(true);
@@ -205,34 +205,20 @@ public class IgniteMqttStreamerTest extends GridCommonAbstractTest {
 
         streamer.start();
 
-        // action time: repeat 5 times; make sure the connection state is kept correctly every time
+        // Action time: repeat 5 times; make sure the connection state is kept correctly every time.
         for (int i = 0; i < 5; i++) {
             log.info("Iteration: " + i);
-
-            GridTestUtils.waitForCondition(new GridAbsPredicate() {
-                @Override public boolean apply() {
-                    return streamer.isConnected();
-                }
-            }, 2000);
 
             assertTrue(streamer.isConnected());
 
             broker.stop();
 
-            GridTestUtils.waitForCondition(new GridAbsPredicate() {
-                @Override public boolean apply() {
-                    return !streamer.isConnected();
-                }
-            }, 2000);
-
             assertFalse(streamer.isConnected());
 
-            if (i < 4) {
-                broker.start(true);
-                broker.waitUntilStarted();
+            broker.start(true);
+            broker.waitUntilStarted();
 
-                Thread.sleep(500);
-            }
+            Thread.sleep(500);
         }
     }
 
