@@ -477,7 +477,7 @@ public class CacheObjectBinaryProcessorImpl extends IgniteCacheObjectProcessorIm
     }
 
     /** {@inheritDoc} */
-    public void addMeta(final int typeId, final BinaryType newMeta) {
+    @Override public void addMeta(final int typeId, final BinaryType newMeta) throws BinaryObjectException {
         assert newMeta != null;
         assert newMeta instanceof BinaryTypeImpl;
 
