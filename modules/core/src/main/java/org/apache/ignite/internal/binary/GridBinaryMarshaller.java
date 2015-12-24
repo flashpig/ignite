@@ -240,15 +240,13 @@ public class GridBinaryMarshaller {
     @Nullable public <T> T unmarshal(byte[] bytes, @Nullable ClassLoader clsLdr) throws BinaryObjectException {
         assert bytes != null;
 
-        assert BINARY_CTX.get() == null;
-
-        BINARY_CTX.set(ctx);
+        BinaryContext oldCtx = pushContext(ctx);
 
         try {
             return (T) BinaryUtils.unmarshal(BinaryHeapInputStream.create(bytes, 0), ctx, clsLdr);
         }
         finally {
-            BINARY_CTX.remove();
+            popContext(oldCtx);
         }
     }
 
@@ -259,15 +257,13 @@ public class GridBinaryMarshaller {
      */
     @SuppressWarnings("unchecked")
     @Nullable public <T> T unmarshal(BinaryInputStream in) throws BinaryObjectException {
-        assert BINARY_CTX.get() == null;
-
-        BINARY_CTX.set(ctx);
+        BinaryContext oldCtx = pushContext(ctx);
 
         try {
             return (T)BinaryUtils.unmarshal(in, ctx, null);
         }
         finally {
-            BINARY_CTX.remove();
+            popContext(oldCtx);
         }
     }
 
@@ -285,16 +281,40 @@ public class GridBinaryMarshaller {
         if (arr[0] == NULL)
             return null;
 
-        assert BINARY_CTX.get() == null;
-
-        BINARY_CTX.set(ctx);
+        BinaryContext oldCtx = pushContext(ctx);
 
         try {
             return (T)new BinaryReaderExImpl(ctx, BinaryHeapInputStream.create(arr, 0), ldr).deserialize();
         }
         finally {
-            BINARY_CTX.remove();
+            popContext(oldCtx);
         }
+    }
+
+    /**
+     * Push binary context and return the old one.
+     *
+     * @param ctx Binary context.
+     * @return Old binary context.
+     */
+    @Nullable private static BinaryContext pushContext(BinaryContext ctx) {
+        BinaryContext old = BINARY_CTX.get();
+
+        BINARY_CTX.set(ctx);
+
+        return old;
+    }
+
+    /**
+     * Pop binary context and restore the old one.
+     *
+     * @param oldCtx Old binary context.
+     */
+    private static void popContext(@Nullable BinaryContext oldCtx) {
+        if (oldCtx == null)
+            BINARY_CTX.remove();
+        else
+            BINARY_CTX.set(oldCtx);
     }
 
     /**
