@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,23 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.ignite.tests.p2p;
 
-using System.Reflection;
-﻿﻿using System.Runtime.InteropServices;
+import org.apache.ignite.lang.IgniteBiPredicate;
 
-[assembly: AssemblyTitle("Apache Ignite.NET Examples Library")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Apache Software Foundation")]
-[assembly: AssemblyProduct("Apache Ignite.NET")]
-[assembly: AssemblyCopyright("Copyright ©  2015")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-
-[assembly: ComVisible(false)]
-
-[assembly: Guid("ce65ec7c-d3cf-41ad-8f45-f90d5af68d77")]
-
-[assembly: AssemblyVersion("1.5.0.7794")]
-[assembly: AssemblyFileVersion("1.5.0.7794")]
-[assembly: AssemblyInformationalVersion("1.5.0.final")]
+/**
+ *
+ */
+public class CacheDeploymentAlwaysTruePredicate implements IgniteBiPredicate<Object, Object> {
+    /** */
+    @Override public boolean apply(Object o, Object o2) {
+        return true;
+    }
+}
