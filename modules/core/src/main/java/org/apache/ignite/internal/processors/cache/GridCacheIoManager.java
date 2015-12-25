@@ -124,7 +124,15 @@ public class GridCacheIoManager extends GridCacheSharedManagerAdapter {
 
             if (cacheMsg.partitionExchangeMessage()) {
                 if (cacheMsg instanceof GridDhtAffinityAssignmentRequest) {
-                    fut = cctx.exchange().affinityReadyFuture(new AffinityTopologyVersion(cctx.localNode().order()));
+                    assert cacheMsg.topologyVersion() != null : cacheMsg;
+
+                    AffinityTopologyVersion startTopVer = new AffinityTopologyVersion(cctx.localNode().order());
+
+                    assert cacheMsg.topologyVersion().compareTo(startTopVer) > 0 :
+                        "Invalid affinity request [startTopVer=" + startTopVer + ", msg=" + cacheMsg + ']';
+
+                    // Need to wait for initial exchange to avoid race between cache start and affinity request.
+                    fut = cctx.exchange().affinityReadyFuture(startTopVer);
 
                     if (fut != null && !fut.isDone()) {
                         cctx.kernalContext().closure().runLocalSafe(new Runnable() {
