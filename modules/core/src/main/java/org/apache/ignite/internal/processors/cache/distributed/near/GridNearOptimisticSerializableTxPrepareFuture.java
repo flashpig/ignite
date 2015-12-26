@@ -118,7 +118,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
                                         new IgniteTxOptimisticCheckedException("Failed to prepare transaction, " +
                                             "read/write conflict [key=" + key + ", cache=" + ctx.name() + ']');
 
-                                    err.compareAndSet(null, err0);
+                                    ERR_UPD.compareAndSet(this, null, err0);
                                 }
 
                                 break;
@@ -187,7 +187,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
                 tx.removeMapping(m.node().id());
         }
 
-        err.compareAndSet(null, e);
+        ERR_UPD.compareAndSet(this, null, e);
 
         if (keyLockFut != null)
             keyLockFut.onDone(e);
@@ -209,7 +209,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
             return false;
 
         if (err != null) {
-            this.err.compareAndSet(null, err);
+            ERR_UPD.compareAndSet(this, null, err);
 
             if (keyLockFut != null)
                 keyLockFut.onDone(err);
@@ -263,7 +263,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
      * @return {@code True} if future was finished by this call.
      */
     private boolean onComplete() {
-        Throwable err0 = err.get();
+        Throwable err0 = err;
 
         if (err0 == null || tx.needCheckBackup())
             tx.state(PREPARED);
@@ -740,7 +740,7 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
         /**
          * @param res Result callback.
          */
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
         void onResult(final GridNearTxPrepareResponse res) {
             if (isDone())
                 return;
@@ -809,7 +809,9 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
                                                         remap(res);
                                                     }
                                                     catch (IgniteCheckedException e) {
-                                                        err.compareAndSet(null, e);
+                                                        ERR_UPD.compareAndSet(
+                                                            GridNearOptimisticSerializableTxPrepareFuture.this,
+                                                            null, e);
 
                                                         onDone(e);
                                                     }
@@ -822,7 +824,8 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
 
                                             err0.retryReadyFuture(affFut);
 
-                                            err.compareAndSet(null, err0);
+                                            ERR_UPD.compareAndSet(GridNearOptimisticSerializableTxPrepareFuture.this,
+                                                null, err0);
 
                                             onDone(err0);
                                         }
@@ -833,7 +836,8 @@ public class GridNearOptimisticSerializableTxPrepareFuture extends GridNearOptim
                                                 GridNearOptimisticSerializableTxPrepareFuture.this);
                                         }
 
-                                        err.compareAndSet(null, e);
+                                        ERR_UPD.compareAndSet(GridNearOptimisticSerializableTxPrepareFuture.this,
+                                            null, e);
 
                                         onDone(e);
                                     }

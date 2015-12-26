@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.expiry.Duration;
@@ -115,10 +116,13 @@ import static org.apache.ignite.transactions.TransactionState.UNKNOWN;
 /**
  * Transaction adapter for cache transactions.
  */
-public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
-    implements IgniteTxLocalEx {
+public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements IgniteTxLocalEx {
     /** */
     private static final long serialVersionUID = 0L;
+
+    /** Commit error updater. */
+    protected static final AtomicReferenceFieldUpdater<IgniteTxLocalAdapter, Throwable> COMMIT_ERR_UPD =
+        AtomicReferenceFieldUpdater.newUpdater(IgniteTxLocalAdapter.class, Throwable.class, "commitErr");
 
     /** Minimal version encountered (either explicit lock or XID of this transaction). */
     protected GridCacheVersion minVer;
@@ -139,7 +143,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
     private boolean sndTransformedVals;
 
     /** Commit error. */
-    protected AtomicReference<Throwable> commitErr = new AtomicReference<>();
+    protected volatile Throwable commitErr;
 
     /** Need return value. */
     protected boolean needRetVal;
@@ -248,12 +252,12 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
 
     /** {@inheritDoc} */
     @Override public Throwable commitError() {
-        return commitErr.get();
+        return commitErr;
     }
 
     /** {@inheritDoc} */
     @Override public void commitError(Throwable e) {
-        commitErr.compareAndSet(null, e);
+        COMMIT_ERR_UPD.compareAndSet(this, null, e);
     }
 
     /** {@inheritDoc} */
@@ -1164,7 +1168,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
 
                             U.error(log, "Heuristic transaction failure.", err);
 
-                            commitErr.compareAndSet(null, err);
+                            COMMIT_ERR_UPD.compareAndSet(this, null, err);
 
                             state(UNKNOWN);
 
@@ -1272,8 +1276,8 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
         if (state != ROLLING_BACK && state != ROLLED_BACK) {
             setRollbackOnly();
 
-            throw new IgniteCheckedException("Invalid transaction state for rollback [state=" + state + ", tx=" + this + ']',
-                commitErr.get());
+            throw new IgniteCheckedException("Invalid transaction state for rollback [state=" + state +
+                ", tx=" + this + ']', commitErr);
         }
 
         if (near()) {
@@ -1302,7 +1306,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                 }
             }
             catch (Error | IgniteCheckedException | RuntimeException e) {
-                U.addLastCause(e, commitErr.get(), log);
+                U.addLastCause(e, commitErr, log);
 
                 throw e;
             }

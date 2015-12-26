@@ -132,7 +132,7 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
             }
         }
 
-        if (err.compareAndSet(null, e)) {
+        if (ERR_UPD.compareAndSet(this, null, e)) {
             boolean marked = tx.setRollbackOnly();
 
             if (e instanceof IgniteTxRollbackCheckedException) {
@@ -199,7 +199,7 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
         if (isDone())
             return false;
 
-        this.err.compareAndSet(null, err);
+        ERR_UPD.compareAndSet(this, null, err);
 
         return onComplete();
     }
@@ -218,7 +218,7 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
      * @return {@code True} if future was finished by this call.
      */
     private boolean onComplete() {
-        Throwable err0 = err.get();
+        Throwable err0 = err;
 
         if (err0 == null || tx.needCheckBackup())
             tx.state(PREPARED);
@@ -730,8 +730,7 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
                         }
                         else
                             remap();
-                    }
-                    else {
+                    } else {
                         onPrepareResponse(m, res);
 
                         // Proceed prepare before finishing mini future.
@@ -750,7 +749,8 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
          */
         private void remap() {
             prepareOnTopology(true, new Runnable() {
-                @Override public void run() {
+                @Override
+                public void run() {
                     onDone((GridNearTxPrepareResponse)null);
                 }
             });
