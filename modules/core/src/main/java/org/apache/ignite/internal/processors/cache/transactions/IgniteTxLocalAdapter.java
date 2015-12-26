@@ -29,8 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import javax.cache.Cache;
 import javax.cache.CacheException;
@@ -124,11 +123,16 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
     protected static final AtomicReferenceFieldUpdater<IgniteTxLocalAdapter, Throwable> COMMIT_ERR_UPD =
         AtomicReferenceFieldUpdater.newUpdater(IgniteTxLocalAdapter.class, Throwable.class, "commitErr");
 
+    /** Done flag updater. */
+    protected static final AtomicIntegerFieldUpdater<IgniteTxLocalAdapter> DONE_FLAG_UPD =
+        AtomicIntegerFieldUpdater.newUpdater(IgniteTxLocalAdapter.class, "doneFlag");
+
     /** Minimal version encountered (either explicit lock or XID of this transaction). */
     protected GridCacheVersion minVer;
 
     /** Flag indicating with TM commit happened. */
-    protected AtomicBoolean doneFlag = new AtomicBoolean(false);
+    @SuppressWarnings("UnusedDeclaration")
+    protected volatile int doneFlag;
 
     /** Committed versions, relative to base. */
     private Collection<GridCacheVersion> committedVers = Collections.emptyList();
@@ -1198,7 +1202,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
 
         // Do not unlock transaction entries if one-phase commit.
         if (!onePhaseCommit()) {
-            if (doneFlag.compareAndSet(false, true)) {
+            if (DONE_FLAG_UPD.compareAndSet(this, 0, 1)) {
                 // Unlock all locks.
                 cctx.tm().commitTx(this);
 
@@ -1219,7 +1223,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
     public void tmFinish(boolean commit) {
         assert onePhaseCommit();
 
-        if (doneFlag.compareAndSet(false, true)) {
+        if (DONE_FLAG_UPD.compareAndSet(this, 0, 1)) {
             // Unlock all locks.
             if (commit)
                 cctx.tm().commitTx(this);
@@ -1287,7 +1291,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter implements Ig
                 evictNearEntry(e, false);
         }
 
-        if (doneFlag.compareAndSet(false, true)) {
+        if (DONE_FLAG_UPD.compareAndSet(this, 0, 1)) {
             try {
                 cctx.tm().rollbackTx(this);
 

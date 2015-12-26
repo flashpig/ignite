@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import javax.cache.expiry.Duration;
@@ -119,6 +119,14 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
             }
         };
 
+    /** Replied flag updater. */
+    private static final AtomicIntegerFieldUpdater<GridDhtTxPrepareFuture> REPLIED_UPD =
+        AtomicIntegerFieldUpdater.newUpdater(GridDhtTxPrepareFuture.class, "replied");
+
+    /** Mapped flag updater. */
+    private static final AtomicIntegerFieldUpdater<GridDhtTxPrepareFuture> MAPPED_UPD =
+        AtomicIntegerFieldUpdater.newUpdater(GridDhtTxPrepareFuture.class, "mapped");
+
     /** Logger. */
     private static IgniteLogger log;
 
@@ -143,10 +151,12 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
     private volatile Throwable err;
 
     /** Replied flag. */
-    private AtomicBoolean replied = new AtomicBoolean(false);
+    @SuppressWarnings("UnusedDeclaration")
+    private volatile int replied;
 
     /** All replies flag. */
-    private AtomicBoolean mapped = new AtomicBoolean(false);
+    @SuppressWarnings("UnusedDeclaration")
+    private volatile int mapped;
 
     /** Prepare reads. */
     private Iterable<IgniteTxEntry> reads;
@@ -577,9 +587,10 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
      *
      * @return {@code True} if all locks are acquired, {@code false} otherwise.
      */
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     private boolean mapIfLocked() {
         if (checkLocks()) {
-            if (!mapped.compareAndSet(false, true))
+            if (!MAPPED_UPD.compareAndSet(this, 0, 1))
                 return false;
 
             if (forceKeysFut == null || (forceKeysFut.isDone() && forceKeysFut.error() == null))
@@ -638,7 +649,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
                         new CIX1<IgniteInternalFuture<IgniteInternalTx>>() {
                             @Override public void applyx(IgniteInternalFuture<IgniteInternalTx> fut) {
                                 try {
-                                    if (replied.compareAndSet(false, true))
+                                    if (REPLIED_UPD.compareAndSet(GridDhtTxPrepareFuture.this, 0, 1))
                                         sendPrepareResponse(res);
                                 }
                                 catch (IgniteCheckedException e) {
@@ -676,7 +687,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
             }
             else {
                 try {
-                    if (replied.compareAndSet(false, true))
+                    if (REPLIED_UPD.compareAndSet(this, 0, 1))
                         sendPrepareResponse(res);
                 }
                 catch (IgniteCheckedException e) {
@@ -687,7 +698,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
             return true;
         }
         else {
-            if (replied.compareAndSet(false, true)) {
+            if (REPLIED_UPD.compareAndSet(this, 0, 1)) {
                 GridNearTxPrepareResponse res = createPrepareResponse(this.err);
 
                 try {
@@ -1474,6 +1485,7 @@ public final class GridDhtTxPrepareFuture extends GridCompoundFuture<IgniteInter
         /**
          * @param res Result callback.
          */
+        @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
         void onResult(GridDhtTxPrepareResponse res) {
             if (res.error() != null)
                 // Fail the whole compound future.

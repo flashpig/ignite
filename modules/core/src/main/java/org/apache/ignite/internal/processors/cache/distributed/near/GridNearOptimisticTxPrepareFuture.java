@@ -632,10 +632,7 @@ public class GridNearOptimisticTxPrepareFuture extends GridNearOptimisticTxPrepa
          * @param m Mapping.
          * @param mappings Queue of mappings to proceed with.
          */
-        MiniFuture(
-            GridDistributedTxMapping m,
-            Queue<GridDistributedTxMapping> mappings
-        ) {
+        MiniFuture(GridDistributedTxMapping m, Queue<GridDistributedTxMapping> mappings) {
             this.m = m;
             this.mappings = mappings;
         }
