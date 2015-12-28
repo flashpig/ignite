@@ -886,11 +886,13 @@ public class GridRestProcessor extends GridProcessorAdapter {
 
         /** Session token id. */
         private final UUID sesId;
+
         /**
          * Time when session is used last time.
          * If this time was set at TIMEDOUT_FLAG, then it should never be changed.
          */
         private final AtomicLong lastTouchTime = new AtomicLong(U.currentTimeMillis());
+
         /** Security context. */
         private volatile SecurityContext secCtx;
 
