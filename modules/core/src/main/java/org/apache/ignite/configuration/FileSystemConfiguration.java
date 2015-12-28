@@ -80,6 +80,9 @@ public class FileSystemConfiguration {
     /** Default IPC endpoint enabled flag. */
     public static final boolean DFLT_IPC_ENDPOINT_ENABLED = true;
 
+    /** Default value of whether to initialize default path modes. */
+    public static final boolean DFLT_INIT_DFLT_PATH_MODES = true;
+
     /** IGFS instance name. */
     private String name;
 
@@ -158,6 +161,9 @@ public class FileSystemConfiguration {
     /** Maximum range length. */
     private long maxTaskRangeLen;
 
+    /** Whether to initialize default path modes. */
+    private boolean initDfltPathModes = DFLT_INIT_DFLT_PATH_MODES;
+
     /**
      * Constructs default configuration.
      */
@@ -189,6 +195,7 @@ public class FileSystemConfiguration {
         fragmentizerThrottlingBlockLen = cfg.getFragmentizerThrottlingBlockLength();
         fragmentizerThrottlingDelay = cfg.getFragmentizerThrottlingDelay();
         secondaryFs = cfg.getSecondaryFileSystem();
+        initDfltPathModes = cfg.isInitializeDefaultPathsModes();
         ipcEndpointCfg = cfg.getIpcEndpointConfiguration();
         ipcEndpointEnabled = cfg.isIpcEndpointEnabled();
         maxSpace = cfg.getMaxSpaceSize();
@@ -507,7 +514,7 @@ public class FileSystemConfiguration {
      * Sets the secondary file system. Secondary file system is provided for pass-through, write-through,
      * and read-through purposes.
      *
-     * @param fileSystem
+     * @param fileSystem Secondary file system.
      */
     public void setSecondaryFileSystem(IgfsSecondaryFileSystem fileSystem) {
         secondaryFs = fileSystem;
@@ -786,6 +793,37 @@ public class FileSystemConfiguration {
      */
     public void setMaximumTaskRangeLength(long maxTaskRangeLen) {
         this.maxTaskRangeLen = maxTaskRangeLen;
+    }
+
+    /**
+     * Get whether to initialize default path modes.
+     * <p>
+     * When set to {@code true} Ignite will automatically create the following path modes:
+     * <ul>
+     *     <li>{@code /ignite/primary} - will work in {@link IgfsMode#PRIMARY} mode;</li>
+     *     <li>{@code /ignite/sync} - will work in {@link IgfsMode#DUAL_SYNC} mode;</li>
+     *     <li>{@code /ignite/async} - will work in {@link IgfsMode#DUAL_ASYNC} mode;</li>
+     *     <li>{@code /ignite/proxy} - will work in {@link IgfsMode#PROXY} mode;</li>
+     * </ul>
+     * See {@link #getPathModes()} for more information about path modes.
+     * <p>
+     * Defaults to {@link #DFLT_INIT_DFLT_PATH_MODES}.
+     *
+     * @return {@code True} if default path modes will be initialized.
+     */
+    public boolean isInitializeDefaultPathsModes() {
+        return initDfltPathModes;
+    }
+
+    /**
+     * Set whether to initialize default path modes.
+     * <p>
+     * See {@link #isInitializeDefaultPathsModes()} for more information.
+     *
+     * @param initDfltPathModes Whether to initialize default path modes.
+     */
+    public void setInitializeDefaultPathsModes(boolean initDfltPathModes) {
+        this.initDfltPathModes = initDfltPathModes;
     }
 
     /** {@inheritDoc} */
