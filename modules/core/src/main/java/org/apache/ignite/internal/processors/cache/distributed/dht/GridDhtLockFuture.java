@@ -999,8 +999,15 @@ public final class GridDhtLockFuture extends GridCompoundIdentityFuture<Boolean>
             }
         });
 
+        Collection<KeyCacheObject> locks;
+
+        synchronized (this) {
+            locks = new HashSet<>(pendingLocks);
+        }
+
         return S.toString(GridDhtLockFuture.class, this,
             "innerFuts", futs,
+            "pendingLocks", locks,
             "super", super.toString());
     }
 
