@@ -801,7 +801,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
             catch (IgniteCheckedException ex) {
                 commitError(ex);
 
-                setRollbackOnly();
+                errorWhenCommitting();
 
                 // Safe to remove transaction from committed tx list because nothing was committed yet.
                 cctx.tm().removeCommittedTx(this);
@@ -811,7 +811,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
             catch (Throwable ex) {
                 commitError(ex);
 
-                setRollbackOnly();
+                errorWhenCommitting();
 
                 // Safe to remove transaction from committed tx list because nothing was committed yet.
                 cctx.tm().removeCommittedTx(this);
@@ -1153,7 +1153,7 @@ public abstract class IgniteTxLocalAdapter extends IgniteTxAdapter
                             // Set operation to NOOP.
                             txEntry.op(NOOP);
 
-                            setRollbackOnly();
+                            errorWhenCommitting();
 
                             throw ex;
                         }

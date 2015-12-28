@@ -799,6 +799,24 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
         return state;
     }
 
+    /**
+     *
+     */
+    protected final void errorWhenCommitting() {
+        synchronized (this) {
+            TransactionState prev = state;
+
+            assert prev == COMMITTING : prev;
+
+            state = MARKED_ROLLBACK;
+
+            if (log.isDebugEnabled())
+                log.debug("Changed transaction state [prev=" + prev + ", new=" + this.state + ", tx=" + this + ']');
+
+            notifyAll();
+        }
+    }
+
     /** {@inheritDoc} */
     @Override public boolean setRollbackOnly() {
         return state(MARKED_ROLLBACK);
