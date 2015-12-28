@@ -721,14 +721,12 @@ public class IgniteTxHandler {
 
             IgniteInternalFuture<IgniteInternalTx> res = null;
 
-            if (tx != null) {
-                IgniteInternalFuture<IgniteInternalTx> rollbackFut = tx.rollbackAsync();
+            IgniteInternalFuture<IgniteInternalTx> rollbackFut = tx.rollbackAsync();
 
-                // Only for error logging.
-                rollbackFut.listen(CU.errorLogger(log));
+            // Only for error logging.
+            rollbackFut.listen(CU.errorLogger(log));
 
-                res = rollbackFut;
-            }
+            res = rollbackFut;
 
             if (e instanceof Error)
                 throw (Error)e;
