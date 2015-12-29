@@ -1097,6 +1097,9 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
                 }
 
                 case MARKED_ROLLBACK: {
+                    if (prev == COMMITTING)
+                        System.exit(99);
+
                     valid = prev == ACTIVE || prev == PREPARING || prev == PREPARED;
 
                     break;
