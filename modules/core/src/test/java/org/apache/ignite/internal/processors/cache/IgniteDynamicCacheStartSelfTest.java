@@ -223,7 +223,12 @@ public class IgniteDynamicCacheStartSelfTest extends GridCommonAbstractTest {
 
                 IgniteEx kernal = grid(ThreadLocalRandom.current().nextInt(nodeCount()));
 
-                futs.add(kernal.context().cache().dynamicStartCache(ccfg, ccfg.getName(), null, true, true, true));
+                futs.add(kernal.context().cache().dynamicStartCache(ccfg,
+                    ccfg.getName(),
+                    null,
+                    true,
+                    true,
+                    true));
 
                 return null;
             }

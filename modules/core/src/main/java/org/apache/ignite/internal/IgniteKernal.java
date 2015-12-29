@@ -2434,7 +2434,12 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
         guard();
 
         try {
-            ctx.cache().dynamicStartCache(cacheCfg, cacheCfg.getName(), null, true, true, true).get();
+            ctx.cache().dynamicStartCache(cacheCfg,
+                cacheCfg.getName(),
+                null,
+                true,
+                true,
+                true).get();
 
             return ctx.cache().publicJCache(cacheCfg.getName());
         }
@@ -2630,6 +2635,7 @@ public class IgniteKernal implements IgniteEx, IgniteMXBean, Externalizable {
 
     /**
      * @param cache Cache.
+     * @throws IgniteCheckedException If cache without near cache was already started.
      */
     private void checkNearCacheStarted(IgniteCacheProxy<?, ?> cache) throws IgniteCheckedException {
         if (!cache.context().isNear())

@@ -800,7 +800,8 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
     }
 
     /**
-     *
+     * Changes transaction state from COMMITTING to MARKED_ROLLBACK.
+     * Must be called only from thread committing transaction.
      */
     protected final void errorWhenCommitting() {
         synchronized (this) {

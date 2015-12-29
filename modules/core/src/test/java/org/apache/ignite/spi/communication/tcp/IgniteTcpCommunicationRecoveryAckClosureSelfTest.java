@@ -348,8 +348,7 @@ public class IgniteTcpCommunicationRecoveryAckClosureSelfTest<T extends Communic
         assertEquals(expMsgs, lsnr.rcvCnt.get());
 
         GridTestUtils.waitForCondition(new GridAbsPredicate() {
-            @Override
-            public boolean apply() {
+            @Override public boolean apply() {
                 return expMsgs == ackMsgs.get();
             }
         }, 5000);
