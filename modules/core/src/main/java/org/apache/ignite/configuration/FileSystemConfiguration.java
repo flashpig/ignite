@@ -526,13 +526,14 @@ public class FileSystemConfiguration {
      * If path doesn't correspond to any specified prefix or mappings are not provided, then
      * {@link #getDefaultMode()} is used.
      * <p>
-     * Several folders under {@code '/apache/ignite'} folder have predefined mappings which cannot be overridden.
-     * <li>{@code /apache/ignite/primary} and all it's sub-folders will always work in {@code PRIMARY} mode.</li>
+     * If {@link #isInitializeDefaultPathsModes()} is set to {@code true}, the following path modes will be created
+     * by default:
+     * <li>{@code /ignite/primary} and all it's sub-folders will always work in {@code PRIMARY} mode.</li>
      * <p>
      * And in case secondary file system URI is provided:
-     * <li>{@code /apache/ignite/proxy} and all it's sub-folders will always work in {@code PROXY} mode.</li>
-     * <li>{@code /apache/ignite/sync} and all it's sub-folders will always work in {@code DUAL_SYNC} mode.</li>
-     * <li>{@code /apache/ignite/async} and all it's sub-folders will always work in {@code DUAL_ASYNC} mode.</li>
+     * <li>{@code /ignite/proxy} and all it's sub-folders will always work in {@code PROXY} mode.</li>
+     * <li>{@code /ignite/sync} and all it's sub-folders will always work in {@code DUAL_SYNC} mode.</li>
+     * <li>{@code /ignite/async} and all it's sub-folders will always work in {@code DUAL_ASYNC} mode.</li>
      *
      * @return Map of paths to {@code IGFS} modes.
      */
@@ -801,9 +802,12 @@ public class FileSystemConfiguration {
      * When set to {@code true} Ignite will automatically create the following path modes:
      * <ul>
      *     <li>{@code /ignite/primary} - will work in {@link IgfsMode#PRIMARY} mode;</li>
-     *     <li>{@code /ignite/sync} - will work in {@link IgfsMode#DUAL_SYNC} mode;</li>
-     *     <li>{@code /ignite/async} - will work in {@link IgfsMode#DUAL_ASYNC} mode;</li>
-     *     <li>{@code /ignite/proxy} - will work in {@link IgfsMode#PROXY} mode;</li>
+     *     <li>{@code /ignite/sync} - will work in {@link IgfsMode#DUAL_SYNC} mode (only if secondary file system
+     *         is set);</li>
+     *     <li>{@code /ignite/async} - will work in {@link IgfsMode#DUAL_ASYNC} mode (only if secondary file system
+     *         is set);</li>
+     *     <li>{@code /ignite/proxy} - will work in {@link IgfsMode#PROXY} mode (only if secondary file system
+     *         is set).</li>
      * </ul>
      * See {@link #getPathModes()} for more information about path modes.
      * <p>
