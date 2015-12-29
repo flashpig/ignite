@@ -17,32 +17,23 @@
 
 package org.apache.ignite.internal.util;
 
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 /**
  * MP-SC concurrent linked queue implementation based on Dmitry Vyukov's
  * <a href="http://www.1024cores.net/home/lock-free-algorithms/queues/non-intrusive-mpsc-node-based-queue">
  *     Non-intrusive MPSC node-based queue</a>.
  */
-public class MPSCConcurrentLinkedQueue<E>
+
+public class MPSCConcurrentLinkedQueue<E> extends MPSCConcurrentLinkedQueuePadding
 {
-    /** Tail field updater. */
-    private static final AtomicReferenceFieldUpdater<MPSCConcurrentLinkedQueue, Node> TAIL_UPD =
-        AtomicReferenceFieldUpdater.newUpdater(MPSCConcurrentLinkedQueue.class, Node.class, "tail");
-
     /** Head. */
-    private Node head;
-
-    /** Tail. */
-    @SuppressWarnings({"UnusedDeclaration", "FieldCanBeLocal"})
-    private volatile Node tail;
+    private MPSCConcurrentLinkedQueueNode head;
 
     /**
      * Constructor.
      */
     public MPSCConcurrentLinkedQueue()
     {
-        head = new Node(null);
+        head = new MPSCConcurrentLinkedQueueNode(null);
 
         tail = head;
     }
@@ -57,11 +48,11 @@ public class MPSCConcurrentLinkedQueue<E>
         if (e == null)
             throw new IllegalArgumentException("Null are not allowed.");
 
-        Node newTail = new Node(e);
+        MPSCConcurrentLinkedQueueNode newTail = new MPSCConcurrentLinkedQueueNode(e);
 
-        Node prevTail = TAIL_UPD.getAndSet(this, newTail);
+        MPSCConcurrentLinkedQueueNode prevTail = TAIL_UPD.getAndSet(this, newTail);
 
-        prevTail.setNext(newTail);
+        prevTail.next(newTail);
     }
 
     /**
@@ -72,13 +63,13 @@ public class MPSCConcurrentLinkedQueue<E>
     @SuppressWarnings("unchecked")
     public E poll()
     {
-        final Node node = head.next;
+        final MPSCConcurrentLinkedQueueNode node = head.next();
 
         if (node != null)
         {
-            Object val = node.val;
+            Object val = node.value();
 
-            node.val = null;
+            node.value(null);
 
             head = node;
 
@@ -86,42 +77,5 @@ public class MPSCConcurrentLinkedQueue<E>
         }
         else
             return null;
-    }
-
-    /**
-     * Node with data.
-     */
-    private static class Node
-    {
-        /** Next field updater. */
-        public static final AtomicReferenceFieldUpdater<Node, Node> NODE_UPD =
-            AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "next");
-
-        /** Value. */
-        private Object val;
-
-        /** Next node. */
-        @SuppressWarnings("UnusedDeclaration")
-        private volatile Node next;
-
-        /**
-         * Constructor.
-         *
-         * @param val Value.
-         */
-        private Node(Object val)
-        {
-            this.val = val;
-        }
-
-        /**
-         * Set next node.
-         *
-         * @param next Next node.
-         */
-        void setNext(Node next)
-        {
-            NODE_UPD.lazySet(this, next);
-        }
     }
 }
