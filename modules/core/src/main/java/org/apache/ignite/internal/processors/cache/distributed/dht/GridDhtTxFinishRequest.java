@@ -20,9 +20,9 @@ package org.apache.ignite.internal.processors.cache.distributed.dht;
 import java.io.Externalizable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.UUID;
 import org.apache.ignite.internal.GridDirectCollection;
+import org.apache.ignite.internal.GridDirectTransient;
 import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
 import org.apache.ignite.internal.processors.cache.distributed.GridDistributedTxFinishRequest;
 import org.apache.ignite.internal.processors.cache.version.GridCacheVersion;
@@ -44,6 +44,9 @@ public class GridDhtTxFinishRequest extends GridDistributedTxFinishRequest {
     /** */
     private static final long serialVersionUID = 0L;
 
+    /** */
+    public static final int WAIT_REMOTE_TX_FLAG_MASK = 0x01;
+
     /** Near node ID. */
     private UUID nearNodeId;
 
@@ -64,7 +67,7 @@ public class GridDhtTxFinishRequest extends GridDistributedTxFinishRequest {
     @GridDirectCollection(GridCacheVersion.class)
     private Collection<GridCacheVersion> pendingVers;
 
-    /** Check comitted flag. */
+    /** Check committed flag. */
     private boolean checkCommitted;
 
     /** Partition update counter. */
@@ -80,6 +83,9 @@ public class GridDhtTxFinishRequest extends GridDistributedTxFinishRequest {
 
     /** Task name hash. */
     private int taskNameHash;
+
+    /** */
+    private byte flags;
 
     /**
      * Empty constructor required for {@link Externalizable}.
@@ -100,6 +106,7 @@ public class GridDhtTxFinishRequest extends GridDistributedTxFinishRequest {
      * @param commit Commit flag.
      * @param invalidate Invalidate flag.
      * @param sys System flag.
+     * @param plc IO policy.
      * @param sysInvalidate System invalidation flag.
      * @param syncCommit Synchronous commit flag.
      * @param syncRollback Synchronous rollback flag.
@@ -180,6 +187,7 @@ public class GridDhtTxFinishRequest extends GridDistributedTxFinishRequest {
      * @param commit Commit flag.
      * @param invalidate Invalidate flag.
      * @param sys System flag.
+     * @param plc IO policy.
      * @param sysInvalidate System invalidation flag.
      * @param syncCommit Synchronous commit flag.
      * @param syncRollback Synchronous rollback flag.
@@ -302,20 +310,17 @@ public class GridDhtTxFinishRequest extends GridDistributedTxFinishRequest {
     }
 
     /**
-     * Gets versions of not acquired locks with version less then one of transaction being committed.
-     *
-     * @return Versions of locks for entries participating in transaction that have not been acquired yet
-     *      have version less then one of transaction being committed.
-     */
-    public Collection<GridCacheVersion> pendingVersions() {
-        return pendingVers == null ? Collections.<GridCacheVersion>emptyList() : pendingVers;
-    }
-
-    /**
      * @return Check committed flag.
      */
     public boolean checkCommitted() {
         return checkCommitted;
+    }
+
+    /**
+     * @return {@code True}
+     */
+    public boolean waitRemoteTxs() {
+        return (flags & WAIT_REMOTE_TX_FLAG_MASK) != 0;
     }
 
     /**
