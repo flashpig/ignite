@@ -873,7 +873,19 @@ public class IgniteTxHandler {
             log.debug("Processing dht tx finish request [nodeId=" + nodeId + ", req=" + req + ']');
 
         if (req.checkCommitted()) {
-            sendReply(nodeId, req, !ctx.tm().addRolledbackTx(null, req.version()));
+            boolean committed = !ctx.tm().addRolledbackTx(null, req.version());
+
+            if (!committed || !req.syncCommit())
+                sendReply(nodeId, req, committed);
+            else {
+                IgniteInternalFuture<?> fut = ctx.tm().remoteTxFinishFuture(req.version());
+
+                fut.listen(new CI1<IgniteInternalFuture<?>>() {
+                    @Override public void apply(IgniteInternalFuture<?> fut) {
+                        sendReply(nodeId, req, true);
+                    }
+                });
+            }
 
             return;
         }

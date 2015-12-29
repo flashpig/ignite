@@ -44,6 +44,7 @@ import org.apache.ignite.internal.util.future.GridCompoundIdentityFuture;
 import org.apache.ignite.internal.util.future.GridFutureAdapter;
 import org.apache.ignite.internal.util.tostring.GridToStringInclude;
 import org.apache.ignite.internal.util.typedef.C1;
+import org.apache.ignite.internal.util.typedef.CI1;
 import org.apache.ignite.internal.util.typedef.F;
 import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.S;
@@ -393,7 +394,7 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
 
                 ClusterNode backup = cctx.discovery().node(backupId);
 
-                MiniFuture mini = new MiniFuture(backup, mapping);
+                final MiniFuture mini = new MiniFuture(backup, mapping);
 
                 add(mini);
 
@@ -414,8 +415,25 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
 
                     readyNearMappingFromBackup(mapping);
 
-                    if (committed)
+                    if (committed) {
+                        if (tx.syncCommit()) {
+                            GridCacheVersion nearXidVer = tx.nearXidVersion();
+
+                            assert nearXidVer != null : tx;
+
+                            IgniteInternalFuture<?> fut = cctx.tm().remoteTxFinishFuture(nearXidVer);
+
+                            fut.listen(new CI1<IgniteInternalFuture<?>>() {
+                                @Override public void apply(IgniteInternalFuture<?> fut) {
+                                    mini.onDone(tx);
+                                }
+                            });
+
+                            return;
+                        }
+
                         mini.onDone(tx);
+                    }
                     else {
                         ClusterTopologyCheckedException cause =
                             new ClusterTopologyCheckedException("Primary node left grid: " + nodeId);
@@ -441,8 +459,8 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
                         tx.system(),
                         tx.ioPolicy(),
                         false,
-                        true,
-                        true,
+                        tx.syncCommit(),
+                        tx.syncRollback(),
                         null,
                         null,
                         null,
@@ -457,10 +475,11 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
                     try {
                         if (FINISH_NEAR_ONE_PHASE_SINCE.compareTo(backup.version()) <= 0)
                             cctx.io().send(backup, finishReq, tx.ioPolicy());
-                        else
+                        else {
                             mini.onDone(new IgniteTxHeuristicCheckedException("Failed to check for tx commit on " +
                                 "the backup node (node has an old Ignite version) [rmtNodeId=" + backup.id() +
                                 ", ver=" + backup.version() + ']'));
+                        }
                     }
                     catch (ClusterTopologyCheckedException e) {
                         mini.onResult(e);
@@ -476,7 +495,7 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
     }
 
     /**
-     *
+     * @return {@code True} if need to send finish request for one phase commit transaction.
      */
     private boolean needFinishOnePhase() {
         if (tx.mappings().empty())

@@ -145,13 +145,13 @@ public class IgniteCacheCommitDelayTxRecoveryTest extends GridCommonAbstractTest
 
         client = false;
 
-        Ignite srv = ignite(0);
-
-        assertFalse(srv.configuration().isClientMode());
-
         clientNode.createCache(cacheConfiguration(backups, useStore));
 
         awaitPartitionMapExchange();
+
+        Ignite srv = ignite(0);
+
+        assertFalse(srv.configuration().isClientMode());
 
         for (Boolean pessimistic : Arrays.asList(false, true)) {
             checkRecovery(backupKey(srv.cache(null)), srv, pessimistic, useStore);
@@ -159,6 +159,10 @@ public class IgniteCacheCommitDelayTxRecoveryTest extends GridCommonAbstractTest
             checkRecovery(nearKey(srv.cache(null)), srv, pessimistic, useStore);
 
             checkRecovery(nearKey(clientNode.cache(null)), clientNode, pessimistic, useStore);
+
+            srv = ignite(0);
+
+            assertFalse(srv.configuration().isClientMode());
         }
     }
 

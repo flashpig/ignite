@@ -1618,6 +1618,24 @@ public class IgniteTxManager extends GridCacheSharedManagerAdapter {
     }
 
     /**
+     * @param nearVer Near version.
+     * @return Finish future for related remote transactions.
+     */
+    @SuppressWarnings("unchecked")
+    public IgniteInternalFuture<?> remoteTxFinishFuture(GridCacheVersion nearVer) {
+        GridCompoundFuture<Void, Void> fut = new GridCompoundFuture<>();
+
+        for (final IgniteInternalTx tx : txs()) {
+            if (!tx.local() && nearVer.equals(tx.nearXidVersion()))
+                fut.add((IgniteInternalFuture) tx.finishFuture());
+        }
+
+        fut.markInitialized();
+
+        return fut;
+    }
+
+    /**
      * @param nearVer Near version ID.
      * @param txNum Number of transactions.
      * @param fut Result future.
