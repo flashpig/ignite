@@ -799,11 +799,8 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
         return state;
     }
 
-    /**
-     * Changes transaction state from COMMITTING to MARKED_ROLLBACK.
-     * Must be called only from thread committing transaction.
-     */
-    protected final void errorWhenCommitting() {
+    /** {@inheritDoc} */
+    public final void errorWhenCommitting() {
         synchronized (this) {
             TransactionState prev = state;
 
@@ -1716,6 +1713,11 @@ public abstract class IgniteTxAdapter extends GridMetadataAwareAdapter
 
         /** {@inheritDoc} */
         @Override public boolean setRollbackOnly() {
+            throw new IllegalStateException("Deserialized transaction can only be used as read-only.");
+        }
+
+        /** {@inheritDoc} */
+        @Override public void errorWhenCommitting() {
             throw new IllegalStateException("Deserialized transaction can only be used as read-only.");
         }
 
