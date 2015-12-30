@@ -717,7 +717,7 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
 
         /**
           * @param nodeId Node ID.
-         * @return {@code True} future processed node failure.
+         * @return {@code True} if future processed node failure.
          */
         abstract boolean onNodeLeft(UUID nodeId);
 
@@ -931,6 +931,21 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
 
         /** {@inheritDoc} */
         @Override boolean onNodeLeft(UUID nodeId) {
+            return onResponse(nodeId);
+        }
+
+        /**
+         * @param nodeId Node ID.
+         */
+        void onDhtFinishResponse(UUID nodeId) {
+            onResponse(nodeId);
+        }
+
+        /**
+         * @param nodeId Node ID.
+         * @return {@code True} if processed node response.
+         */
+        private boolean onResponse(UUID nodeId) {
             boolean done;
 
             boolean ret;
@@ -945,22 +960,6 @@ public final class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFutu
                 onDone(tx);
 
             return ret;
-        }
-
-        /**
-         * @param nodeId Node ID.
-         */
-        void onDhtFinishResponse(UUID nodeId) {
-            boolean done;
-
-            synchronized (this) {
-                nodes.remove(nodeId);
-
-                done = nodes.isEmpty();
-            }
-
-            if (done)
-                onDone(tx);
         }
 
         /** {@inheritDoc} */
