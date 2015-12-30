@@ -31,8 +31,10 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.events.Event;
 import org.apache.ignite.events.EventType;
+import org.apache.ignite.internal.util.lang.GridAbsPredicate;
 import org.apache.ignite.lang.IgniteBiPredicate;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
+import org.apache.ignite.testframework.GridTestUtils;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
 /**
@@ -79,7 +81,6 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
         // start the Curator client so we can perform assertions on the ZK state later
         zkCurator = CuratorFrameworkFactory.newClient(zkCluster.getConnectString(), new RetryNTimes(10, 1000));
         zkCurator.start();
-
     }
 
     /**
@@ -98,22 +99,21 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
         }
 
         stopAllGrids();
-
     }
 
     /**
      * Enhances the default configuration with the {#TcpDiscoveryZookeeperIpFinder}.
      *
      * @param gridName Grid name.
-     * @return
-     * @throws Exception
+     * @return Ignite configuration.
+     * @throws Exception If failed.
      */
     @Override protected IgniteConfiguration getConfiguration(String gridName) throws Exception {
         IgniteConfiguration configuration = super.getConfiguration(gridName);
 
         TcpDiscoverySpi tcpDisco = (TcpDiscoverySpi) configuration.getDiscoverySpi();
         TcpDiscoveryZookeeperIpFinder zkIpFinder = new TcpDiscoveryZookeeperIpFinder();
-        zkIpFinder.setAllowDuplicateRegistrations(isAllowDuplicateRegistrations());
+        zkIpFinder.setAllowDuplicateRegistrations(allowDuplicateRegistrations);
 
         // first node => configure with zkUrl; second node => configure with CuratorFramework; third and subsequent
         // shall be configured through system property
@@ -126,11 +126,12 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
         }
 
         tcpDisco.setIpFinder(zkIpFinder);
+
         return configuration;
     }
 
     /**
-     * @throws Exception
+     * @throws Exception If failed.
      */
     public void testOneIgniteNodeIsAlone() throws Exception {
         startGrid(0);
@@ -141,7 +142,7 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
     }
 
     /**
-     * @throws Exception
+     * @throws Exception If failed.
      */
     public void testTwoIgniteNodesFindEachOther() throws Exception {
         // start one node
@@ -164,7 +165,7 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
     }
 
     /**
-     * @throws Exception
+     * @throws Exception If failed.
      */
     public void testThreeNodesWithThreeDifferentConfigMethods() throws Exception {
         // start one node
@@ -195,7 +196,7 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
     }
 
     /**
-     * @throws Exception
+     * @throws Exception If failed.
      */
     public void testFourNodesStartingAndStopping() throws Exception {
         // start one node
@@ -242,10 +243,10 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
     }
 
     /**
-     * @throws Exception
+     * @throws Exception If failed.
      */
     public void testFourNodesWithDuplicateRegistrations() throws Exception {
-        setAllowDuplicateRegistrations(true);
+        allowDuplicateRegistrations = true;
 
         // start 4 nodes
         System.setProperty(TcpDiscoveryZookeeperIpFinder.PROP_ZK_CONNECTION_STRING, zkCluster.getConnectString());
@@ -265,10 +266,10 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
     }
 
     /**
-     * @throws Exception
+     * @throws Exception If failed.
      */
     public void testFourNodesWithNoDuplicateRegistrations() throws Exception {
-        setAllowDuplicateRegistrations(false);
+        allowDuplicateRegistrations = false;
 
         // start 4 nodes
         System.setProperty(TcpDiscoveryZookeeperIpFinder.PROP_ZK_CONNECTION_STRING, zkCluster.getConnectString());
@@ -288,10 +289,10 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
     }
 
     /**
-     * @throws Exception
+     * @throws Exception If failed.
      */
     public void testFourNodesRestartLastSeveralTimes() throws Exception {
-        setAllowDuplicateRegistrations(false);
+        allowDuplicateRegistrations = false;
 
         // start 4 nodes
         System.setProperty(TcpDiscoveryZookeeperIpFinder.PROP_ZK_CONNECTION_STRING, zkCluster.getConnectString());
@@ -321,14 +322,13 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
         stopAllGrids();
 
         assertEquals(0, zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
-
     }
 
     /**
-     * @throws Exception
+     * @throws Exception If failed.
      */
     public void testFourNodesKillRestartZookeeper() throws Exception {
-        setAllowDuplicateRegistrations(false);
+        allowDuplicateRegistrations = false;
 
         // start 4 nodes
         System.setProperty(TcpDiscoveryZookeeperIpFinder.PROP_ZK_CONNECTION_STRING, zkCluster.getConnectString());
@@ -357,14 +357,28 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
 
         // stop all grids
         stopAllGrids();
-        Thread.sleep(2000);
+
+        GridTestUtils.waitForCondition(new GridAbsPredicate() {
+            @Override public boolean apply() {
+                try {
+                    return zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size() == 0;
+                }
+                catch (Exception e) {
+                    fail("Unexpected error: ");
+
+                    return true;
+                }
+            }
+        }, 5000);
 
         // check that all nodes are gone in ZK
         assertEquals(0, zkCurator.getChildren().forPath(SERVICES_IGNITE_ZK_PATH).size());
     }
 
     /**
-     * @throws Exception
+     * @param ignite Node.
+     * @param joinEventCount Expected events number.
+     * @return Events latch.
      */
     private CountDownLatch expectJoinEvents(Ignite ignite, int joinEventCount) {
         final CountDownLatch latch = new CountDownLatch(joinEventCount);
@@ -377,19 +391,5 @@ public class ZookeeperIpFinderTest extends GridCommonAbstractTest {
         }, null, EventType.EVT_NODE_JOINED);
 
         return latch;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public void setAllowDuplicateRegistrations(boolean allowDuplicateRegistrations) {
-        this.allowDuplicateRegistrations = allowDuplicateRegistrations;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public boolean isAllowDuplicateRegistrations() {
-        return allowDuplicateRegistrations;
     }
 }
