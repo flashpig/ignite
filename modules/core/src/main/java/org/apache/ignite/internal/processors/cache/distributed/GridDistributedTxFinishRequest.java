@@ -184,6 +184,13 @@ public class GridDistributedTxFinishRequest extends GridDistributedBaseMessage {
     }
 
     /**
+     * @param syncCommit Sync commit flag.
+     */
+    public void syncCommit(boolean syncCommit) {
+        this.syncCommit = syncCommit;
+    }
+
+    /**
      * @return Sync rollback flag.
      */
     public boolean syncRollback() {

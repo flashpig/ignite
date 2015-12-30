@@ -873,7 +873,7 @@ public class IgniteTxHandler {
             log.debug("Processing dht tx finish request [nodeId=" + nodeId + ", req=" + req + ']');
 
         if (req.checkCommitted()) {
-            boolean committed = !ctx.tm().addRolledbackTx(null, req.version());
+            boolean committed = req.waitRemoteTransactions() || !ctx.tm().addRolledbackTx(null, req.version());
 
             if (!committed || !req.syncCommit())
                 sendReply(nodeId, req, committed);
@@ -1054,7 +1054,7 @@ public class IgniteTxHandler {
      * @param committed {@code True} if transaction committed on this node.
      */
     protected void sendReply(UUID nodeId, GridDhtTxFinishRequest req, boolean committed) {
-        if (req.replyRequired()) {
+        if (req.replyRequired() || req.checkCommitted()) {
             GridDhtTxFinishResponse res = new GridDhtTxFinishResponse(req.version(), req.futureId(), req.miniId());
 
             if (req.checkCommitted()) {
