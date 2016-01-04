@@ -330,8 +330,6 @@ public class IgniteHadoopFileSystem extends FileSystem {
 
             if (initSecondary) {
                 try {
-                    Object payload0 = paths.getPayload(getClass().getClassLoader());
-
                     factory = (HadoopFileSystemFactory) paths.getPayload(getClass().getClassLoader());
                 }
                 catch (IgniteCheckedException e) {
@@ -1148,7 +1146,7 @@ public class IgniteHadoopFileSystem extends FileSystem {
      * @return {@code true} If secondary file system is initialized.
      */
     public boolean hasSecondaryFileSystem() {
-        return secondaryFs != null;
+        return factory != null;
     }
 
     /**
