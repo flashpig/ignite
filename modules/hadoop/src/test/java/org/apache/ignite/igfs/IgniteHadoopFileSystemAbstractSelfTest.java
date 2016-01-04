@@ -489,7 +489,7 @@ public abstract class IgniteHadoopFileSystemAbstractSelfTest extends IgfsCommonA
                 // Initial cache size.
                 int initSize = cache.size();
 
-                X.print(">>> Initial IO cache size: " + initSize);
+                X.print(">>> Initial IO: " + cache.keySet());
 
                 // Ensure that when IO is used by multiple file systems and one of them is closed, IO is not stopped.
                 fsOther = FileSystem.get(new URI(PRIMARY_URI), cfg);
