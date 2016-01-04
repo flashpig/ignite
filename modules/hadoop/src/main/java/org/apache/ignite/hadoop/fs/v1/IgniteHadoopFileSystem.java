@@ -190,8 +190,7 @@ public class IgniteHadoopFileSystem extends FileSystem {
     /** {@inheritDoc} */
     @Override public URI getUri() {
         if (uri == null)
-            throw new IllegalStateException("URI is null (was IgniteHadoopFileSystem properly initialized?) [closed="
-                + closeGuard.get() + ']');
+            throw new IllegalStateException("URI is null (was IgniteHadoopFileSystem properly initialized?).");
 
         return uri;
     }
@@ -922,35 +921,35 @@ public class IgniteHadoopFileSystem extends FileSystem {
 
     /** {@inheritDoc} */
     @Override public void setWorkingDirectory(Path newPath) {
-        FileSystem secondaryFs;
-
         try {
-            secondaryFs = secondaryFileSystem();
+            if (newPath == null) {
+                Path homeDir = getHomeDirectory();
+
+                FileSystem secondaryFs  = secondaryFileSystem();
+
+                if (secondaryFs != null)
+                    secondaryFs.setWorkingDirectory(toSecondary(homeDir));
+
+                workingDir = homeDir;
+            }
+            else {
+                Path fixedNewPath = fixRelativePart(newPath);
+
+                String res = fixedNewPath.toUri().getPath();
+
+                if (!DFSUtil.isValidName(res))
+                    throw new IllegalArgumentException("Invalid DFS directory name " + res);
+
+                FileSystem secondaryFs  = secondaryFileSystem();
+
+                if (secondaryFs != null)
+                    secondaryFs.setWorkingDirectory(toSecondary(fixedNewPath));
+
+                workingDir = fixedNewPath;
+            }
         }
         catch (IOException e) {
             throw new RuntimeException("Failed to obtain secondary file system instance.", e);
-        }
-
-        if (newPath == null) {
-            Path homeDir = getHomeDirectory();
-
-            if (secondaryFs != null)
-                secondaryFs.setWorkingDirectory(toSecondary(homeDir));
-
-            workingDir = homeDir;
-        }
-        else {
-            Path fixedNewPath = fixRelativePart(newPath);
-
-            String res = fixedNewPath.toUri().getPath();
-
-            if (!DFSUtil.isValidName(res))
-                throw new IllegalArgumentException("Invalid DFS directory name " + res);
-
-            if (secondaryFs != null)
-                secondaryFs.setWorkingDirectory(toSecondary(fixedNewPath));
-
-            workingDir = fixedNewPath;
         }
     }
 
