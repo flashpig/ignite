@@ -92,7 +92,7 @@ public class IgfsExUniversalFileSystemAdapter implements UniversalFileSystemAdap
     }
 
     /** {@inheritDoc} */
-    @Override public <T> T getAdapter(Class<T> clazz) {
+    @Override public <T> T unwrap(Class<T> clazz) {
         if (clazz == IgfsEx.class)
             return (T)igfsEx;
 
