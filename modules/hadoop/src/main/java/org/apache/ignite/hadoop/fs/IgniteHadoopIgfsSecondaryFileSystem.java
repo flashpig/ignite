@@ -518,7 +518,7 @@ public class IgniteHadoopIgfsSecondaryFileSystem implements IgfsSecondaryFileSys
         assert !F.isEmpty(user);
 
         try {
-            return fsFactory.create(user);
+            return fsFactory.get(user);
         }
         catch (IOException ioe) {
             throw new IgniteException(ioe);

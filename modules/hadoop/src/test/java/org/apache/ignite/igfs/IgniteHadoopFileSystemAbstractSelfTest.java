@@ -412,7 +412,7 @@ public abstract class IgniteHadoopFileSystemAbstractSelfTest extends IgfsCommonA
                 return new IgniteHadoopFileSystem().getUri();
             }
         }, IllegalStateException.class,
-            "URI is null (was IgniteHadoopFileSystem properly initialized?) [closed=false]");
+            "URI is null (was IgniteHadoopFileSystem properly initialized?)");
     }
 
     /** @throws Exception If failed. */

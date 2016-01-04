@@ -20,6 +20,7 @@ package org.apache.ignite.hadoop.fs;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.ignite.IgniteException;
+import org.apache.ignite.hadoop.fs.v1.IgniteHadoopFileSystem;
 import org.apache.ignite.internal.processors.hadoop.HadoopUtils;
 import org.apache.ignite.internal.processors.igfs.IgfsUtils;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -36,7 +37,9 @@ import java.net.URL;
 import java.util.Arrays;
 
 /**
- * Simple Hadoop file system factory factory which delegates to {@code FileSystem.get()}.
+ * Simple Hadoop file system factory which delegates to {@code FileSystem.get()} on each call.
+ * <p>
+ * If {@code "fs.[prefix].impl.disable.cache"} is set to {@code true}, file system instances will be cached by Hadoop.
  */
 public class BasicHadoopFileSystemFactory implements HadoopFileSystemFactory, Externalizable, LifecycleAware {
     /** File system URI. */
@@ -52,14 +55,14 @@ public class BasicHadoopFileSystemFactory implements HadoopFileSystemFactory, Ex
     protected transient URI fullUri;
 
     /**
-     * Public non-arg constructor.
+     * Constructor.
      */
     public BasicHadoopFileSystemFactory() {
-        // noop
+        // No-op.
     }
 
     /** {@inheritDoc} */
-    @Override public FileSystem create(String usrName) throws IOException {
+    @Override public FileSystem get(String usrName) throws IOException {
         return create0(IgfsUtils.fixUserName(usrName));
     }
 
@@ -85,6 +88,11 @@ public class BasicHadoopFileSystemFactory implements HadoopFileSystemFactory, Ex
 
     /**
      * Gets file system URI.
+     * <p>
+     * This URI will be used as a first argument when calling {@link FileSystem#get(URI, Configuration, String)}.
+     * <p>
+     * If not set, default URI will be picked from file system configuration using
+     * {@link FileSystem#getDefaultUri(Configuration)} method.
      *
      * @return File system URI.
      */
@@ -93,7 +101,7 @@ public class BasicHadoopFileSystemFactory implements HadoopFileSystemFactory, Ex
     }
 
     /**
-     * Sets file system URI.
+     * Sets file system URI. See {@link #getUri()} for more information.
      *
      * @param uri File system URI.
      */
@@ -103,6 +111,14 @@ public class BasicHadoopFileSystemFactory implements HadoopFileSystemFactory, Ex
 
     /**
      * Gets paths to additional file system configuration files (e.g. core-site.xml).
+     * <p>
+     * Path could be either absolute or relative to {@code IGNITE_HOME} environment variable.
+     * <p>
+     * All provided paths will be loaded in the order they provided and then applied to {@link Configuration}. It means
+     * that path order might be important in some cases.
+     * <p>
+     * <b>NOTE!</b> Factory can be serialized and transferred to other machines where instance of
+     * {@link IgniteHadoopFileSystem} resides. Corresponding paths must exist on these machines as well.
      *
      * @return Paths to file system configuration files.
      */
@@ -111,7 +127,8 @@ public class BasicHadoopFileSystemFactory implements HadoopFileSystemFactory, Ex
     }
 
     /**
-     * Set paths to additional file system configuration files (e.g. core-site.xml).
+     * Set paths to additional file system configuration files (e.g. core-site.xml). See {@link #getConfigPaths()} for
+     * more information.
      *
      * @param cfgPaths Paths to file system configuration files.
      */
@@ -126,7 +143,7 @@ public class BasicHadoopFileSystemFactory implements HadoopFileSystemFactory, Ex
         if (cfgPaths != null) {
             for (String cfgPath : cfgPaths) {
                 if (cfgPath == null)
-                    throw new IgniteException("Configuration path cannot be null: " + Arrays.toString(cfgPaths));
+                    throw new NullPointerException("Configuration path cannot be null: " + Arrays.toString(cfgPaths));
                 else {
                     URL url = U.resolveIgniteUrl(cfgPath);
 

@@ -341,7 +341,7 @@ public class IgniteHadoopFileSystem extends FileSystem {
                     ((LifecycleAware) factory).start();
 
                 try {
-                    FileSystem secFs = factory.create(user);
+                    FileSystem secFs = factory.get(user);
 
                     secondaryUri = secFs.getUri();
 
@@ -1350,6 +1350,6 @@ public class IgniteHadoopFileSystem extends FileSystem {
         if (factory == null)
             return null;
 
-        return factory.create(user);
+        return factory.get(user);
     }
 }

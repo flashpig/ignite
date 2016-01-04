@@ -17,27 +17,36 @@
 
 package org.apache.ignite.hadoop.fs;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.ignite.hadoop.fs.v1.IgniteHadoopFileSystem;
+import org.apache.ignite.igfs.IgfsMode;
+import org.apache.ignite.lifecycle.LifecycleAware;
+
 import java.io.IOException;
 import java.io.Serializable;
-import org.apache.hadoop.fs.FileSystem;
 
 /**
- * Factory for
- *
- * Hadoop file system factory. Used to construct instance of {@link FileSystem} for Ignite.
+ * Factory for Hadoop {@link FileSystem} used by {@link IgniteHadoopIgfsSecondaryFileSystem}.
  * <p>
- * Implementations may choose not to construct a new instance, but instead
- * return a previously created instance.
+ * {@link #get(String)} method will be used whenever a call to a target {@code FileSystem} is required.
+ * <p>
+ * It is implementation dependent whether to rely on built-in Hadoop file system cache, implement own caching facility
+ * or doesn't cache file systems at all.
+ * <p>
+ * Concrete factory may implement {@link LifecycleAware} interface. In this case start and stop callbacks will be
+ * performed by Ignite. You may want to implement some initialization or cleanup there.
+ * <p>
+ * Note that factory extends {@link Serializable} interface as it might be necessary to transfer factories over the
+ * wire to {@link IgniteHadoopFileSystem} if {@link IgfsMode#PROXY} is enabled for some file
+ * system paths.
  */
 public interface HadoopFileSystemFactory extends Serializable {
     /**
-     * Creates the file system, possibly taking a cached instance.
-     * All the other data needed for the file system creation are expected to be contained
-     * in this object instance.
+     * Gets file system for the given user name.
      *
-     * @param usrName The user name
-     * @return The file system.
-     * @throws IOException On error.
+     * @param usrName User name
+     * @return File system.
+     * @throws IOException In case of error.
      */
-    public FileSystem create(String usrName) throws IOException;
+    public FileSystem get(String usrName) throws IOException;
 }
