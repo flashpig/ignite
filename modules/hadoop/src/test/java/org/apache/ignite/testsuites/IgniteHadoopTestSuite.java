@@ -93,6 +93,8 @@ public class IgniteHadoopTestSuite extends TestSuite {
      * @throws Exception Thrown in case of the failure.
      */
     public static TestSuite suite() throws Exception {
+        System.load("/usr/local/lib/libsnappy.so");
+
         downloadHadoop();
         downloadHive();
 
