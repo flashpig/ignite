@@ -42,6 +42,9 @@ import java.util.Arrays;
  * If {@code "fs.[prefix].impl.disable.cache"} is set to {@code true}, file system instances will be cached by Hadoop.
  */
 public class BasicHadoopFileSystemFactory implements HadoopFileSystemFactory, Externalizable, LifecycleAware {
+    /** */
+    private static final long serialVersionUID = 0L;
+
     /** File system URI. */
     protected String uri;
 

@@ -40,6 +40,9 @@ import java.net.URI;
  * use {@link BasicHadoopFileSystemFactory} or implement your own factory.
  */
 public class CachingHadoopFileSystemFactory extends BasicHadoopFileSystemFactory {
+    /** */
+    private static final long serialVersionUID = 0L;
+
     /** Per-user file system cache. */
     private final transient HadoopLazyConcurrentMap<String, FileSystem> cache = new HadoopLazyConcurrentMap<>(
         new HadoopLazyConcurrentMap.ValueFactory<String, FileSystem>() {
