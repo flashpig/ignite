@@ -74,7 +74,7 @@ public class HadoopLazyConcurrentMap<K, V extends Closeable> {
             try {
                 if (closed)
                     throw new IllegalStateException("Failed to create value for key [" + k
-                        + "]: the map is already closed. this = " + System.identityHashCode(this));
+                        + "]: the map is already closed.");
 
                 final ValueWrapper wNew = new ValueWrapper(k);
 
