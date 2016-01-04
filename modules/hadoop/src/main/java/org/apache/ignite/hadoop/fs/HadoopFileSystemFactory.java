@@ -22,6 +22,8 @@ import java.io.Serializable;
 import org.apache.hadoop.fs.FileSystem;
 
 /**
+ * Factory for
+ *
  * Hadoop file system factory. Used to construct instance of {@link FileSystem} for Ignite.
  * <p>
  * Implementations may choose not to construct a new instance, but instead
