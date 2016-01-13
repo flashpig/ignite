@@ -30,3 +30,5 @@ git-patch-prop-local.sh
 /modules/platforms/cpp/doc/
 *.project
 **/.settings
+**/.classpath
+**/bin/*
